@@ -116,7 +116,10 @@ class SpikePlotter(PlotterBase):
                     linestyle=":",
                     linewidth=0.5,
                 )
-
+                self._despine(sub_ax)
+                sub_ax.spines["bottom"].set_visible(False)
+                sub_ax.spines["left"].set_visible(False)
+            plt.tight_layout()
             cax = fig.add_axes(
                 [
                     sub_ax.get_position().x1 + 0.01,
@@ -125,6 +128,7 @@ class SpikePlotter(PlotterBase):
                     sub_ax.get_position().height,
                 ]
             )
+
             plt.colorbar(im, cax=cax, label="Z scores")  # Similar to fig.colorbar(im, cax = cax)
             plt.title(f"{stimulus}")
             plt.figure(dpi=self.dpi)
@@ -365,4 +369,4 @@ class SpikePlotter(PlotterBase):
 
     def _despine(self, ax):
         ax.spines["right"].set_visible(False)
-        ax.spines["top"].set_visiible(False)
+        ax.spines["top"].set_visible(False)
