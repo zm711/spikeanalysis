@@ -4,14 +4,14 @@ from scipy import stats
 
 
 def latency_core_stats(
-        bsl_fr, firing_data:np.array, time_bin_size:float
+        bsl_fr:float, firing_data:np.array, time_bin_size:float
 ):
     """idea modified from Chase and Young, 2007: PNAS
 p_tn(>=n) = 1 - sum_m_n-1 ((rt)^m e^(-rt))/m!"""
 
     latency = np.zeros((np.shape(firing_data)[0]))
     for trial in range(np.shape(firing_data)[0]):
-         for n_bin in range(np.shape(firing_data)[1] - 1):
+        for n_bin in range(np.shape(firing_data)[1] - 1):
             final_prob = 1 - stats.poisson.cdf(
                 np.sum(firing_data[trial][: n_bin + 1]) - 1,
                 bsl_fr * ((n_bin + 1) * time_bin_size),
@@ -19,7 +19,11 @@ p_tn(>=n) = 1 - sum_m_n-1 ((rt)^m e^(-rt))/m!"""
             if final_prob <= 10e-6:
                 break
 
+        if n_bin == np.shape(firing_data)[1]-1:
+            latency[trial] = np.nan
+        else:
             latency[trial] = (n_bin + 1) * time_bin_size
+            
     return latency
     
 
