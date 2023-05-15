@@ -30,10 +30,15 @@ class SpikeData:
         windows prepend r in front of the str."
 
         self._file_path = file_path
+        self.CACHING = False
         import glob
 
         current_dir = os.getcwd()
+        print(file_path)
+        print(os.getcwd())
         os.chdir(file_path)
+        print(os.getcwd())
+        print(glob.glob('spike_times.npy'))
         assert len(glob.glob("spike_times.npy")) != 0, "This folder doesn't contain Phy files"
         self._filename = glob.glob("*bin")[0]
 
@@ -68,6 +73,10 @@ class SpikeData:
 
         self._return_to_dir(current_dir)
 
+    def set_caching(self, cache:bool = True):
+
+        self.CACHING = cache
+
     def run_all(
         self,
         ref_dur_ms: float,
@@ -75,6 +84,7 @@ class SpikeData:
         rpv: float,
         sil: float,
         recurated: bool = False,
+        set_caching: bool = True,
         depth: float = 0,
     ):
         current_dir = os.getcwd()
@@ -84,11 +94,12 @@ class SpikeData:
             self._return_to_dir(current_dir)
             return
         except FileNotFoundError:
+            self.set_caching(set_caching)
             self.refractory_violation(ref_dur_ms=ref_dur_ms)
             self.generate_pcs()
             self.generate_qcmetrics()
             self.get_waveforms()
-            self.get_waveform_values()
+            self.get_waveform_values(depth=depth)
             self.qc_preprocessing(idthres=idthres, rpv=rpv, sil=sil, recurated=recurated)
             self.set_qc()
             self.denoise_data()
@@ -160,6 +171,7 @@ class SpikeData:
 
         """
         print("calculating refractory period violation fraction")
+        self._goto_file_path()
         ref_dur = ref_dur_ms / 1000
         spike_clusters = np.load('spike_clusters.npy')
         violations = np.zeros((len(set(spike_clusters))))
@@ -181,7 +193,8 @@ class SpikeData:
                 violations[idx] = num_violations / total_spikes
 
         self.refractory_period_violations = violations
-        np.save("refractory_period_violations.npy", violations)
+        if self.CACHING:
+            np.save("refractory_period_violations.npy", violations)
 
     def generate_pcs(self):
         """
@@ -283,8 +296,9 @@ class SpikeData:
 
         self.isolation_distances = isolation_distances
         self.silhouette_scores = silhouette_scores
-        np.save("silhouette_scores.npy", silhouette_scores)
-        np.save("isolation_distances.npy", isolation_distances)
+        if self.CACHING:
+            np.save("silhouette_scores.npy", silhouette_scores)
+            np.save("isolation_distances.npy", isolation_distances)
 
         self._return_to_dir(current_dir)
 
@@ -304,7 +318,7 @@ class SpikeData:
         None, saves the spikes used in waveform_spike_times and the waveforms as waveforms
 
         """
-        from .stimulus_data import NumpyEncoder
+        from .utils import NumpyEncoder
         import json
 
         print("generating raw waveforms")
@@ -364,9 +378,9 @@ class SpikeData:
 
         self.waveform_spike_times = spike_time_keeps / sample_rate
         self.waveforms = waveforms
-
-        with open("waveforms.json", "w") as write_file:
-            json.dump(self.waveforms, write_file, cls=NumpyEncoder)
+        if self.CACHING:
+            with open("waveforms.json", "w") as write_file:
+                json.dump(self.waveforms, write_file, cls=NumpyEncoder)
 
         self._return_to_dir(current_dir)
 
@@ -417,7 +431,9 @@ class SpikeData:
             self._sil_threshold = sil
             self._rpv = rpv
 
-            np.save("qc_threshold.npy", threshold)
+            if self.CACHING:
+
+                np.save("qc_threshold.npy", threshold)
 
         self._return_to_dir(current_dir)
 
