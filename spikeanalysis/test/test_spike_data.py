@@ -1,6 +1,8 @@
 
 import numpy as np
 import os
+import pytest
+from pathlib import Path
 
 CURRENT_DIR = os.getcwd()
 
@@ -10,16 +12,19 @@ def test_import_SpikeData():
     except:
         assert False, "import failed"
 
-
-def initialize_SpikeData():
+@pytest.fixture
+def spikes():
+    
     from spike_data import SpikeData
-    spikes = SpikeData(file_path = './test/test_data')
+    directory = Path(__file__).parent.resolve() / 'test_data'
+    spikes = SpikeData(file_path = directory)
+    
 
     return spikes
 
 
-def test_SpikeData_attributes():
-    spikes = initialize_SpikeData()
+def test_SpikeData_attributes(spikes):
+    
 
     assert spikes.raw_spike_times[0]==100, "spike times loading didn't work"
     assert spikes.spike_clusters[0]!=spikes.spike_clusters[2], "spike clusters not working"
@@ -32,16 +37,16 @@ def test_SpikeData_attributes():
     assert np.shape(spikes.x_coords) == (4,), "channel map incorrectly read"
     assert len(spikes._cids) == 2, "cids no loaded correctly"
 
-def test_samples_to_seconds():
-    spikes= initialize_SpikeData()
+def test_samples_to_seconds(spikes):
+    
 
     spikes.samples_to_seconds()
     spike_times = spikes.spike_times
 
     assert spike_times[0] == 1
 
-def test_refractory_violations():
-    spikes = initialize_SpikeData()
+def test_refractory_violations(spikes):
+
     spikes.spike_clusters = spikes._spike_templates
     spikes._cids = [1]
     spikes.refractory_violation(ref_dur_ms=3000)
@@ -49,16 +54,16 @@ def test_refractory_violations():
     print(spikes.refractory_period_violations)
     assert spikes.refractory_period_violations[0] == 0.9 
 
-def test_get_file_size():
-    spikes = initialize_SpikeData()
+def test_get_file_size(spikes):
+
     spikes._goto_file_path()
     size = spikes._get_file_size()
     spikes._return_to_dir(CURRENT_DIR)
 
     assert size == 1
     
-def test_read_cgs():
-    spikes= initialize_SpikeData()
+def test_read_cgs(spikes):
+
     spikes._goto_file_path()
     cids, cgs = spikes._read_cgs()
     spikes._return_to_dir(CURRENT_DIR)
@@ -70,9 +75,9 @@ def test_read_cgs():
     assert cgs[0]==2, 'cgs issue'
 
 
-def test_find_index():
+def test_find_index(spikes):
 
-    spikes = initialize_SpikeData()
+
     test_matrix = np.array([[0,1],[3,2]])
     print(test_matrix)
     r, c = spikes._find_index(test_matrix)
@@ -84,9 +89,9 @@ def test_find_index():
             assert False, "0,0 is a 0 so that should not be found, ie r and c can't both be 0"
 
 
-def test_count_unique():
+def test_count_unique(spikes):
 
-    spikes = initialize_SpikeData()
+
     test_matrix = np.array([1,2,3,2,1,2,2,])
     print(test_matrix)
     val, inst = spikes._count_unique(test_matrix)
