@@ -1,5 +1,5 @@
 
-
+import pytest
 from spike_plotter import SpikePlotter
 
 
@@ -15,3 +15,9 @@ def test_SpikePlotter_kwargs():
     assert plotter.dpi == 1200
     assert plotter.x_axis == 'Time (ms)'
     assert plotter.figsize == (10,8)
+
+@pytest.mark.xfail(reason='Checking to make sure only appropriate kwargs can be passed')
+def test_SpikePlotter_wrong_kwarg():
+    plotter = SpikePlotter(None, **{'x': 5})
+
+    assert plotter.x == 5
