@@ -3,6 +3,8 @@ from typing import Optional, Union
 import numpy as np
 import matplotlib.pyplot as plt
 
+from utils import verify_window_format
+
 try:
     import seaborn as sns
 
@@ -11,8 +13,8 @@ except ImportError:
     HAVE_SNS = False
 
 
-from .plotbase import PlotterBase
-from .spike_analysis import SpikeAnalysis
+from plotbase import PlotterBase
+from spike_analysis import SpikeAnalysis
 
 
 _z_scores_code = ("get_raw_psths", "z_score_data")
@@ -150,11 +152,7 @@ class SpikePlotter(PlotterBase):
         else:
             ylabel = self.y_axis
 
-        if len(window) == 2 and isinstance(window[0], (int, float)):
-            windows = [window] * len(psths.keys())
-        else:
-            windows = window
-        assert len(windows) == len(psths.keys()), "Please enter one list per stimulus"
+        windows = verify_window_format(window = window, num_stim = len(psths.keys()))
 
         stim_trial_groups = self._get_trial_groups()
 
@@ -222,11 +220,7 @@ class SpikePlotter(PlotterBase):
         else:
             ylabel = self.y_axis
 
-        if len(window) == 2 and isinstance(window[0], (int, float)):
-            windows = [window] * len(psths.keys())
-        else:
-            windows = window
-        assert len(windows) == len(psths.keys()), "Please enter one list per stimulus"
+        windows = verify_window_format(window=window, num_stim = len(psths.keys()))
 
         stim_trial_groups = self._get_trial_groups()
         event_lengths = self._get_event_lengths_all()
