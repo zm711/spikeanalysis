@@ -7,6 +7,7 @@ from spike_data import SpikeData
 from stimulus_data import StimulusData
 from analysis_utils import histogram_functions as hf
 from analysis_utils import latency_functions as lf
+from utils import verify_window_format
 
 
 _possible_digital = ("generate_digital_events", "set_trial_groups", "set_stimulus_name")
@@ -132,11 +133,8 @@ class SpikeAnalysis:
         if self.HAVE_DIG_ANALOG:
             TOTAL_STIM += len(self.dig_analog_events.keys())
 
-        if len(window) == 2 and isinstance(window[0], (float, int)):
-            windows = [window] * TOTAL_STIM
-        else:
-            windows = window
-        assert len(windows) == TOTAL_STIM, "Please enter one list per stimulus"
+        windows = verify_window_format(window=window, num_stim = TOTAL_STIM)
+
         psths = dict()
 
         if self.HAVE_DIGITAL:
@@ -265,23 +263,9 @@ class SpikeAnalysis:
                 number of bins is{len(time_bin_ms)} and should be {NUM_STIM}"
             time_bin_size = np.array(time_bin_ms) / 1000
 
-        if len(bsl_window) == 2 and isinstance(bsl_window[0], (int, float)):
-            bsl_windows = [bsl_window] * NUM_STIM
-        else:
-            assert (
-                len(bsl_window) == NUM_STIM
-            ), f"Please enter correct number of lists for stim \
-                bsl_window length is {len(bsl_window)} and should be {NUM_STIM}"
-            bsl_windows = bsl_window
+        bsl_windows = verify_window_format(window=bsl_window, num_stim=NUM_STIM)
 
-        if len(z_window) == 2 and isinstance(z_window[0], (int, float)):
-            z_windows = [z_window] * NUM_STIM
-        else:
-            assert (
-                len(z_window) == NUM_STIM
-            ), f"Please enter correct number of z window lists for stim\
-                z_window len is{len(z_window)} and should be {NUM_STIM}"
-            z_windows = z_window
+        z_windows = verify_window_format(window = z_window, num_stim=NUM_STIM)
 
         z_scores = {}
         final_z_scores = {}
@@ -353,14 +337,8 @@ class SpikeAnalysis:
 
         NUM_STIM = self.NUM_STIM
         NUM_DIG = self.NUM_DIG
-        if len(bsl_window) == 2 and isinstance(bsl_window[0], (int, float)):
-            bsl_windows = [bsl_window] * NUM_STIM
-        else:
-            assert (
-                len(bsl_window) == NUM_STIM
-            ), f"Please enter correct number of lists for stim \
-                bsl_window length is {len(bsl_window)} and should be {NUM_STIM}"
-            bsl_windows = bsl_window
+        
+        bsl_windows = verify_window_format(window=bsl_window, num_stim=NUM_STIM)
 
         stim_dict = self._get_keys_for_stim()
         psths = self.psths
@@ -548,6 +526,7 @@ class SpikeAnalysis:
             import pandas as pd
         except ImportError:
             raise Exception("pandas is required for correlation function, install with pip or conda")
+        
         if dataset == "psth":
             try:
                 psths = self.psths
@@ -555,6 +534,7 @@ class SpikeAnalysis:
 
             except AttributeError:
                 raise Exception("To run dataset=='psth', ensure 'get_raw_psth' has been run")
+            
         elif dataset == "z_scores":
             try:
                 z_scores = self.z_scores
@@ -566,11 +546,8 @@ class SpikeAnalysis:
         else:
             raise Exception(f"You have entered {dataset} and only ('psth', or 'z_scores') are possible options")
 
-        if len(window) == 2 and isinstance(window[0], (int, float)):
-            windows = [window] * self.NUM_STIM
-        else:
-            windows = window
-        assert len(windows) == self.NUM_STIM, "Please enter one list per stimulus"
+        windows = verify_window_format(window=window, num_stim = self.NUM_STIM)
+
         stim_dict = self._get_key_for_stim()
 
         correlations = {}
@@ -628,7 +605,7 @@ class SpikeAnalysis:
         }
 
         with open("z_parameters.json") as write_file:
-            json.dump(write_file, example_z_parameter)
+            json.dump(example_z_parameter, write_file)
 
         return example_z_parameter
 
