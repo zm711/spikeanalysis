@@ -86,8 +86,8 @@ class SpikePlotter(PlotterBase):
                 vmax = 5
                 vmin = -5
             bin_size = bins[1] - bins[0]
-            zero_point = np.where((bins > -bin_size) & (bins < bin_size))[0][0]
-            end_point = np.where((bins > length - bin_size) & (bins < length + bin_size))[0][0]
+            zero_point = np.where((bins > -bin_size) & (bins < bin_size))[0][0] #aim for nearest bin to zero
+            end_point = np.where((bins > length - bin_size) & (bins < length + bin_size))[0][0] # aim for nearest bin at end of stim
             bins_length = int(len(bins) / 7)
 
             fig, axes = plt.subplots(1, columns, sharey=True, figsize=(24, 10))
@@ -208,7 +208,10 @@ class SpikePlotter(PlotterBase):
     def plot_sm_fr(self, window: Union[list, list[list]], sm_time_ms: float):
         import matplotlib as mpl
 
-        cmap = mpl.colormaps["rainbow"]
+        if self.cmap is not None:
+            cmap = mpl.colormap[self.cmap]
+        else:
+            cmap = mpl.colormaps["rainbow"]
 
         try:
             psths = self.data.psths
@@ -235,10 +238,11 @@ class SpikePlotter(PlotterBase):
             tg_set = np.unique(trial_groups)
             norm = mpl.colors.Normalize(vmin=0, vmax=len(tg_set))
             bin_size = bins[1] - bins[0]
-            sm_std = int((1 / (bin_size * 1000))) * sm_time_ms
+            sm_std = int((1 / (bin_size * 1000))) * sm_time_ms # convert from user input
 
-            if sm_std % 2 != 0:
+            if sm_std % 2 != 0: # make it odd so it has a peak convolution bin
                 sm_std += 1
+
             mean_smoothed_psth = np.zeros((len(tg_set), len(bins)))
             stderr = np.zeros((len(tg_set), len(bins)))
             event_len = np.zeros((len(tg_set)))
@@ -362,5 +366,13 @@ class SpikePlotter(PlotterBase):
         return stim_trial_groups
 
     def _despine(self, ax):
+        """General utility function to mimic seaborn despine if seaborn not present
+        Parameters
+        ----------
+        ax: Axes object
+        Returns
+        -------
+        None
+        """
         ax.spines["right"].set_visible(False)
         ax.spines["top"].set_visible(False)
