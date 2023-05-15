@@ -24,7 +24,7 @@ def jsonify_parameters(parameters:dict):
         
 
     with open('analysis_parameters.json') as write_file:
-        json.dump(new_parameters)
+        json.dump(new_parameters, write_file)
 
 
 
