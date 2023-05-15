@@ -3,10 +3,10 @@ from typing import Union, Optional
 import numpy as np
 from tqdm import tqdm
 
-from .spike_data import SpikeData
-from .stimulus_data import StimulusData
-from .analysis_utils import histogram_functions as hf
-from .analysis_utils import latency_functions as lf
+from spike_data import SpikeData
+from stimulus_data import StimulusData
+from analysis_utils import histogram_functions as hf
+from analysis_utils import latency_functions as lf
 
 
 _possible_digital = ("generate_digital_events", "set_trial_groups", "set_stimulus_name")
