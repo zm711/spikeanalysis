@@ -50,7 +50,28 @@ def test_calculate_events(stim):
     assert onset[0]==2
     assert length[0]==3
 
+
+def test_get_raw_digital_events(stim):
+    stim.get_raw_digital_data()
+
+    assert np.isnan(stim._raw_digital_data)
+
+
+def test_read_intan_header(stim):
+    file_name = stim._filename
+
+    fid =  open(file_name, "rb")
+    header = stim._read_header(fid)
+    assert isinstance(header, dict)
+    print(header.keys())
+    assert header['version'] ==  {'major': 3, 'minor': 2}
+    assert header['sample_rate'] == 3000.0
+    assert header['num_samples_per_data_block'] == 128
+
 """
+
+
+
 @pytest.fixture()
 def get_raw_digital_data(stim):
 
