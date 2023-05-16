@@ -136,7 +136,7 @@ class SpikeAnalysis:
         windows = verify_window_format(window=window, num_stim = TOTAL_STIM)
 
         psths = dict()
-
+        
         if self.HAVE_DIGITAL:
             for idx, stimulus in enumerate(self.digital_events.keys()):
                 stimulus_counter = idx
@@ -171,6 +171,8 @@ class SpikeAnalysis:
                         print("There are bins with more than 1 spike. For best psth results bins should only be 0 or 1")
                 psths[stim_name]["psth"] = psth
                 psths[stim_name]["bins"] = bins_sub / self._sampling_rate
+        else:
+            stimulus_counter = -1
 
         if self.HAVE_DIG_ANALOG:
             stimulus_counter += 1
