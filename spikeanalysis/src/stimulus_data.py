@@ -300,7 +300,7 @@ class StimulusData:
 
         return onset, lengths
 
-    def _read_header(self, fid):
+    def _read_header(self, fid)->dict:
         # Michael Gibson 23 APRIL 2015
         # Adrian Foy Sep 2018
         import struct
@@ -452,9 +452,16 @@ class StimulusData:
 
         return header
 
-    def _read_qstring(self, fid):
+    def _read_qstring(self, fid)->str:
         # Michael Gibson 23APRIL2015
         # ZM some changes
+        """
+        Parameters
+        ----------
+        fid: file id
+        Returns
+        -------
+        a string from the file"""
         import struct, os
 
         (length,) = struct.unpack("<I", fid.read(4))
