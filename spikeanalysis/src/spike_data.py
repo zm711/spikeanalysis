@@ -34,11 +34,9 @@ class SpikeData:
         import glob
 
         current_dir = os.getcwd()
-        print(file_path)
-        print(os.getcwd())
+        
         os.chdir(file_path)
-        print(os.getcwd())
-        print(glob.glob('spike_times.npy'))
+        
         assert len(glob.glob("spike_times.npy")) != 0, "This folder doesn't contain Phy files"
         self._filename = glob.glob("*bin")[0]
 
@@ -173,7 +171,7 @@ class SpikeData:
         print("calculating refractory period violation fraction")
         self._goto_file_path()
         ref_dur = ref_dur_ms / 1000
-        spike_clusters = np.load('spike_clusters.npy')
+        spike_clusters = np.squeeze(np.load('spike_clusters.npy'))
         violations = np.zeros((len(set(spike_clusters))))
         violations[:] = np.nan
 
@@ -182,7 +180,7 @@ class SpikeData:
         except AttributeError:
             spike_times = self.raw_spike_times / self._sampling_rate
 
-        for idx, cluster in enumerate(set(spike_clusters)):
+        for idx, cluster in enumerate(tqdm(set(spike_clusters))):
             spikes = spike_times[self.spike_clusters == cluster]
             # print(len(spikes))
             if len(spikes) < 10:
@@ -484,7 +482,7 @@ class SpikeData:
         self.waveform_depth = final_depth
 
     def save_qc_parameters(self):
-        from utils import jsonify_parameters
+        from .utils import jsonify_parameters
 
         try:
             idthres = self._isolation_threshold
