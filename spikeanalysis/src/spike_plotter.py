@@ -3,7 +3,7 @@ from typing import Optional, Union
 import numpy as np
 import matplotlib.pyplot as plt
 
-from utils import verify_window_format
+from .utils import verify_window_format
 
 try:
     import seaborn as sns
@@ -13,8 +13,8 @@ except ImportError:
     HAVE_SNS = False
 
 
-from plotbase import PlotterBase
-from spike_analysis import SpikeAnalysis
+from .plotbase import PlotterBase
+from .spike_analysis import SpikeAnalysis
 
 
 _z_scores_code = ("get_raw_psths", "z_score_data")
@@ -86,8 +86,10 @@ class SpikePlotter(PlotterBase):
                 vmax = 5
                 vmin = -5
             bin_size = bins[1] - bins[0]
-            zero_point = np.where((bins > -bin_size) & (bins < bin_size))[0][0] #aim for nearest bin to zero
-            end_point = np.where((bins > length - bin_size) & (bins < length + bin_size))[0][0] # aim for nearest bin at end of stim
+            zero_point = np.where((bins > -bin_size) & (bins < bin_size))[0][0]  # aim for nearest bin to zero
+            end_point = np.where((bins > length - bin_size) & (bins < length + bin_size))[0][
+                0
+            ]  # aim for nearest bin at end of stim
             bins_length = int(len(bins) / 7)
 
             fig, axes = plt.subplots(1, columns, sharey=True, figsize=(24, 10))
@@ -130,7 +132,7 @@ class SpikePlotter(PlotterBase):
                     sub_ax.get_position().height,
                 ]
             )
-
+            cax.spines["bottom"].set_visible(False)
             plt.colorbar(im, cax=cax, label="Z scores")  # Similar to fig.colorbar(im, cax = cax)
             plt.title(f"{stimulus}")
             plt.figure(dpi=self.dpi)
@@ -152,7 +154,7 @@ class SpikePlotter(PlotterBase):
         else:
             ylabel = self.y_axis
 
-        windows = verify_window_format(window = window, num_stim = len(psths.keys()))
+        windows = verify_window_format(window=window, num_stim=len(psths.keys()))
 
         stim_trial_groups = self._get_trial_groups()
 
@@ -223,7 +225,7 @@ class SpikePlotter(PlotterBase):
         else:
             ylabel = self.y_axis
 
-        windows = verify_window_format(window=window, num_stim = len(psths.keys()))
+        windows = verify_window_format(window=window, num_stim=len(psths.keys()))
 
         stim_trial_groups = self._get_trial_groups()
         event_lengths = self._get_event_lengths_all()
@@ -238,9 +240,9 @@ class SpikePlotter(PlotterBase):
             tg_set = np.unique(trial_groups)
             norm = mpl.colors.Normalize(vmin=0, vmax=len(tg_set))
             bin_size = bins[1] - bins[0]
-            sm_std = int((1 / (bin_size * 1000))) * sm_time_ms # convert from user input
+            sm_std = int((1 / (bin_size * 1000))) * sm_time_ms  # convert from user input
 
-            if sm_std % 2 != 0: # make it odd so it has a peak convolution bin
+            if sm_std % 2 != 0:  # make it odd so it has a peak convolution bin
                 sm_std += 1
 
             mean_smoothed_psth = np.zeros((len(tg_set), len(bins)))
