@@ -3,11 +3,11 @@ from typing import Union, Optional
 import numpy as np
 from tqdm import tqdm
 
-from spike_data import SpikeData
-from stimulus_data import StimulusData
-from analysis_utils import histogram_functions as hf
-from analysis_utils import latency_functions as lf
-from utils import verify_window_format
+from .spike_data import SpikeData
+from .stimulus_data import StimulusData
+from .analysis_utils import histogram_functions as hf
+from .analysis_utils import latency_functions as lf
+from .utils import verify_window_format
 
 
 _possible_digital = ("generate_digital_events", "set_trial_groups", "set_stimulus_name")
@@ -51,8 +51,13 @@ class SpikeAnalysis:
                   include acceptable values"
             )
             self.qc_threshold = np.array([True for _ in self._cids])
-
-        self.cluster_ids = sp._cids[self.qc_threshold]
+        try:
+            
+            sp.set_qc()
+            sp.denoise_data()
+        except:
+            print('Setting qc values failed')
+        self._cids = sp._cids
         self.spike_clusters = sp.spike_clusters
         self._sampling_rate = sp._sampling_rate
 
