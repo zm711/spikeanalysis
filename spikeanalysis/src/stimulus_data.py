@@ -137,7 +137,7 @@ class StimulusData:
 
         self.dig_analog_events = {}
         for row in tqdm(range(np.shape(current_analog_data)[1])):
-            self.dig_analog_events[row] = {}
+            self.dig_analog_events[str(row)] = {}
             sub_data = current_analog_data[:, row]
             filtered_analog_data = np.where(sub_data > 0.09, 1, 0)
 
@@ -151,11 +151,13 @@ class StimulusData:
                 end = start + lengths[idx]
                 trial_groups[idx] = int(self._valueround(statistics.mode(sub_data[start:end]) / 0.25))
 
-            self.dig_analog_events[row]["events"] = events
-            self.dig_analog_events[row]["lengths"] = lengths
-            self.dig_analog_events[row]["trial_groups"] = trial_groups
+            self.dig_analog_events[str(row)]["events"] = events
+            self.dig_analog_events[str(row)]["lengths"] = lengths
+            self.dig_analog_events[str(row)]["trial_groups"] = trial_groups
             if stim_name is not None:
-                self.dig_analog_events[row]["stim"] = stim_name[row]
+                self.dig_analog_events[str(row)]["stim"] = stim_name[row]
+            else:
+                self.dig_analog_events[str(row)]["stim"] = str(row)
 
     def _valueround(self, x: float, precision: int = 2, base: float = 0.25):
         return round(base * round(float(x) / base), precision)
