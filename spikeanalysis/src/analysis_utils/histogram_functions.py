@@ -12,7 +12,6 @@ def spike_times_to_bins(
     bin_number = len(bin_borders) - 1
     bin_array = np.zeros((len(events), bin_number), np.int32)
     bin_centers = bin_borders[:-1] + np.diff(bin_borders) / 2
-
     if len(time_stamps) == 0:
         return bin_array, bin_centers
 
@@ -21,20 +20,17 @@ def spike_times_to_bins(
     return bin_array, bin_centers
 
 
-@jit(nopython=True)
+
 def rasterize(time_stamps: np.array) -> tuple[np.array, np.array]:
     x_out = np.empty((len(time_stamps) * 3))
     x_out[:] = np.NaN
 
-    for value in range(len(x_out)):
-        if value % 3 == 0:
-            x_out[value] = time_stamps[(2 * value) % len(time_stamps)]
-        if value % 3 == 1:
-            x_out[value] = time_stamps[2 * (value - 1) % len(time_stamps)]
-    y_out = np.zeros((len(time_stamps) * 3))
-    for value in range(len(y_out)):
-        if value % 3 == 1:
-            y_out[value] = 1
+    x_out[0:-1:3] = time_stamps
+    x_out[1:-1:3] = time_stamps
+    y_out = np.empty((len(time_stamps) * 3))
+    y_out[:] = np.NaN
+    y_out[0:-1:3] = 0
+    y_out[1:-1:3] = 1
     xx = x_out.reshape(1, len(x_out))
     yy = y_out.reshape(1, len(y_out))
 
