@@ -174,26 +174,36 @@ class SpikePlotter(PlotterBase):
 
             for idx in range(np.shape(psth)[0]):
                 psth_sub = np.squeeze(psth[idx])
+                
                 if np.sum(psth_sub) == 0:
                     continue
+                
                 raster_scale = np.floor(np.shape(psth_sub)[0] / 100)
                 indices = np.argsort(trial_groups)
                 bin_index = np.transpose(np.nonzero(psth_sub[indices, :]))
-
+                
                 b = bin_index[:, 1]
+                inds = np.argsort(b)
+                b=b[inds]
+               
                 tr = bin_index[:, 0]
+                tr = tr[inds]
+                
                 if isinstance(tr, int):
                     continue
                 raster_x, yy = hf.rasterize(bins[b])
+                
+                
                 raster_x = np.squeeze(raster_x)
-                raster_y = yy + np.reshape(np.tile(tr.T, (3, 1)), (1, len(tr.T) * 3))
+                raster_y = yy + np.reshape(np.tile(tr, (3, 1)).T, (1, len(tr) * 3))
+                
                 raster_y = np.squeeze(raster_y)
                 raster_y[1:-1:3] = raster_y[1:-1:3] + raster_scale
 
                 fig, ax = plt.subplots(figsize=self.figsize)
                 ax.plot(raster_x, raster_y, color="black")
-                ax.plot([0, 0], [0, np.max(raster_y) + 1], color="red", linestyle=":")
-                ax.plot([events, events], [0, np.max(raster_y) + 1], color="red", linestyle=":")
+                ax.plot([0, 0], [0, np.nanmax(raster_y) + 1], color="red", linestyle=":")
+                ax.plot([events, events], [0, np.nanmax(raster_y) + 1], color="red", linestyle=":")
 
                 ax.set(xlabel=self.x_axis, ylabel=ylabel)
 
@@ -204,6 +214,7 @@ class SpikePlotter(PlotterBase):
                     sns.despine()
                 else:
                     self._despine(ax)
+                plt.title(f'{self.data.cluster_ids[idx]}', size=7)
                 plt.figure(dpi=self.dpi)
                 plt.show()
 
