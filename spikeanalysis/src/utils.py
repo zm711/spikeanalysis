@@ -14,7 +14,7 @@ class NumpyEncoder(json.JSONEncoder):
 def jsonify_parameters(parameters:dict):
 
     try:
-        with open('analysis_parameters.json') as read_file:
+        with open('analysis_parameters.json', 'r') as read_file:
             old_params = json.load(read_file)
         old_params.update(parameters)
         new_parameters = old_params
@@ -23,7 +23,7 @@ def jsonify_parameters(parameters:dict):
         new_parameters = parameters
         
 
-    with open('analysis_parameters.json') as write_file:
+    with open('analysis_parameters.json', 'w') as write_file:
         json.dump(new_parameters, write_file)
 
 
