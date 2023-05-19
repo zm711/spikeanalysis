@@ -64,13 +64,16 @@ class AnalogAnalysis:
 
         sta = {}
         for row in range(np.shape(analog_data)[0]):
-            sta[str(row)] = np.zeros((len(cluster_ids), int(time_after+time_before)))
+            sta[str(row)] = {}
+            sta[str(row)]['mean'] = np.zeros((len(cluster_ids), int(time_after+time_before)))
+            sta[str(row)]['std'] = np.zeros((len(cluster_ids), int(time_after+time_before)))
             ana_data = analog_data[row]
 
             
             for cluster_number, cluster in enumerate(cluster_ids):
                 these_spikes = spike_times[spike_clusters==cluster]
                 stim_form = np.zeros((len(these_spikes), int(time_after+time_before)))
+            
                 for idx, spike in enumerate(tqdm(these_spikes)):
 
                     start = int(spike-time_before)
@@ -82,7 +85,9 @@ class AnalogAnalysis:
                         fill_val[:]  = np.NaN
                         stim_form[idx] = fill_val
                 mean_stim_form = np.nanmean(stim_form, axis = 0)
-                sta[str(row)][cluster_number] = mean_stim_form
+                std_stim_form = np.nanstd(stim_form, axis=0)
+                sta[str(row)]['mean'][cluster_number] = mean_stim_form
+                sta[str(row)]['std'][cluster_number] = std_stim_form
 
         self.sta = sta
 
