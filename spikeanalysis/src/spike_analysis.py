@@ -57,7 +57,7 @@ class SpikeAnalysis:
             sp.denoise_data()
         except:
             print('Setting qc values failed')
-        self._cids = sp._cids
+        self.cluster_ids = sp._cids
         self.spike_clusters = sp.spike_clusters
         self._sampling_rate = sp._sampling_rate
 
@@ -255,9 +255,13 @@ class SpikeAnalysis:
         except AttributeError:
             raise Exception("Run get_raw_psth before running z_score_data")
 
-        stim_dict = self._get_key_for_stim()
-        NUM_DIG = len(stim_dict.keys())
-        self.NUM_DIG = NUM_DIG
+        try:
+            stim_dict = self._get_key_for_stim()
+            NUM_DIG = len(stim_dict.keys())
+            self.NUM_DIG = NUM_DIG
+        except AttributeError:
+            self.NUM_DIG = 0
+            NUM_DIG = 0
 
         NUM_STIM = self.NUM_STIM
 
@@ -283,7 +287,7 @@ class SpikeAnalysis:
             if idx < NUM_DIG:
                 trials = self.digital_events[stim_dict[stim]]["trial_groups"]
             else:
-                trials = self.dig_analog_events[idx - NUM_DIG]["trial_groups"]
+                trials = self.dig_analog_events[str(idx - NUM_DIG)]["trial_groups"]
 
             trial_set = np.unique(np.array(trials))
             time_bin_current = time_bin_size[idx]
@@ -354,7 +358,7 @@ class SpikeAnalysis:
             if idx < NUM_DIG:
                 trials = self.digital_events[stim_dict[stim]]["trial_groups"]
             else:
-                trials = self.dig_analog_events[idx - NUM_DIG]["trial_groups"]
+                trials = self.dig_analog_events[str(idx - NUM_DIG)]["trial_groups"]
 
             trial_set = np.unique(np.array(trials))
             current_bsl = bsl_windows[idx]
@@ -562,7 +566,7 @@ class SpikeAnalysis:
             if idx < self.NUM_DIG:
                 trial_groups = self.digital_events[stim_dict[stimulus]]["trial_groups"]
             else:
-                trial_groups = self.dig_analog_events[idx - self.NUM_DIG]["trial_groups"]
+                trial_groups = self.dig_analog_events[str(idx - self.NUM_DIG)]["trial_groups"]
             current_window = windows[idx]
             current_data = data[stimulus]
             correlations[stimulus] = np.zeros((np.shape(current_data)[0], len(set(trial_groups))))
