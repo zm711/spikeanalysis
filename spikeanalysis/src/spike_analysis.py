@@ -162,9 +162,14 @@ class SpikeAnalysis:
                 )
 
                 psths[stim_name] = {}
+                min_time = np.min(events)+window_start
+                max_time = np.max(events) + window_end
+                current_spike_clusters = spike_clusters[np.logical_and(spike_times>min_time, spike_times<max_time)]
+                current_spikes = spike_times[np.logical_and(spike_times>min_time, spike_times<max_time)]
+
                 for idy, cluster in enumerate(tqdm(cluster_ids)):
                     spikes_array, bins_sub = hf.spike_times_to_bins(
-                        spike_times[spike_clusters == cluster],
+                        current_spikes[current_spike_clusters == cluster],
                         events,
                         time_bin_size,
                         window_start,
@@ -199,9 +204,14 @@ class SpikeAnalysis:
                 )
 
                 psths[stim_name] = {}
+                min_time = np.min(events)+window_start
+                max_time = np.max(events) + window_end
+                current_spike_clusters = spike_clusters[np.logical_and(spike_times>min_time, spike_times<max_time)]
+                current_spikes = spike_times[np.logical_and(spike_times>min_time, spike_times<max_time)]
+
                 for idy, cluster in enumerate(tqdm(cluster_ids)):
                     spikes_array, bins_sub = hf.spike_times_to_bins(
-                        spike_times[spike_clusters == cluster],
+                        current_spikes[current_spike_clusters == cluster],
                         events,
                         time_bin_size,
                         window_start,
@@ -327,7 +337,7 @@ class SpikeAnalysis:
             self.z_bins[stim] = bins[z_window_values]
         self.z_scores = final_z_scores
 
-    def latencies(self, bsl_window: Union[list, list[float]], num_shuffles: int = 500):
+    def latencies(self, bsl_window: Union[list, list[float]], time_bin_ms: float = 50., num_shuffles: int = 500):
         """
         Calculates the latency to fire for each neuron based on either Chase & Young 2007 or
         Mormann et al. 2012 with the cutoff being a baseline firing rate of 2Hz
@@ -350,25 +360,35 @@ class SpikeAnalysis:
         NUM_DIG = self.NUM_DIG
         
         bsl_windows = verify_window_format(window=bsl_window, num_stim=NUM_STIM)
-
-        stim_dict = self._get_keys_for_stim()
+        if NUM_DIG:
+            stim_dict = self._get_keys_for_stim()
         psths = self.psths
         self.latency = {}
-        for idx, stim in enumerate(tqdm(self.psths.keys(), leave=False)):
+        for idx, stim in enumerate(self.psths.keys()):
             if idx < NUM_DIG:
                 trials = self.digital_events[stim_dict[stim]]["trial_groups"]
             else:
                 trials = self.dig_analog_events[str(idx - NUM_DIG)]["trial_groups"]
-
+            print(stim)
             trial_set = np.unique(np.array(trials))
             current_bsl = bsl_windows[idx]
             psth = psths[stim]["psth"]
             bins = psths[stim]["bins"]
             time_bin_size = bins[1] - bins[0]
+            new_time_bin_size = time_bin_ms/1000
+            n_bins = np.shape(psth)[2]
+            new_bin_number = np.int32((n_bins * time_bin_size) /new_time_bin_size)
+            
+            if new_bin_number != n_bins:
+                psth = hf.convert_to_new_bins(psth, new_bin_number)
+                bins = hf.convert_bins(bins, new_bin_number)
+
+                
             bsl_shuffled = (
-                np.random.rand(np.shape(psth)[0], np.shape(psth)[1], num_shuffles) * (current_bsl[1] - current_bsl[0])
+                np.random.rand(np.shape(psth)[0], len(trial_set), num_shuffles,) * (current_bsl[1] - current_bsl[0])
                 + current_bsl[0]
             )
+            
             self.latency[stim] = {
                 "latency": np.empty((np.shape(psth)[0], np.shape(psth)[1])),
                 "latency_shuffled": np.empty((np.shape(psth)[0], np.shape(psth)[1], num_shuffles)),
@@ -378,34 +398,42 @@ class SpikeAnalysis:
                 np.sum(
                     psth[:, :, np.logical_and(bins >= current_bsl[0], bins <= current_bsl[1])],
                     axis=2,
-                ),
+                ) / (current_bsl[1]-current_bsl[0]),
                 axis=1,
             )
-
-            for trial in trial_set:
+            
+            for t_number, trial in enumerate(trial_set):
+                
                 current_psth = psth[:, trials == trial, :]
-                bsl_shuffled_trial = bsl_shuffled[:, trials == trial, :]
+                
+                bsl_shuffled_trial = bsl_shuffled[:, t_number, :]
+            
                 for idx in range(len(bsl_values)):
                     psth_by_trial = current_psth[idx]
                     bsl_fr = bsl_values[idx]
                     bsl_shuffled_trial_cluster = bsl_shuffled_trial[idx]
 
                     if bsl_fr > 2:
-                        self.latency[stim]["latency"][idx, trials == trial] = lf.latency_core_stats(
-                            bsl_fr, psth_by_trial, time_bin_size
+                        
+                        self.latency[stim]["latency"][idx, trials == trial] =1000 *  lf.latency_core_stats(
+                            bsl_fr, psth_by_trial[:, bins>=0], time_bin_size
                         )
                         for shuffle in tqdm(range(num_shuffles)):
+                            
                             self.latency[stim]["latency_shuffled"][
                                 idx, trials == trial, shuffle
-                            ] = lf.latency_core_stats(bsl_fr, bsl_shuffled_trial_cluster, time_bin_size)
+                            ] = 1000 * lf.latency_core_stats(bsl_fr, psth_by_trial[:, bins>=bsl_shuffled_trial_cluster[shuffle]], time_bin_size)
+                        
                     else:
-                        psth_by_trial = psth_by_trial[:, bins >= 0]
-                        self.latency[stim]["latency"][idx, trials == trial] = lf.latency_median(
-                            psth_by_trial, time_bin_size
+                        
+                        
+                        self.latency[stim]["latency"][idx, trials == trial] = 1000*  lf.latency_median(
+                            psth_by_trial[:, bins>=0], time_bin_size
                         )
                         for shuffle in tqdm(range(num_shuffles)):
-                            self.latency[stim]["latency_shuffled"][idx, trials == trial, shuffle] = lf.latency_median(
-                                bsl_shuffled_trial_cluster, time_bin_size
+                            
+                            self.latency[stim]["latency_shuffled"][idx, trials == trial, shuffle] = 1000 * lf.latency_median(
+                                psth_by_trial[:, bins>=bsl_shuffled_trial_cluster[ shuffle]], time_bin_size
                             )
 
     def get_interspike_intervals(self):
@@ -446,7 +474,7 @@ class SpikeAnalysis:
         None.
 
         """
-        bins = np.linspace(0, time_ms / 1000, num=int(time_ms))
+        bins = np.linspace(0, time_ms / 1000, num=int(time_ms+1))
         final_isi = {}
         if self.HAVE_DIGITAL:
             for idx, stimulus in enumerate(self.digital_events.keys()):
@@ -454,8 +482,8 @@ class SpikeAnalysis:
                 lengths = np.array(self.digital_events[stimulus]["lengths"])
                 stim_name = self.digital_events[stimulus]["stim"]
                 final_isi[stim_name] = {}
-                final_counts = np.zeros((len(self.isi_raw.keys()), len(events), len(bins)))
-                final_counts_bsl = np.zeros((len(self.isi_raw.keys()), len(events), len(bins)))
+                final_counts = np.zeros((len(self.isi_raw.keys()), len(events), len(bins)-1))
+                final_counts_bsl = np.zeros((len(self.isi_raw.keys()), len(events), len(bins)-1))
                 for idy, cluster in enumerate(self.isi_raw.keys()):
                     current_times = self.isi_raw[cluster]["times"]
                     cluster_isi_raw = self.isi_raw[cluster]["isi"]
@@ -478,13 +506,13 @@ class SpikeAnalysis:
 
         if self.HAVE_DIG_ANALOG:
             for idx, stimulus in enumerate(self.dig_analog_events.keys()):
-                final_isi[stim_name] = {}
+                
                 events = np.array(self.dig_analog_events[stimulus]["events"])
                 lengths = np.array(self.dig_analog_events[stimulus]["lengths"])
-                stim_name = np.array(self.dig_analog_events[stimulus]["stim"])
+                stim_name = self.dig_analog_events[stimulus]["stim"]
                 final_isi[stim_name] = {}
-                final_counts = np.zeros((len(self.isi_raw.keys()), len(events), len(bins)))
-                final_counts_bsl = np.zeros((len(self.isi_raw.keys()), len(events), len(bins)))
+                final_counts = np.zeros((len(self.isi_raw.keys()), len(events), len(bins)-1))
+                final_counts_bsl = np.zeros((len(self.isi_raw.keys()), len(events), len(bins)-1))
                 for idy, cluster in enumerate(self.isi_raw.keys()):
                     current_times = self.isi_raw[cluster]["times"]
                     cluster_isi_raw = self.isi_raw[cluster]["isi"]
