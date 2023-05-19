@@ -10,7 +10,7 @@ except ImportError:
     print("Please install seaborn for full functionality")
     HAVE_SNS = False
 
-from analysis_utils import histogram_functions as hf
+from .analysis_utils import histogram_functions as hf
 import numpy as np
 from typing import Union, Optional
 
@@ -91,7 +91,7 @@ class IntrinsicPlotter(PlotterBase):
             [float("%.3f" % x) for x in bin_centers_vals]
             )  # convert x-values to 3 decimal points for viusalization
 
-            fig, ax = self._set_axis()
+            fig, ax = plt.subplots(figsize=self.figsize)
             ax.stairs(stairs_val, color='black')
             ax.plot([line2[0], line2[0]], [0, np.max(stairs_val)+6], color='red', linestyle=":")
             ax.plot(
@@ -113,21 +113,25 @@ class IntrinsicPlotter(PlotterBase):
 
     def plot_waveforms(self, sp: SpikeData):
         waveforms = sp.waveforms
+        if len(sp._cids)!=np.shape(waveforms)[0]:
+            waveforms = waveforms[sp._qc_threshold, ...]
         mean_waveforms = np.nanmean(waveforms, axis=1)
 
+        
         for cluster in range(np.shape(waveforms)[0]):
-            max_val = np.argwhere(mean_waveforms[cluster]==np.min(mean_waveforms))[0]
+            
+            max_val = np.argwhere(mean_waveforms[cluster]==np.min(mean_waveforms[cluster]))[0]
             max_channel = max_val[0]
 
             current_waves = waveforms[cluster, :, max_channel, :]
-            current_mean = mean_waveforms[cluster, :, max_channel, :]
+            current_mean = mean_waveforms[cluster, max_channel, :]
 
             if np.shape(current_waves)[0] >30:
                 WAVES = 300
             else:
                 WAVES = np.shape(current_waves)[0]
 
-            fig, ax = self._set_axis()
+            fig, ax = plt.subplots(figsize=self.figsize)
 
             for wave in range(WAVES):
                 ax.plot(np.linspace(-40,41, num=82), current_waves[wave], color='gray')
@@ -138,7 +142,7 @@ class IntrinsicPlotter(PlotterBase):
             if self.title:
                 plt.title(self.title)
             else:
-                plt.title(f'Cluster {cluster}', fontsize=8)
+                plt.title(f'Cluster {sp._cids[cluster]}', fontsize=8)
             if HAVE_SNS:
                 sns.despine()
             plt.figure(dpi=self.dpi)
@@ -231,6 +235,3 @@ class IntrinsicPlotter(PlotterBase):
 
 
 
-
-    def _set_axis(self):
-        fig, ax = plt.subplots(figsize=self.figsize)
