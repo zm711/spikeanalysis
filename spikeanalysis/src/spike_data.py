@@ -131,12 +131,12 @@ class SpikeData:
         ]
         self._spike_templates = self._spike_templates[np.isin(self.spike_clusters, noise_clusters, invert=True)]
         self.spike_clusters = self.spike_clusters[np.isin(self.spike_clusters, noise_clusters, invert=True)]
-        self.cgs = self.cgs[np.isin(cids, noise_clusters, invert=True)]
+        #self.cgs = self.cgs[np.isin(cids, noise_clusters, invert=True)]
         self.noise = np.isin(cids, noise_clusters)
 
-        if len(cids) > len(self._cids):
-            cids = self._cids
-        self._cids = self._cids[np.isin(cids, noise_clusters, invert=True)]
+        #if len(cids) > len(self._cids):
+        #    cids = self._cids
+        #self._cids = self._cids[np.isin(cids, noise_clusters, invert=True)]
 
         self._return_to_dir(current_dir)
 
@@ -601,9 +601,9 @@ class SpikeData:
                 cgs[row] = 3
             else:
                 cgs[row] = 0
-
+        """
         number_clusters_missing = len(self._cids) - len(sub_cids)
-
+        print(len(sub_cids), len(cgs))
         if number_clusters_missing > 0:
             missing_cgs = 2 * np.ones((number_clusters_missing))
 
@@ -611,7 +611,8 @@ class SpikeData:
 
             if len(missing_cids) == len(self._cids):
                 return 0, 0
-
+            print(len(missing_cgs), len(missing_cids))
+            
             assert len(missing_cgs) == len(missing_cids), "lengths of values not the same"
 
             sub_cids = np.concatenate((sub_cids, missing_cids))
@@ -621,7 +622,7 @@ class SpikeData:
             indices = np.argsort(sub_cids)
 
             sub_cids = sub_cids[indices]
-            cgs = cgs[indices]
+            cgs = cgs[indices]"""
 
         return sub_cids, cgs
 
