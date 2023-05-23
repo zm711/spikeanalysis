@@ -253,7 +253,7 @@ class SpikePlotter(PlotterBase):
             bin_size = bins[1] - bins[0]
             sm_std = int((1 / (bin_size * 1000))) * sm_time_ms  # convert from user input
 
-            if sm_std % 2 != 0:  # make it odd so it has a peak convolution bin
+            if sm_std % 2 == 0:  # make it odd so it has a peak convolution bin
                 sm_std += 1
 
             mean_smoothed_psth = np.zeros((len(tg_set), len(bins)))
