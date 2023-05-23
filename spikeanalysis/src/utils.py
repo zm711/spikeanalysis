@@ -56,3 +56,15 @@ def verify_window_format(window: Union[list,list[list]], num_stim: int)->list[li
         windows= window
 
     return windows
+
+
+def guassian_smoothing(self, array: np.array, bin_size: float, std: float):
+        from scipy import signal
+
+        gaussian_window = signal.windows.gaussian(round(std), (std - 1) / 6)
+        smoothing_window = gaussian_window / np.sum(gaussian_window)
+        smoothed_array = np.zeros((np.shape(array)[0], np.shape(array)[1]))
+        for row in range(np.shape(array)[0]):
+            smoothed_array[row] = signal.convolve(array[row], smoothing_window, mode="same") / bin_size
+
+        return smoothed_array
