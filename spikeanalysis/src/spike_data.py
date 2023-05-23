@@ -96,11 +96,11 @@ class SpikeData:
             self.refractory_violation(ref_dur_ms=ref_dur_ms)
             self.generate_pcs()
             self.generate_qcmetrics()
-            self.get_waveforms()
-            self.get_waveform_values(depth=depth)
             self.qc_preprocessing(idthres=idthres, rpv=rpv, sil=sil, recurated=recurated)
             self.set_qc()
             self.denoise_data()
+            self.get_waveforms()
+            self.get_waveform_values(depth=depth)
             self._return_to_dir(current_dir)
 
     def denoise_data(self):
@@ -252,6 +252,7 @@ class SpikeData:
                     new_feat[these_spikes_temps, :, feature] = pc_features[
                         these_spikes_temps, :, this_template_feature_ind
                     ]
+                    
 
         if np.shape(pc_features)[1] != 3:
             raise ("Error generating pc features")
