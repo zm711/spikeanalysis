@@ -63,6 +63,13 @@ class StimulusData:
         stim_length_seconds: Optional[float] = None,
         stim_name: Optional[list] = None,
     ):
+        
+        try:
+            self.get_all_files()
+            return
+        except AssertionError:
+            print('Reading raw data files')
+
         self.create_neo_reader()
         try:
             self.get_analog_data()
@@ -86,6 +93,8 @@ class StimulusData:
         if HAVE_DIGITAL:
             self.get_final_digital_data()
             self.generate_digital_events()
+
+        del self.reader # reader and memmap heavy. Delete after this since not needed
 
     def create_neo_reader(self):
         reader = neo.rawio.IntanRawIO(filename=self._filename)
@@ -192,7 +201,7 @@ class StimulusData:
 
         values = np.zeros((len(dig_in_channels), len(self._raw_digital_data)))
         for value in range(len(dig_in_channels)):
-            values[value, :] = np.not_equal(
+            values[value, :] = np.not_equal( # this operation comes from the python Intan code
                 np.bitwise_and(
                     self._raw_digital_data,
                     (1 << dig_in_channels[value]["native_order"]),
@@ -203,7 +212,7 @@ class StimulusData:
         self.dig_in_channels = dig_in_channels
 
     def generate_digital_events(self):
-        assert self.digital_data is not None, "There is no final digital data, run get_final_digital_data first"
+        assert self.digital_data is not None, "There is no final digital data, run `get_final_digital_data` first"
 
         self.digital_events = {}
         self.digital_channels = []
@@ -236,7 +245,7 @@ class StimulusData:
                 self.digital_events[channel]["trial_groups"] = trial_dictionary[channel]
         except KeyError:
             raise Exception(
-                f"Incorrect channel name. use get_stimulus_channels or create dict with \
+                f"Incorrect channel name. use `get_stimulus_channels` or create dict with \
                             keys of {self.digital_channels}"
             )
 
@@ -247,9 +256,31 @@ class StimulusData:
                 self.digital_events[channel]["stim"] = stim_names[channel]
         except KeyError:
             raise Exception(
-                f"Incorrect channel name. use get_stimulus_channels or create dict with \
+                f"Incorrect channel name. use `get_stimulus_channels` or create dict with \
                             keys of {self.digital_channels}"
             )
+
+    def generate_stimulus_trains(self, channel_name: Union[str, list[str]], stim_freq: Union[float, list[float]], stim_time_secs: Union[float, list[float]]):
+
+        if isinstance(channel_name, str):
+            channel_name = list(channel_name)
+        if isinstance(stim_freq, (float, int)):
+            stim_freq = list(stim_freq)
+        if isinstance(stim_time_secs, (float, int)):
+            stim_time_secs = list(stim_time_secs)
+
+        digital_events = self.digital_events
+
+        for idx, name in enumerate(channel_name):
+            sub_dig = digital_events[name]
+            pulse_number = int(stim_freq[idx] * stim_time_secs[idx])
+            sub_dig['events'] = sub_dig['events'][::pulse_number]
+            sub_dig['trial_groups'] = sub_dig['trial_groups'][::pulse_number]
+            sub_dig['lengths'] = np.ones((len(sub_dig['events']))) * (stim_time_secs[idx] * self.sample_frequency)
+            sub_dig['stim_frequency'] = stim_freq[idx]
+            sub_dig['stim_time_secs'] = stim_time_secs[idx]
+        
+        self.digital_events = digital_events
 
     def save_events(self):
         try:

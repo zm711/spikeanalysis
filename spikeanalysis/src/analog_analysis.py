@@ -91,3 +91,17 @@ class AnalogAnalysis:
 
         self.sta = sta
 
+    def stimulus_distribution(self, stim_index: Optional[int]=None)-> dict:
+        stim_dist = {}
+        analog_data = self.analog_data
+        if len(np.shape(analog_data)) !=2:
+            analog_data = np.expand_dims(analog_data, axis=0)
+        for row in analog_data:
+            stim_dist[row] = {}
+            counts, bins = np.histogram(self.analog_data, bins=1000)
+            stim_dist[row]['counts'] = counts
+            stim_dist[row]['bins'] = bins
+
+        return stim_dist
+        
+

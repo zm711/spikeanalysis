@@ -31,6 +31,7 @@ class SpikeData:
 
         self._file_path = file_path
         self.CACHING = False
+        self.QC_RUN = False
         import glob
 
         current_dir = os.getcwd()
@@ -310,7 +311,7 @@ class SpikeData:
         wf_window : tuple, optional
             This is the sample window to assess around each spike. The default is (-40,41).
         n_wfs : int, optional
-            The number of waveforms to save for each cluster. The default is 1000.
+            The number of waveforms to save for each cluster. The default is 500.
 
         Returns
         -------
@@ -445,7 +446,7 @@ class SpikeData:
             raise Exception(f"Must run qc functions first ('generate_pcs', 'generate_qcmetrics', 'refractory_violation')")
         
         self._cids = self._cids[threshold]
-        
+        self.QC_RUN = True
         self._return_to_dir(current_dir)
 
     def get_waveform_values(self, depth: float = 0):

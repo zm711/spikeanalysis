@@ -3,7 +3,7 @@ from typing import Optional, Union
 import numpy as np
 import matplotlib.pyplot as plt
 
-from .utils import verify_window_format
+from .utils import verify_window_format, guassian_smoothing
 
 try:
     import seaborn as sns
@@ -214,7 +214,7 @@ class SpikePlotter(PlotterBase):
                     sns.despine()
                 else:
                     self._despine(ax)
-                plt.title(f'{self.data.cluster_ids[idx]}', size=7)
+                plt.title(f'{self.data.cluster_ids[idx]} stim: {stimulus}', size=7)
                 plt.figure(dpi=self.dpi)
                 plt.show()
 
@@ -260,7 +260,7 @@ class SpikePlotter(PlotterBase):
             stderr = np.zeros((len(tg_set), len(bins)))
             event_len = np.zeros((len(tg_set)))
             for cluster_number in range(np.shape(psth)[0]):
-                smoothed_psth = self.data._guassian_smoothing(psth[cluster_number], bin_size, sm_std)
+                smoothed_psth = guassian_smoothing(psth[cluster_number], bin_size, sm_std)
 
                 for trial_number, trial in enumerate(tg_set):
                     mean_smoothed_psth[trial_number] = np.mean(smoothed_psth[trial_groups == trial], axis=0)

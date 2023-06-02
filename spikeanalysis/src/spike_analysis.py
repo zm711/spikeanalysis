@@ -35,6 +35,7 @@ class SpikeAnalysis:
         None.
 
         """
+        self._file_path = sp._file_path
         try:
             self.spike_times = sp.spike_times
         except AttributeError:
@@ -45,18 +46,23 @@ class SpikeAnalysis:
         self._cids = sp._cids
         try:
             self.qc_threshold = sp._qc_threshold
+            QC_DATA = True
         except AttributeError:
             print(
                 f"There is no qc run_threshold. Run {_possible_qc} to only\
                   include acceptable values"
             )
             self.qc_threshold = np.array([True for _ in self._cids])
-        try:
-            
+            QC_DATA=False
+
+        if sp.QC_RUN and QC_DATA:
+            sp.denoise_data()
+        elif QC_DATA:
             sp.set_qc()
             sp.denoise_data()
-        except:
-            print('Setting qc values failed')
+        else:
+            sp.denoise_data()
+            
         self.cluster_ids = sp._cids
         self.spike_clusters = sp.spike_clusters
         self._sampling_rate = sp._sampling_rate
@@ -75,7 +81,7 @@ class SpikeAnalysis:
         None.
 
         """
-
+        self._file_path = event_times._file_path
         try:
             self.digital_events = event_times.digital_events
             self.HAVE_DIGITAL = True
@@ -299,7 +305,7 @@ class SpikeAnalysis:
             else:
                 trials = self.dig_analog_events[str(idx - NUM_DIG)]["trial_groups"]
 
-            trial_set = np.unique(np.array(trials))
+            trial_set = np.sort(np.unique(np.array(trials)))
             time_bin_current = time_bin_size[idx]
 
             psth = psths[stim]["psth"]
@@ -337,7 +343,7 @@ class SpikeAnalysis:
             self.z_bins[stim] = bins[z_window_values]
         self.z_scores = final_z_scores
 
-    def latencies(self, bsl_window: Union[list, list[float]], time_bin_ms: float = 50., num_shuffles: int = 500):
+    def latencies(self, bsl_window: Union[list, list[float]], time_bin_ms: float = 50., num_shuffles: int = 300):
         """
         Calculates the latency to fire for each neuron based on either Chase & Young 2007 or
         Mormann et al. 2012 with the cutoff being a baseline firing rate of 2Hz
@@ -535,7 +541,7 @@ class SpikeAnalysis:
 
         self.isi = final_isi
 
-    def trial_correlation(self, window: Union[list, list[list]], time_bin_ms: float = 50, dataset: str = "z_scores"):
+    def trial_correlation(self, window: Union[list, list[list]], time_bin_ms: Optional[float] = None, dataset: str = "z_scores"):
         """
         Function to calculate pairwise pearson correlation coefficents of z scored or raw firing rate data/time bin.
         Organized by trial groupings.
@@ -586,8 +592,22 @@ class SpikeAnalysis:
             raise Exception(f"You have entered {dataset} and only ('psth', or 'z_scores') are possible options")
 
         windows = verify_window_format(window=window, num_stim = self.NUM_STIM)
+        if time_bin_ms is not None:
+            if isinstance(time_bin_ms, float) or isinstance(time_bin_ms, int):
+                time_bin_size = [time_bin_ms / 1000] * self.NUM_STIM
+            else:
+                assert (
+                    len(time_bin_ms) == self.NUM_STIM
+                ), f"Please enter the correct number of time bins\
+                    number of bins is{len(time_bin_ms)} and should be {self.NUM_STIM}"
+                time_bin_size = np.array(time_bin_ms) / 1000
 
-        stim_dict = self._get_key_for_stim()
+            try:
+                stim_dict = self._get_key_for_stim()
+            except AttributeError:
+                pass
+        else:
+            time_bin_size = [None] * self.NUM_STIM
 
         correlations = {}
         for idx, stimulus in enumerate(data.keys()):
@@ -604,9 +624,14 @@ class SpikeAnalysis:
             else:
                 current_bins = bins[stimulus]
             n_bins = len(current_bins)
-            time_bin_current = time_bin_ms * 1000
+            time_bin_current = time_bin_size[idx] 
             bin_size = current_bins[1] - current_bins[0]
+            if time_bin_current is None:
+                time_bin_current = bin_size
+            assert time_bin_current >= bin_size, f"The current data has bin size of {bin_size*1000}ms and you selected {time_bin_current*1000}\
+                select a value less than or equal to {bin_size *1000}"
             new_bin_number = np.int32((n_bins * bin_size) / time_bin_current)
+
             if n_bins != new_bin_number:
                 current_data = hf.convert_to_new_bins(current_data, new_bin_number)
                 current_bins = hf.convert_bins(current_bins, new_bin_number)
@@ -614,13 +639,15 @@ class SpikeAnalysis:
             correlation_window = np.logical_and(current_bins > current_window[0], current_bins < current_window[1])
 
             current_data_windowed = current_data[:, :, correlation_window]
+            print(trial_groups)
 
             for trial_number, trial in enumerate(tqdm(set(trial_groups))):
                 current_data_windowed_by_trial = current_data_windowed[:, trial_groups == trial, :]
+                return current_data_windowed_by_trial
 
                 for cluster_number in range(np.shape(current_data_windowed_by_trial)[0]):
                     final_sub_data = np.squeeze(current_data_windowed_by_trial[cluster_number])
-
+                    return final_sub_data
                     data_dataframe = pd.DataFrame(final_sub_data.T)
 
                     sub_correlations = data_dataframe.corr()
@@ -710,18 +737,8 @@ class SpikeAnalysis:
                     self.responsive_neuron[stim][key] = responsive_neurons
 
     def save_parameters(self):
-        raise ("not implemented")
+        raise Exception("not implemented")
 
-    def _guassian_smoothing(self, array: np.array, bin_size: float, std: float):
-        from scipy import signal
-
-        gaussian_window = signal.windows.gaussian(round(std), (std - 1) / 6)
-        smoothing_window = gaussian_window / np.sum(gaussian_window)
-        smoothed_array = np.zeros((np.shape(array)[0], np.shape(array)[1]))
-        for row in range(np.shape(array)[0]):
-            smoothed_array[row] = signal.convolve(array[row], smoothing_window, mode="same") / bin_size
-
-        return smoothed_array
 
     def _get_key_for_stim(self) -> dict:
         """
