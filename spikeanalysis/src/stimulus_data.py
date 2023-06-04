@@ -241,7 +241,7 @@ class StimulusData:
 
     def set_trial_groups(self, trial_dictionary: dict):
         try:
-            for channel in self.digital_events.keys():
+            for channel in trial_dictionary.keys():
                 self.digital_events[channel]["trial_groups"] = trial_dictionary[channel]
         except KeyError:
             raise Exception(
