@@ -193,6 +193,34 @@ class IntrinsicPlotter(PlotterBase):
                 plt.figure(dpi =self.dpi)
                 plt.show()
 
+    def plot_spike_depth_fr(self, sp: Optional[SpikeData]=None):
+
+        if sp is None:
+            depths = self.data.waveform_depth
+            cids = self.data._cids
+            spike_clusters = self.data.spike_clusters
+            self.data.samples_to_seconds()
+            spike_times = self.data.spike_times
+        else:
+            depths = sp.waveform_depth
+            cids = sp._cids
+            spike_clusters = sp.spike_clusters
+            sp.samples_to_seconds()
+            spike_times = sp.spike_times
+
+        fig, ax = plt.subplots(figsize=self.figsize)
+
+        spike_counts = np.zeros((len(cids),))
+        for idx, cluster in enumerate(cids):
+            spike_counts[idx] = len(spike_times[spike_clusters==cluster])/ spike_times[-1]
+
+        ax.scatter(x=spike_counts, y= -depths, color='k')
+        ax.set_xlabel('Spike Rate (Hz)')
+        ax.set_ylabel('Depth (um)')
+        plt.figure(dpi=self.dpi)
+        ax.title('depth by firing rate')
+        plt.show()
+
 
     def _sparse_pcs(self, pc_feat, pc_feat_ind, templates, n_per_chan, n_pc_chans):
         from scipy.sparse import csr_matrix
