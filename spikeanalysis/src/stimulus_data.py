@@ -263,11 +263,11 @@ class StimulusData:
     def generate_stimulus_trains(self, channel_name: Union[str, list[str]], stim_freq: Union[float, list[float]], stim_time_secs: Union[float, list[float]]):
 
         if isinstance(channel_name, str):
-            channel_name = list(channel_name)
+            channel_name = [channel_name]
         if isinstance(stim_freq, (float, int)):
-            stim_freq = list(stim_freq)
+            stim_freq = len(channel_name) * [stim_freq]
         if isinstance(stim_time_secs, (float, int)):
-            stim_time_secs = list(stim_time_secs)
+            stim_time_secs = len(channel_name) * [stim_time_secs]
 
         digital_events = self.digital_events
 
