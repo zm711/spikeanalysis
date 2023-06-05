@@ -307,6 +307,94 @@ class SpikePlotter(PlotterBase):
                 plt.figure(dpi=self.dpi)
                 plt.show()
 
+    def plot_z_scores_ind(self):
+        try:
+            z_scores = self.data.z_scores
+        except AttributeError:
+            raise Exception(f"SpikeAnalysis is missing zscores object, run {_z_scores_code}")
+        
+        if self.cmap is None:
+            cmap = "vlag"
+        else:
+            cmap = self.cmap
+
+        if self.y_axis is None:
+            y_axis = "Units"
+        else:
+            y_axis = self.y_axis
+
+        stim_lengths = self._get_event_lengths()
+
+        for stimulus in z_scores.keys():
+            bins = self.data.z_bins[stimulus]
+            if len(np.shape(z_scores)) < 3:
+                sub_zscores = np.expand_dims(z_scores[stimulus], axis=1)
+            sub_zscores = z_scores[stimulus]
+
+            z_window = self.data.z_windows[stimulus]
+            length = stim_lengths[stimulus]
+
+            sub_zscores = sub_zscores[:, :, np.logical_and(bins >= z_window[0], bins <= z_window[1])]
+            bins = bins[np.logical_and(bins >= z_window[0], bins <= z_window[1])]
+            event_window = np.logical_and(bins >= 0, bins <= length)
+            bin_size = bins[1] - bins[0]
+            zero_point = np.where((bins > -bin_size) & (bins < bin_size))[0][0]  # aim for nearest bin to zero
+            end_point = np.where((bins > length - bin_size) & (bins < length + bin_size))[0][
+                0
+            ]  # aim for nearest bin at end of stim
+            bins_length = int(len(bins) / 7)
+            for trial_idx in np.shape(sub_zscores)[1]:
+                fig, ax = plt.subplots(figsize=self.figsize)
+                z_score_sorting_index = np.argsort(-np.sum(sub_zscores[:, trial_idx, event_window], axis=1))
+
+                sorted_z_scores = sub_zscores[z_score_sorting_index, trial_idx, :]
+
+                if np.max(sorted_z_scores) > 30:
+                    vmax = 10
+                    vmin = -10
+                else:
+                    vmax = 5
+                    vmin = -5
+                
+                im = ax.imshow(sorted_z_scores, vmin=vmin, vmax=vmax, cmap=cmap, aspect="auto")
+                ax.set_xlabel(self.x_axis, fontsize="small")
+                ax.set_xticks([i * bins_length for i in range(7)])
+                ax.set_xticklabels([round(bins[i * bins_length], 4) if i < 7 else z_window[1] for i in range(7)])
+                ax.set_ylabel(y_axis, fontsize="small")
+                ax.axvline(
+                    zero_point,
+                    0,
+                    np.shape(sorted_z_scores)[0],
+                    color="black",
+                    linestyle=":",
+                    linewidth=0.5,
+                )
+                ax.axvline(
+                    end_point,
+                    0,
+                    np.shape(sorted_z_scores)[0],
+                    color="black",
+                    linestyle=":",
+                    linewidth=0.5,
+                )
+                self._despine(sub_ax)
+                ax.spines["bottom"].set_visible(False)
+                ax.spines["left"].set_visible(False)
+                plt.tight_layout()
+                cax = fig.add_axes(
+                    [
+                        ax.get_position().x1 + 0.01,
+                        ax.get_position().y0,
+                        0.02,
+                        ax.get_position().height,
+                    ]
+                )
+                cax.spines["bottom"].set_visible(False)
+                plt.colorbar(im, cax=cax, label="Z scores")  # Similar to fig.colorbar(im, cax = cax)
+                plt.title(f"{stimulus}")
+                plt.figure(dpi=self.dpi)
+                plt.show()
+
     def _get_event_lengths(self) -> dict:
         stim_lengths = {}
         try:
