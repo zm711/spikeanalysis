@@ -35,9 +35,9 @@ class SpikeData:
         import glob
 
         current_dir = os.getcwd()
-        
+
         os.chdir(file_path)
-        
+
         assert len(glob.glob("spike_times.npy")) != 0, "This folder doesn't contain Phy files"
         self._filename = glob.glob("*bin")[0]
 
@@ -72,8 +72,14 @@ class SpikeData:
 
         self._return_to_dir(current_dir)
 
-    def set_caching(self, cache:bool = True):
+    def __repr__(self):
+        var_methods = dir(self)
+        var = list(vars(self).keys())  # get our currents variables
+        methods = list(set(var_methods) - set(var))
+        final_methods = [method for method in methods if "__" not in method and method[0] != "_"]
+        return f"The methods are {final_methods}"
 
+    def set_caching(self, cache: bool = True):
         self.CACHING = cache
 
     def run_all(
@@ -106,9 +112,7 @@ class SpikeData:
 
     def denoise_data(self):
         """
-        function for removing data labeled as noise during curation. Use if not wanting
-        to run qc
-
+        Function for removing clusters labeled as noise in Phy
 
         """
         print("Denoising Data")
@@ -132,12 +136,12 @@ class SpikeData:
         ]
         self._spike_templates = self._spike_templates[np.isin(self.spike_clusters, noise_clusters, invert=True)]
         self.spike_clusters = self.spike_clusters[np.isin(self.spike_clusters, noise_clusters, invert=True)]
-        #self.cgs = self.cgs[np.isin(cids, noise_clusters, invert=True)]
+        # self.cgs = self.cgs[np.isin(cids, noise_clusters, invert=True)]
         self.noise = np.isin(cids, noise_clusters)
 
-        #if len(cids) > len(self._cids):
+        # if len(cids) > len(self._cids):
         #    cids = self._cids
-        #self._cids = self._cids[np.isin(cids, noise_clusters, invert=True)]
+        # self._cids = self._cids[np.isin(cids, noise_clusters, invert=True)]
 
         self._return_to_dir(current_dir)
 
@@ -152,6 +156,7 @@ class SpikeData:
         """
 
         self.spike_times = self.raw_spike_times / self._sampling_rate
+
 
     def refractory_violation(self, ref_dur_ms: float):
         """
@@ -172,7 +177,7 @@ class SpikeData:
         print("calculating refractory period violation fraction")
         self._goto_file_path()
         ref_dur = ref_dur_ms / 1000
-        spike_clusters = np.squeeze(np.load('spike_clusters.npy'))
+        spike_clusters = np.squeeze(np.load("spike_clusters.npy"))
         violations = np.zeros((len(set(spike_clusters))))
         violations[:] = np.nan
 
@@ -253,7 +258,6 @@ class SpikeData:
                     new_feat[these_spikes_temps, :, feature] = pc_features[
                         these_spikes_temps, :, this_template_feature_ind
                     ]
-                    
 
         if np.shape(pc_features)[1] != 3:
             raise ("Error generating pc features")
@@ -321,16 +325,17 @@ class SpikeData:
         from .utils import NumpyEncoder
         import json
 
-        print("generating raw waveforms")
+        
         current_dir = os.getcwd()
         self._goto_file_path()
         try:
             with open("waveforms.json", "r") as read_file:
+                print("loading raw waveforms")
                 self.waveforms = json.load(read_file)
                 self.waveforms = np.array(self.waveforms)
             return
         except FileNotFoundError:
-            pass
+            print("generating raw waveforms")
 
         sample_rate = self._sampling_rate
         spike_times = self.raw_spike_times
@@ -385,6 +390,30 @@ class SpikeData:
         self._return_to_dir(current_dir)
 
     def qc_preprocessing(self, idthres: float, rpv: float, sil: float, recurated: bool = False):
+        """
+        function for curating data based on qc metrics and refractory periods
+
+        Parameters
+        ----------
+        idthres : float
+            The cutoff isolation distance, 0 means no curation.
+        rpv : float
+            Fractional rate of refractory period violations, 0 is no violations and 1 would be all violations okay
+        sil : float
+            Minimum silhouette score, [-1, 1], where bigger is better.
+        recurated : bool, optional
+            If data has been recurated in phy since the last data run. The default is False.
+
+        Raises
+        ------
+        Exception
+            If various functions haven't been run
+
+        Returns
+        -------
+        None.
+
+        """
         current_dir = os.getcwd()
         self._goto_file_path()
         try:
@@ -432,24 +461,45 @@ class SpikeData:
             self._rpv = rpv
 
             if self.CACHING:
-
                 np.save("qc_threshold.npy", threshold)
 
         self._return_to_dir(current_dir)
 
     def set_qc(self):
+        """
+        Function to load the qc mask onto the cluster ids.
+
+        """
         current_dir = os.getcwd()
         self._goto_file_path()
         try:
             threshold = self._qc_threshold
         except AttributeError:
-            raise Exception(f"Must run qc functions first ('generate_pcs', 'generate_qcmetrics', 'refractory_violation')")
-        
+            raise Exception(
+                f"Must run qc functions first ('generate_pcs', 'generate_qcmetrics', 'refractory_violation')"
+            )
+
         self._cids = self._cids[threshold]
         self.QC_RUN = True
         self._return_to_dir(current_dir)
 
     def get_waveform_values(self, depth: float = 0):
+        """
+        Function that uses weighted average of waveforms to calculate waveform metrics
+        such as duration, amplitude, depths
+
+        Parameters
+        ----------
+        depth : float, optional
+            If given this is the true depth of the probe in the tissue and will cause
+            the depths to corrected to depth in tissue rather than distance from
+            probe tip. The default is 0.
+
+        Returns
+        -------
+        None.
+
+        """
         xcoords = self.x_coords
         ycoords = self.y_coords
 
@@ -502,7 +552,16 @@ class SpikeData:
         }
         jsonify_parameters(qc_params)
 
-    def _get_file_size(self):
+    def _get_file_size(self) -> int:
+        """
+        Utility function to calculate a binary file size in samples
+
+        Returns
+        -------
+        n_samples : int
+            number of samples in a file.
+
+        """
         file_size = os.path.getsize(self._filename)
         dtype = self._binary_file_info["dtype"]
         temp = np.array([0, 0, 0], dtype=dtype)
@@ -514,6 +573,24 @@ class SpikeData:
         return n_samples
 
     def _isolation_distance(self, pc_feat: np.array, labels: np.array, this_id: int) -> float:
+        """
+        Function for calculating isolation distances
+
+        Parameters
+        ----------
+        pc_feat : np.array
+            the pc features to be assessed over.
+        labels : np.array
+            cluster identities for each pc row.
+        this_id : int
+            current cluster identity currently being assessed.
+
+        Returns
+        -------
+        float
+            isolation distance for the cluster given by this_id.
+
+        """
         pc_this_cluster = pc_feat[labels == this_id, :]
         pc_other_clusters = pc_feat[labels != this_id, :]
 
@@ -538,6 +615,25 @@ class SpikeData:
         return isolation_dist
 
     def _simplified_silhouette_score(self, pc_feat: np.array, labels: np.array, this_id: int) -> float:
+        """
+        the simplified silhouette score (Hrushka et al.) which uses centroid rather than pairwise comparisons
+        for generating distances
+
+        Parameters
+        ----------
+        pc_feat : np.array
+            the pc features to be assessed over.
+        labels : np.array
+            cluster identities for each pc row.
+        this_id : int
+            current cluster identity currently being assessed.
+
+        Returns
+        -------
+        float
+            returns the simplified silhouette score.
+
+        """
         pcs_for_this_unit = pc_feat[labels == this_id, :]
         centroid_for_this_unit = np.expand_dims(np.mean(pcs_for_this_unit, 0), 0)
         distances_for_this_unit = cdist(centroid_for_this_unit, pcs_for_this_unit)
@@ -563,6 +659,20 @@ class SpikeData:
         return unit_silhouette_score
 
     def _count_unique(self, x: np.array) -> tuple[int, int]:
+        """
+        Utility function for counting unique instances for each value in x
+
+        Parameters
+        ----------
+        x : np.array
+            an array of values
+
+        Returns
+        -------
+        tuple[int, int]
+            Each unique value and the number of instances of that value.
+
+        """
         x = [np.int32(val) for val in x]
         values = [np.int32(x_val) for x_val in set(x)]
         instance = [np.int32(ins) for ins in range(0)]
@@ -571,6 +681,22 @@ class SpikeData:
         return values, instance
 
     def _find_index(self, matrix: np.array) -> tuple[np.array, np.array]:
+        """
+        Utility function for miming the syntax of Matlab find.
+
+        Parameters
+        ----------
+        matrix : np.array
+            a matrix as an np.array
+
+        Returns
+        -------
+        row : TYPE
+           row indices of nonzero values
+        col : TYPE
+            column indicies of nonzero values
+
+        """
         index = np.transpose(np.nonzero(matrix))
 
         row = index[:, 0]
@@ -578,6 +704,17 @@ class SpikeData:
         return row, col
 
     def _read_cgs(self):
+        """
+        Utility function for reading Phy cluster_group files (stored either as csv or tsv)
+
+        Returns
+        -------
+        TYPE
+            cluster ids
+        TYPE
+           cluster id identity converted to ints
+
+        """
         if os.path.isfile("cluster_group.csv"):
             with open("cluster_group.csv", "r") as c:
                 cgsfile = c.readlines()
@@ -629,8 +766,25 @@ class SpikeData:
         return sub_cids, cgs
 
     def _goto_file_path(self):
+        """
+        Utility function to make sure in the correct directory
+
+        """
         if os.getcwd() != self._file_path:
             os.chdir(self._file_path)
 
     def _return_to_dir(self, return_dir: str):
+        """
+        Utility function to return to whatever is the current directory
+
+        Parameters
+        ----------
+        return_dir : str
+           current directory.
+
+        Returns
+        -------
+        None.
+
+        """
         os.chdir(return_dir)
