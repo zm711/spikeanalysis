@@ -21,6 +21,13 @@ class SpikeAnalysis:
     def __init__(self):
         pass
 
+    def __repr__(self):
+        var_methods = dir(self)
+        var = list(vars(self).keys())  # get our currents variables
+        methods = list(set(var_methods) - set(var))
+        final_methods = [method for method in methods if "__" not in method and method[0] != "_"]
+        return f"The methods are {final_methods}"
+
     def set_spike_data(self, sp: SpikeData):
         """
         loads in spike data from phy for analysis
@@ -35,7 +42,14 @@ class SpikeAnalysis:
         None.
 
         """
-        self._file_path = sp._file_path
+        try:
+            file_path = self._file_path
+            assert (
+                file_path == sp._file_path
+            ), f"Stim data and Spike data must have same root Stim: {file_path}, spike:\
+                {sp._file_path}"
+        except AttributeError:
+            self._file_path = sp._file_path
         try:
             self.spike_times = sp.spike_times
         except AttributeError:
@@ -53,7 +67,7 @@ class SpikeAnalysis:
                   include acceptable values"
             )
             self.qc_threshold = np.array([True for _ in self._cids])
-            QC_DATA=False
+            QC_DATA = False
 
         if sp.QC_RUN and QC_DATA:
             sp.denoise_data()
@@ -61,8 +75,11 @@ class SpikeAnalysis:
             sp.set_qc()
             sp.denoise_data()
         else:
-            sp.denoise_data()
-            
+            try:
+                sp.denoise_data()
+            except TypeError:
+                print("no qc run")
+
         self.cluster_ids = sp._cids
         self.spike_clusters = sp.spike_clusters
         self._sampling_rate = sp._sampling_rate
@@ -81,7 +98,15 @@ class SpikeAnalysis:
         None.
 
         """
-        self._file_path = event_times._file_path
+        try:
+            file_path = self._file_path
+            assert (
+                file_path == event_times._file_path
+            ), f"Stim data and Spike data must have same root Stim: \
+                {event_times._file_path}, Spike: {file_path}"
+        except AttributeError:
+            self._file_path = event_times._file_path
+
         try:
             self.digital_events = event_times.digital_events
             self.HAVE_DIGITAL = True
@@ -144,10 +169,10 @@ class SpikeAnalysis:
         if self.HAVE_DIG_ANALOG:
             TOTAL_STIM += len(self.dig_analog_events.keys())
 
-        windows = verify_window_format(window=window, num_stim = TOTAL_STIM)
+        windows = verify_window_format(window=window, num_stim=TOTAL_STIM)
 
         psths = dict()
-        
+        MULTISPIKE_BIN = 0
         if self.HAVE_DIGITAL:
             for idx, stimulus in enumerate(self.digital_events.keys()):
                 stimulus_counter = idx
@@ -168,10 +193,10 @@ class SpikeAnalysis:
                 )
 
                 psths[stim_name] = {}
-                min_time = np.min(events)+window_start
+                min_time = np.min(events) + window_start
                 max_time = np.max(events) + window_end
-                current_spike_clusters = spike_clusters[np.logical_and(spike_times>min_time, spike_times<max_time)]
-                current_spikes = spike_times[np.logical_and(spike_times>min_time, spike_times<max_time)]
+                current_spike_clusters = spike_clusters[np.logical_and(spike_times > min_time, spike_times < max_time)]
+                current_spikes = spike_times[np.logical_and(spike_times > min_time, spike_times < max_time)]
 
                 for idy, cluster in enumerate(tqdm(cluster_ids)):
                     spikes_array, bins_sub = hf.spike_times_to_bins(
@@ -183,14 +208,19 @@ class SpikeAnalysis:
                     )
                     psth[idy] = spikes_array
                     if len(np.where(spikes_array > 1)[0]) != 0 or len(np.where(spikes_array > 1)[1]) != 0:
-                        print(f"minimum time_bin size in ms is  {1000/self._sampling_rate}")
-                        print("There are bins with more than 1 spike. For best psth results bins should only be 0 or 1")
+                        MULTISPIKE_BIN += 1
+                if MULTISPIKE_BIN:
+                    print(f"Minimum time_bin size in ms is  {1000/self._sampling_rate}")
+                    print(
+                        f"There are {MULTISPIKE_BIN} bins with more than 1 spike. For best psth results bins should only be 0 or 1"
+                    )
                 psths[stim_name]["psth"] = psth
                 psths[stim_name]["bins"] = bins_sub / self._sampling_rate
         else:
             stimulus_counter = -1
 
         if self.HAVE_DIG_ANALOG:
+            MULTISPIKE_BIN = 0
             stimulus_counter += 1
             for idx, stimulus in enumerate(tqdm(self.dig_analog_events.keys())):
                 stimulus_counter = stimulus_counter + idx
@@ -210,10 +240,10 @@ class SpikeAnalysis:
                 )
 
                 psths[stim_name] = {}
-                min_time = np.min(events)+window_start
+                min_time = np.min(events) + window_start
                 max_time = np.max(events) + window_end
-                current_spike_clusters = spike_clusters[np.logical_and(spike_times>min_time, spike_times<max_time)]
-                current_spikes = spike_times[np.logical_and(spike_times>min_time, spike_times<max_time)]
+                current_spike_clusters = spike_clusters[np.logical_and(spike_times > min_time, spike_times < max_time)]
+                current_spikes = spike_times[np.logical_and(spike_times > min_time, spike_times < max_time)]
 
                 for idy, cluster in enumerate(tqdm(cluster_ids)):
                     spikes_array, bins_sub = hf.spike_times_to_bins(
@@ -225,8 +255,12 @@ class SpikeAnalysis:
                     )
                     psth[idy] = spikes_array
                     if len(np.where(spikes_array > 1)[0]) != 0 or len(np.where(spikes_array > 1)[1]) != 0:
-                        print(f"minimum time_bin size in ms is  {1000/self._sampling_rate}")
-                        print("There are bins with more than 1 spike. For best psth results bins should only be 0 or 1")
+                        MULTISPIKE_BIN += 1
+                if MULTISPIKE_BIN:
+                    print(f"\nMinimum time_bin size in ms is  {1000/self._sampling_rate}")
+                    print(
+                        f"There are {MULTISPIKE_BIN} bins with more than 1 spike. For best psth results bins should only be 0 or 1"
+                    )
                 psths[stim_name]["psth"] = psth
                 psths[stim_name]["bins"] = bins_sub / self._sampling_rate
 
@@ -292,7 +326,7 @@ class SpikeAnalysis:
 
         bsl_windows = verify_window_format(window=bsl_window, num_stim=NUM_STIM)
 
-        z_windows = verify_window_format(window = z_window, num_stim=NUM_STIM)
+        z_windows = verify_window_format(window=z_window, num_stim=NUM_STIM)
 
         z_scores = {}
         final_z_scores = {}
@@ -343,7 +377,7 @@ class SpikeAnalysis:
             self.z_bins[stim] = bins[z_window_values]
         self.z_scores = final_z_scores
 
-    def latencies(self, bsl_window: Union[list, list[float]], time_bin_ms: float = 50., num_shuffles: int = 300):
+    def latencies(self, bsl_window: Union[list, list[float]], time_bin_ms: float = 50.0, num_shuffles: int = 300):
         """
         Calculates the latency to fire for each neuron based on either Chase & Young 2007 or
         Mormann et al. 2012 with the cutoff being a baseline firing rate of 2Hz
@@ -364,7 +398,7 @@ class SpikeAnalysis:
 
         NUM_STIM = self.NUM_STIM
         NUM_DIG = self.NUM_DIG
-        
+
         bsl_windows = verify_window_format(window=bsl_window, num_stim=NUM_STIM)
         if NUM_DIG:
             stim_dict = self._get_keys_for_stim()
@@ -381,20 +415,24 @@ class SpikeAnalysis:
             psth = psths[stim]["psth"]
             bins = psths[stim]["bins"]
             time_bin_size = bins[1] - bins[0]
-            new_time_bin_size = time_bin_ms/1000
+            new_time_bin_size = time_bin_ms / 1000
             n_bins = np.shape(psth)[2]
-            new_bin_number = np.int32((n_bins * time_bin_size) /new_time_bin_size)
-            
+            new_bin_number = np.int32((n_bins * time_bin_size) / new_time_bin_size)
+
             if new_bin_number != n_bins:
                 psth = hf.convert_to_new_bins(psth, new_bin_number)
                 bins = hf.convert_bins(bins, new_bin_number)
 
-                
             bsl_shuffled = (
-                np.random.rand(np.shape(psth)[0], len(trial_set), num_shuffles,) * (current_bsl[1] - current_bsl[0])
+                np.random.rand(
+                    np.shape(psth)[0],
+                    len(trial_set),
+                    num_shuffles,
+                )
+                * (current_bsl[1] - current_bsl[0])
                 + current_bsl[0]
             )
-            
+
             self.latency[stim] = {
                 "latency": np.empty((np.shape(psth)[0], np.shape(psth)[1])),
                 "latency_shuffled": np.empty((np.shape(psth)[0], np.shape(psth)[1], num_shuffles)),
@@ -404,42 +442,41 @@ class SpikeAnalysis:
                 np.sum(
                     psth[:, :, np.logical_and(bins >= current_bsl[0], bins <= current_bsl[1])],
                     axis=2,
-                ) / (current_bsl[1]-current_bsl[0]),
+                )
+                / (current_bsl[1] - current_bsl[0]),
                 axis=1,
             )
-            
+
             for t_number, trial in enumerate(trial_set):
-                
                 current_psth = psth[:, trials == trial, :]
-                
+
                 bsl_shuffled_trial = bsl_shuffled[:, t_number, :]
-            
+
                 for idx in range(len(bsl_values)):
                     psth_by_trial = current_psth[idx]
                     bsl_fr = bsl_values[idx]
                     bsl_shuffled_trial_cluster = bsl_shuffled_trial[idx]
 
                     if bsl_fr > 2:
-                        
-                        self.latency[stim]["latency"][idx, trials == trial] =1000 *  lf.latency_core_stats(
-                            bsl_fr, psth_by_trial[:, bins>=0], time_bin_size
+                        self.latency[stim]["latency"][idx, trials == trial] = 1000 * lf.latency_core_stats(
+                            bsl_fr, psth_by_trial[:, bins >= 0], time_bin_size
                         )
                         for shuffle in tqdm(range(num_shuffles)):
-                            
                             self.latency[stim]["latency_shuffled"][
                                 idx, trials == trial, shuffle
-                            ] = 1000 * lf.latency_core_stats(bsl_fr, psth_by_trial[:, bins>=bsl_shuffled_trial_cluster[shuffle]], time_bin_size)
-                        
+                            ] = 1000 * lf.latency_core_stats(
+                                bsl_fr, psth_by_trial[:, bins >= bsl_shuffled_trial_cluster[shuffle]], time_bin_size
+                            )
+
                     else:
-                        
-                        
-                        self.latency[stim]["latency"][idx, trials == trial] = 1000*  lf.latency_median(
-                            psth_by_trial[:, bins>=0], time_bin_size
+                        self.latency[stim]["latency"][idx, trials == trial] = 1000 * lf.latency_median(
+                            psth_by_trial[:, bins >= 0], time_bin_size
                         )
                         for shuffle in tqdm(range(num_shuffles)):
-                            
-                            self.latency[stim]["latency_shuffled"][idx, trials == trial, shuffle] = 1000 * lf.latency_median(
-                                psth_by_trial[:, bins>=bsl_shuffled_trial_cluster[ shuffle]], time_bin_size
+                            self.latency[stim]["latency_shuffled"][
+                                idx, trials == trial, shuffle
+                            ] = 1000 * lf.latency_median(
+                                psth_by_trial[:, bins >= bsl_shuffled_trial_cluster[shuffle]], time_bin_size
                             )
 
     def get_interspike_intervals(self):
@@ -480,7 +517,7 @@ class SpikeAnalysis:
         None.
 
         """
-        bins = np.linspace(0, time_ms / 1000, num=int(time_ms+1))
+        bins = np.linspace(0, time_ms / 1000, num=int(time_ms + 1))
         final_isi = {}
         if self.HAVE_DIGITAL:
             for idx, stimulus in enumerate(self.digital_events.keys()):
@@ -488,8 +525,8 @@ class SpikeAnalysis:
                 lengths = np.array(self.digital_events[stimulus]["lengths"])
                 stim_name = self.digital_events[stimulus]["stim"]
                 final_isi[stim_name] = {}
-                final_counts = np.zeros((len(self.isi_raw.keys()), len(events), len(bins)-1))
-                final_counts_bsl = np.zeros((len(self.isi_raw.keys()), len(events), len(bins)-1))
+                final_counts = np.zeros((len(self.isi_raw.keys()), len(events), len(bins) - 1))
+                final_counts_bsl = np.zeros((len(self.isi_raw.keys()), len(events), len(bins) - 1))
                 for idy, cluster in enumerate(self.isi_raw.keys()):
                     current_times = self.isi_raw[cluster]["times"]
                     cluster_isi_raw = self.isi_raw[cluster]["isi"]
@@ -512,13 +549,12 @@ class SpikeAnalysis:
 
         if self.HAVE_DIG_ANALOG:
             for idx, stimulus in enumerate(self.dig_analog_events.keys()):
-                
                 events = np.array(self.dig_analog_events[stimulus]["events"])
                 lengths = np.array(self.dig_analog_events[stimulus]["lengths"])
                 stim_name = self.dig_analog_events[stimulus]["stim"]
                 final_isi[stim_name] = {}
-                final_counts = np.zeros((len(self.isi_raw.keys()), len(events), len(bins)-1))
-                final_counts_bsl = np.zeros((len(self.isi_raw.keys()), len(events), len(bins)-1))
+                final_counts = np.zeros((len(self.isi_raw.keys()), len(events), len(bins) - 1))
+                final_counts_bsl = np.zeros((len(self.isi_raw.keys()), len(events), len(bins) - 1))
                 for idy, cluster in enumerate(self.isi_raw.keys()):
                     current_times = self.isi_raw[cluster]["times"]
                     cluster_isi_raw = self.isi_raw[cluster]["isi"]
@@ -541,7 +577,9 @@ class SpikeAnalysis:
 
         self.isi = final_isi
 
-    def trial_correlation(self, window: Union[list, list[list]], time_bin_ms: Optional[float] = None, dataset: str = "z_scores"):
+    def trial_correlation(
+        self, window: Union[list, list[list]], time_bin_ms: Optional[float] = None, dataset: str = "z_scores"
+    ):
         """
         Function to calculate pairwise pearson correlation coefficents of z scored or raw firing rate data/time bin.
         Organized by trial groupings.
@@ -571,7 +609,7 @@ class SpikeAnalysis:
             import pandas as pd
         except ImportError:
             raise Exception("pandas is required for correlation function, install with pip or conda")
-        
+
         if dataset == "psth":
             try:
                 psths = self.psths
@@ -579,7 +617,7 @@ class SpikeAnalysis:
 
             except AttributeError:
                 raise Exception("To run dataset=='psth', ensure 'get_raw_psth' has been run")
-            
+
         elif dataset == "z_scores":
             try:
                 z_scores = self.z_scores
@@ -591,7 +629,7 @@ class SpikeAnalysis:
         else:
             raise Exception(f"You have entered {dataset} and only ('psth', or 'z_scores') are possible options")
 
-        windows = verify_window_format(window=window, num_stim = self.NUM_STIM)
+        windows = verify_window_format(window=window, num_stim=self.NUM_STIM)
         if time_bin_ms is not None:
             if isinstance(time_bin_ms, float) or isinstance(time_bin_ms, int):
                 time_bin_size = [time_bin_ms / 1000] * self.NUM_STIM
@@ -624,11 +662,13 @@ class SpikeAnalysis:
             else:
                 current_bins = bins[stimulus]
             n_bins = len(current_bins)
-            time_bin_current = time_bin_size[idx] 
+            time_bin_current = time_bin_size[idx]
             bin_size = current_bins[1] - current_bins[0]
             if time_bin_current is None:
                 time_bin_current = bin_size
-            assert time_bin_current >= bin_size, f"The current data has bin size of {bin_size*1000}ms and you selected {time_bin_current*1000}\
+            assert (
+                time_bin_current >= bin_size
+            ), f"The current data has bin size of {bin_size*1000}ms and you selected {time_bin_current*1000}\
                 select a value less than or equal to {bin_size *1000}"
             new_bin_number = np.int32((n_bins * bin_size) / time_bin_current)
 
@@ -658,6 +698,16 @@ class SpikeAnalysis:
         self.correlations = correlations
 
     def _generate_sample_z_parameter(self) -> dict:
+        """
+        Function for providing example z score parameters. Then saves as json
+        for easy editing in the future.
+
+        Returns
+        -------
+        dict
+            the z parameter sample dictionary which can be edited.
+
+        """
         import json
 
         example_z_parameter = {
@@ -676,6 +726,27 @@ class SpikeAnalysis:
         return example_z_parameter
 
     def responsive_neurons(self, z_parameters: Optional[dict] = None):
+        """
+        function for assessing only responsive neurons based on z scored parameters.
+
+
+        Parameters
+        ----------
+        z_parameters : Optional[dict], optional
+            gives the manual classes of response type. Run ` _generate_sample_z_parameter`
+            The default is None.
+
+        Raises
+        ------
+        Exception
+            General exception if there is no json or dictonary of desried z values.
+
+        Returns
+        -------
+        None.
+
+        """
+
         import json
         import glob
 
@@ -738,7 +809,6 @@ class SpikeAnalysis:
 
     def save_parameters(self):
         raise Exception("not implemented")
-
 
     def _get_key_for_stim(self) -> dict:
         """
