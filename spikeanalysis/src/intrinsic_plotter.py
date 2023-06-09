@@ -113,8 +113,12 @@ class IntrinsicPlotter(PlotterBase):
 
     def plot_waveforms(self, sp: SpikeData):
         waveforms = sp.waveforms
-        if len(sp._cids)!=np.shape(waveforms)[0]:
+        
+        if len(sp._cids)!=np.shape(waveforms)[0]: # if not same need to run set_qc
+            sp.set_qc()
+        if len(sp._cids)!=np.shape(waveforms)[0]: # still not same need to index waveforms
             waveforms = waveforms[sp._qc_threshold, ...]
+
         mean_waveforms = np.nanmean(waveforms, axis=1)
 
         
