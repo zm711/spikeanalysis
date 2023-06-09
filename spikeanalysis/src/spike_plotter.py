@@ -21,7 +21,22 @@ _z_scores_code = ("get_raw_psths", "z_score_data")
 
 
 class SpikePlotter(PlotterBase):
+    """SpikePlotter is a plotting class which allows for plotting of PSTHs, z score heatmaps
+    in the future it will plot other values"""
+
     def __init__(self, analysis: SpikeAnalysis, **kwargs):
+        """
+        SpikePlotter requires a SpikeAnalysis object
+
+        Parameters
+        ----------
+        analysis : SpikeAnalysis
+            a spikeanalysis.SpikeAnalysis object
+        **kwargs : dict
+            general matplot lib values with key being desired setting to change and the value being
+            the change value e.g. {'dpi': 300}
+
+        """
         # assert isinstance(analysis, SpikeAnalysis), "please enter a SpikeAnalysis object"
 
         PlotterBase.__init__(self)
@@ -32,7 +47,26 @@ class SpikePlotter(PlotterBase):
 
         self.data = analysis
 
+    def __repr__(self):
+        var_methods = dir(self)
+        var = list(vars(self).keys())  # get our currents variables
+        methods = list(set(var_methods) - set(var))
+        final_methods = [method for method in methods if "plot" in method]
+        return f"The methods are {final_methods}"
+
     def plot_zscores(self, figsize: Optional[tuple] = (24, 10), sorting_index: Optional[int] = None):
+        """
+        Function to plot heatmaps of z scored firing rate.
+
+        Parameters
+        ----------
+        figsize : Optional[tuple], optional
+            Matplotlib figsize tuple. For multiple trial groups bigger is better. The default is (24, 10).
+        sorting_index : Optional[int], optional
+            The trial group to sort all values on. The default is None (which uses the largest trial group).
+
+        """
+
         try:
             z_scores = self.data.z_scores
         except AttributeError:
@@ -142,6 +176,17 @@ class SpikePlotter(PlotterBase):
                 sorting_index = None
 
     def plot_raster(self, window: Union[list, list[list]]):
+        """
+        Function to plot rasters
+
+        Parameters
+        ----------
+        window : Union[list, list[list]]
+            The window [start, stop] to plot the raster over. Either one global list or nested list
+            of [start, stop] format
+
+
+        """
         from .analysis_utils import histogram_functions as hf
 
         try:
@@ -174,29 +219,28 @@ class SpikePlotter(PlotterBase):
 
             for idx in range(np.shape(psth)[0]):
                 psth_sub = np.squeeze(psth[idx])
-                
+
                 if np.sum(psth_sub) == 0:
                     continue
-                
+
                 raster_scale = np.floor(np.shape(psth_sub)[0] / 100)
                 indices = np.argsort(trial_groups)
                 bin_index = np.transpose(np.nonzero(psth_sub[indices, :]))
-                
+
                 b = bin_index[:, 1]
                 inds = np.argsort(b)
-                b=b[inds]
-               
+                b = b[inds]
+
                 tr = bin_index[:, 0]
                 tr = tr[inds]
-                
+
                 if isinstance(tr, int):
                     continue
                 raster_x, yy = hf.rasterize(bins[b])
-                
-                
+
                 raster_x = np.squeeze(raster_x)
                 raster_y = yy + np.reshape(np.tile(tr, (3, 1)).T, (1, len(tr) * 3))
-                
+
                 raster_y = np.squeeze(raster_y)
                 raster_y[1:-1:3] = raster_y[1:-1:3] + raster_scale
 
@@ -214,11 +258,24 @@ class SpikePlotter(PlotterBase):
                     sns.despine()
                 else:
                     self._despine(ax)
-                plt.title(f'{self.data.cluster_ids[idx]} stim: {stimulus}', size=7)
+                plt.title(f"{self.data.cluster_ids[idx]} stim: {stimulus}", size=7)
                 plt.figure(dpi=self.dpi)
                 plt.show()
 
-    def plot_sm_fr(self, window: Union[list, list[list]], sm_time_ms: float):
+    def plot_sm_fr(self, window: Union[list, list[list]], sm_time_ms: Union[float, list[float]]):
+        """
+        Function to plot smoothed firing rates
+
+        Parameters
+        ----------
+        window : Union[list, list[list]]
+            The window [start, stop] to plot the raster over. Either one global list or nested list
+            of [start, stop] format
+        sm_time_ms : Union[float, list[float]]
+            Smoothing time in milliseconds. Either one global smoothing time or a list of smoothing time stds for each
+            stimulus
+
+        """
         import matplotlib as mpl
 
         if self.cmap is not None:
@@ -237,7 +294,10 @@ class SpikePlotter(PlotterBase):
             ylabel = self.y_axis
 
         windows = verify_window_format(window=window, num_stim=len(psths.keys()))
-
+        if isinstance(sm_time_ms, (int, float)):
+            sm_time_ms = [sm_time_ms] * len(windows)
+        else:
+            assert len(sm_time_ms) == len(windows), "Enter one smoothing value per stim or one global smoothing value"
         stim_trial_groups = self._get_trial_groups()
         event_lengths = self._get_event_lengths_all()
         for idx, stimulus in enumerate(psths.keys()):
@@ -251,7 +311,7 @@ class SpikePlotter(PlotterBase):
             tg_set = np.unique(trial_groups)
             norm = mpl.colors.Normalize(vmin=0, vmax=len(tg_set))
             bin_size = bins[1] - bins[0]
-            sm_std = int((1 / (bin_size * 1000))) * sm_time_ms  # convert from user input
+            sm_std = int((1 / (bin_size * 1000))) * sm_time_ms[idx]  # convert from user input
 
             if sm_std % 2 == 0:  # make it odd so it has a peak convolution bin
                 sm_std += 1
@@ -312,7 +372,7 @@ class SpikePlotter(PlotterBase):
             z_scores = self.data.z_scores
         except AttributeError:
             raise Exception(f"SpikeAnalysis is missing zscores object, run {_z_scores_code}")
-        
+
         if self.cmap is None:
             cmap = "vlag"
         else:
@@ -355,7 +415,7 @@ class SpikePlotter(PlotterBase):
                 else:
                     vmax = 5
                     vmin = -5
-                
+
                 im = ax.imshow(sorted_z_scores, vmin=vmin, vmax=vmax, cmap=cmap, aspect="auto")
                 ax.set_xlabel(self.x_axis, fontsize="small")
                 ax.set_xticks([i * bins_length for i in range(7)])
@@ -377,7 +437,7 @@ class SpikePlotter(PlotterBase):
                     linestyle=":",
                     linewidth=0.5,
                 )
-                self._despine(sub_ax)
+                self._despine(ax)
                 ax.spines["bottom"].set_visible(False)
                 ax.spines["left"].set_visible(False)
                 plt.tight_layout()
@@ -396,6 +456,16 @@ class SpikePlotter(PlotterBase):
                 plt.show()
 
     def _get_event_lengths(self) -> dict:
+        """
+        Utility function to get the event lengths and convert from samples to seconds
+
+        Returns
+        -------
+        lengths: dict
+           A dictionary of the lengths of events that can indexed into with plotting functions
+
+        """
+
         stim_lengths = {}
         try:
             stim_dict = self.data._get_key_for_stim()
