@@ -69,6 +69,12 @@ class StimulusData:
         except IndexError:
             pass
 
+        with open("params.py", "r") as p:
+            params = p.readlines()
+
+        sampling_rate = float(params[4].split()[-1])
+        self.sample_frequency = sampling_rate
+
     def run_all(
         self,
         stim_index: Optional[int] = None,
