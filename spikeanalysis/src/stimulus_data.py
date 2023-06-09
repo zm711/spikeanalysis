@@ -33,7 +33,19 @@ class StimulusData:
         self.analog_data = None
         self.digital_data = None
 
+    def __repr__(self):
+        var_methods = dir(self)
+        var = list(vars(self).keys())  # get our currents variables
+        methods = list(set(var_methods) - set(var))
+        final_methods = [method for method in methods if "__" not in method and method[0] != "_"]
+        return f"The methods are {final_methods}"
+
     def get_all_files(self):
+        """
+        function to load all stimulus data from a previous instance of the class
+        if saved
+
+        """
         import os
 
         os.chdir(self._file_path)
@@ -63,12 +75,25 @@ class StimulusData:
         stim_length_seconds: Optional[float] = None,
         stim_name: Optional[list] = None,
     ):
-        
+        """
+        Pipeline function to run through all steps necessary to load intan data
+
+        Parameters
+        ----------
+        stim_index : Optional[int], optional
+           If there are particular desired analog stimuli to assess. The default is None.
+        stim_length_seconds : Optional[float], optional
+            The length (seconds) of the analog stimuli to digitize them. The default is None.
+        stim_name : Optional[list], optional
+            Name of the stimulus. The default is None.
+
+        """
+
         try:
             self.get_all_files()
             return
         except AssertionError:
-            print('Reading raw data files')
+            print("Reading raw data files")
 
         self.create_neo_reader()
         try:
@@ -94,9 +119,13 @@ class StimulusData:
             self.get_final_digital_data()
             self.generate_digital_events()
 
-        del self.reader # reader and memmap heavy. Delete after this since not needed
+        del self.reader  # reader and memmap heavy. Delete after this since not needed
 
     def create_neo_reader(self):
+        """
+        Function that creates a Neo IntanRawIO reader and then parses the header
+
+        """
         reader = neo.rawio.IntanRawIO(filename=self._filename)
         reader.parse_header()
 
@@ -107,6 +136,11 @@ class StimulusData:
         self.reader = reader
 
     def get_analog_data(self):
+        """
+        Function to load analog data from an Intan file. Requires the IntanRawIO to be generated with
+        `create_neo_reader`
+
+        """
         stream_list = list()
         for value in self.reader.header["signal_streams"]:
             stream_list.append(str(value[0]))
@@ -128,6 +162,9 @@ class StimulusData:
         stim_length_seconds: Optional[float] = None,
         stim_name: Optional[list[str]] = None,
     ):
+        """Function to digitize the analog data for stimuli that have "events" rather than assessing
+        them as continually changing values"""
+
         assert self.analog_data is not None, "There is no analog data"
 
         import statistics
@@ -168,10 +205,35 @@ class StimulusData:
             else:
                 self.dig_analog_events[str(row)]["stim"] = str(row)
 
-    def _valueround(self, x: float, precision: int = 2, base: float = 0.25):
+    def _valueround(self, x: float, precision: int = 2, base: float = 0.25) -> float:
+        """
+        Utility function to round values for generating distinct trial grouping for events
+        based on their analog voltages
+
+        Parameters
+        ----------
+        x : float
+            float to be rounded.
+        precision : int, optional
+            Number of decimal places The default is 2.
+        base : float, optional
+           the nearest value to round to. The default is 0.25.
+
+        Returns
+        -------
+        float
+            the rounded value.
+
+        """
         return round(base * round(float(x) / base), precision)
 
     def get_raw_digital_data(self):
+        """
+        This is a function that in the future will get the digital data, but currently due
+        to the inability to grab digital from neo automatically. Calls on internal hack to
+        call digital data.
+
+        """
         # stream_list = list()
         # for value in self.reader.header["signal_streams"]:
         #    stream_list.append(str(value[0]))
@@ -187,6 +249,10 @@ class StimulusData:
         self._raw_digital_data = digital_data
 
     def get_final_digital_data(self):
+        """
+        Function for converting the digital memmap info into actual digital channels.
+
+        """
         try:
             len(np.isnan(self._raw_digital_data))
 
@@ -201,7 +267,7 @@ class StimulusData:
 
         values = np.zeros((len(dig_in_channels), len(self._raw_digital_data)))
         for value in range(len(dig_in_channels)):
-            values[value, :] = np.not_equal( # this operation comes from the python Intan code
+            values[value, :] = np.not_equal(  # this operation comes from the python Intan code
                 np.bitwise_and(
                     self._raw_digital_data,
                     (1 << dig_in_channels[value]["native_order"]),
@@ -228,6 +294,21 @@ class StimulusData:
             self.digital_channels.append(self.dig_in_channels[idx]["native_channel_name"])
 
     def get_stimulus_channels(self) -> dict:
+        """
+        function to give names of stimulus channels since they are a bit long for Intan
+
+        Raises
+        ------
+        Exception
+            If there are no digital events then this function can't be run
+
+        Returns
+        -------
+        dict
+           Keys are the correct channel names. Values are empty strings that can be replaced
+           for other functions.
+
+        """
         try:
             _ = self.digital_events
         except AttributeError:
@@ -240,6 +321,25 @@ class StimulusData:
         return stim_dict
 
     def set_trial_groups(self, trial_dictionary: dict):
+        """
+        function for setting trial groups.
+
+        Parameters
+        ----------
+        trial_dictionary : dict
+           Dictionary where key is the channel name and value is an np.array or list with
+           n elements = len(events) (filled with ints.)
+
+        Raises
+        ------
+        Exception
+            If keys do not exist it warns and gives the current channel names
+
+        Returns
+        -------
+        None.
+
+        """
         try:
             for channel in trial_dictionary.keys():
                 self.digital_events[channel]["trial_groups"] = trial_dictionary[channel]
@@ -260,8 +360,26 @@ class StimulusData:
                             keys of {self.digital_channels}"
             )
 
-    def generate_stimulus_trains(self, channel_name: Union[str, list[str]], stim_freq: Union[float, list[float]], stim_time_secs: Union[float, list[float]]):
+    def generate_stimulus_trains(
+        self,
+        channel_name: Union[str, list[str]],
+        stim_freq: Union[float, list[float]],
+        stim_time_secs: Union[float, list[float]],
+    ):
+        """
+        Function for converting events into event trains, eg for optogenetic stimulus trains
 
+        Parameters
+        ----------
+        channel_name : Union[str, list[str]]
+            Then channel_name which needs to be converted from individual events to trains.
+        stim_freq : Union[float, list[float]]
+           Stimulation frequency (eg. 20.0 for 20 Hz).
+        stim_time_secs : Union[float, list[float]]
+            Length of time the stimulus is occurring in seconds (for example 0.5 would be 500 ms).
+
+
+        """
         if isinstance(channel_name, str):
             channel_name = [channel_name]
         if isinstance(stim_freq, (float, int)):
@@ -274,15 +392,19 @@ class StimulusData:
         for idx, name in enumerate(channel_name):
             sub_dig = digital_events[name]
             pulse_number = int(stim_freq[idx] * stim_time_secs[idx])
-            sub_dig['events'] = sub_dig['events'][::pulse_number]
-            sub_dig['trial_groups'] = sub_dig['trial_groups'][::pulse_number]
-            sub_dig['lengths'] = np.ones((len(sub_dig['events']))) * (stim_time_secs[idx] * self.sample_frequency)
-            sub_dig['stim_frequency'] = stim_freq[idx]
-            sub_dig['stim_time_secs'] = stim_time_secs[idx]
-        
+            sub_dig["events"] = sub_dig["events"][::pulse_number]
+            sub_dig["trial_groups"] = sub_dig["trial_groups"][::pulse_number]
+            sub_dig["lengths"] = np.ones((len(sub_dig["events"]))) * (stim_time_secs[idx] * self.sample_frequency)
+            sub_dig["stim_frequency"] = stim_freq[idx]
+            sub_dig["stim_time_secs"] = stim_time_secs[idx]
+
         self.digital_events = digital_events
 
     def save_events(self):
+        """
+        Function for saving events in json for nested structures and .npy files for simple arrays
+
+        """
         try:
             _ = self.digital_events
 
@@ -304,6 +426,21 @@ class StimulusData:
             print("No raw analog data to save")
 
     def _intan_neo_read_no_dig(self, reader: neo.rawio.IntanRawIO) -> np.array:
+        """
+        Utility function that hacks the Neo memmap structure to be able to read
+        digital events.
+
+        Parameters
+        ----------
+        reader : neo.rawio.IntanRawIO
+            The current file reader containing the memmap to the .rhd file.
+
+        Returns
+        -------
+        raw_digital_data : np.ndarray
+            the raw digital data stored. Cannot be used. Must be processed first.
+
+        """
         digital_memmap = reader._raw_data["DIGITAL-IN"]  # directly grab memory map from neo
         dig_size = digital_memmap.size
         dig_shape = digital_memmap.shape
@@ -322,6 +459,22 @@ class StimulusData:
         return raw_digital_data
 
     def _calculate_events(self, array: np.array) -> tuple[np.array, np.array]:
+        """
+        Utility function to calculate events based on rising or falling signals
+
+        Parameters
+        ----------
+        array : np.array
+            Array to be analyzed for events
+
+        Returns
+        -------
+        onset : np.array(int)
+           Array of the sample in which an event occurs
+        lengths : np.array(int)
+            Array contaning the length of each event in samples
+
+        """
         sq_array = np.array(np.squeeze(array), dtype=np.int16)
         onset = np.where(np.diff(sq_array) == 1)[0]
         offset = np.where(np.diff(sq_array) == -1)[0]
@@ -333,7 +486,23 @@ class StimulusData:
 
         return onset, lengths
 
-    def _read_header(self, fid)->dict:
+    def _read_header(self, fid) -> dict:
+        """
+        The official Intan reader header function with edits. This function is needed
+        until Neo allows access to digital information in their IntanRawIO class
+
+        Parameters
+        ----------
+        fid : file id
+            id of the rhd file
+
+
+        Returns
+        -------
+        header: dict
+            A dictionary of all the channel information of the rhd file
+
+        """
         # Michael Gibson 23 APRIL 2015
         # Adrian Foy Sep 2018
         import struct
@@ -485,7 +654,21 @@ class StimulusData:
 
         return header
 
-    def _read_qstring(self, fid)->str:
+    def _read_qstring(self, fid) -> str:
+        """
+        Utility function from Intan for reading qstrings. Edits from ZM
+
+        Parameters
+        ----------
+        fid : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        str
+           q string returned as string
+
+        """
         # Michael Gibson 23APRIL2015
         # ZM some changes
         """
@@ -516,5 +699,3 @@ class StimulusData:
         a = "".join([chr(c) for c in data])
 
         return a
-
-
