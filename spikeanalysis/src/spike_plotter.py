@@ -403,7 +403,7 @@ class SpikePlotter(PlotterBase):
                 0
             ]  # aim for nearest bin at end of stim
             bins_length = int(len(bins) / 7)
-            for trial_idx in np.shape(sub_zscores)[1]:
+            for trial_idx in range(np.shape(sub_zscores)[1]):
                 fig, ax = plt.subplots(figsize=self.figsize)
                 z_score_sorting_index = np.argsort(-np.sum(sub_zscores[:, trial_idx, event_window], axis=1))
 
