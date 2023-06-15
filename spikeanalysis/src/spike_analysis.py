@@ -578,7 +578,7 @@ class SpikeAnalysis:
         self.isi = final_isi
 
     def trial_correlation(
-        self, window: Union[list, list[list]], time_bin_ms: Optional[float] = None, dataset: str = "z_scores"
+        self, window: Union[list, list[list]], time_bin_ms: Optional[float] = None, dataset: str = "psth"
     ):
         """
         Function to calculate pairwise pearson correlation coefficents of z scored or raw firing rate data/time bin.
@@ -605,6 +605,8 @@ class SpikeAnalysis:
         None.
 
         """
+
+        assert dataset=='psth', "z-score is wip please only use psth for now"
         try:
             import pandas as pd
         except ImportError:
@@ -631,7 +633,7 @@ class SpikeAnalysis:
 
         windows = verify_window_format(window=window, num_stim=self.NUM_STIM)
         if time_bin_ms is not None:
-            if isinstance(time_bin_ms, float) or isinstance(time_bin_ms, int):
+            if isinstance(time_bin_ms, (float,int)):
                 time_bin_size = [time_bin_ms / 1000] * self.NUM_STIM
             else:
                 assert (
@@ -679,15 +681,12 @@ class SpikeAnalysis:
             correlation_window = np.logical_and(current_bins > current_window[0], current_bins < current_window[1])
 
             current_data_windowed = current_data[:, :, correlation_window]
-            print(trial_groups)
 
             for trial_number, trial in enumerate(tqdm(set(trial_groups))):
                 current_data_windowed_by_trial = current_data_windowed[:, trial_groups == trial, :]
-                return current_data_windowed_by_trial
 
                 for cluster_number in range(np.shape(current_data_windowed_by_trial)[0]):
                     final_sub_data = np.squeeze(current_data_windowed_by_trial[cluster_number])
-                    return final_sub_data
                     data_dataframe = pd.DataFrame(final_sub_data.T)
 
                     sub_correlations = data_dataframe.corr()
@@ -781,10 +780,7 @@ class SpikeAnalysis:
                 current_z_params = z_parameters[stim]
 
                 for key, value in current_z_params.items():
-                    self.responsive_neurons[stim][key] = np.zeros(
-                        np.shape(current_z_scores)[0], np.shape(current_z_scores)[1]
-                    )
-
+                    
                     current_window = value["time"]
                     current_score = value["score"]
                     current_n_bins = value["n_bins"]
@@ -805,7 +801,7 @@ class SpikeAnalysis:
                     z_above_threshold = np.sum(np.where(current_z_scores_sub > current_score, 1, 0), axis=2)
                     responsive_neurons = np.where(z_above_threshold > current_n_bins, True, False)
 
-                    self.responsive_neuron[stim][key] = responsive_neurons
+                    self.responsive_neurons[stim][key] = responsive_neurons
 
     def save_parameters(self):
         raise Exception("not implemented")
