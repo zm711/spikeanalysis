@@ -1,0 +1,17 @@
+name: spikeanalysis_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - numpy
+  - scipy
+  - matplotlib
+  - numba
+  - seaborn
+  - pandas
+  - scikit-learn
+  - git
+  - pip
+  - pip:
+    - git+https://github.com/NeuralEnsemble/python-neo.git
