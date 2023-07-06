@@ -8,14 +8,14 @@ CURRENT_DIR = os.getcwd()
 
 def test_import_SpikeData():
     try:
-        from spike_data import SpikeData
+        from spikeanalysis.spike_data import SpikeData
     except:
         assert False, "import failed"
 
 @pytest.fixture
 def spikes():
     
-    from spike_data import SpikeData
+    from spikeanalysis.spike_data import SpikeData
     directory = Path(__file__).parent.resolve() / 'test_data'
     spikes = SpikeData(file_path = directory)
     

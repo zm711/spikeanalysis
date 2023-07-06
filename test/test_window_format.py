@@ -1,4 +1,4 @@
-from utils import verify_window_format
+from spikeanalysis.utils import verify_window_format
 
 
 

@@ -1,6 +1,6 @@
 
 import numpy as np
-from analysis_utils import histogram_functions as hf
+from spikeanalysis.analysis_utils import histogram_functions as hf
 
 def test_convert_to_new_bins():
 

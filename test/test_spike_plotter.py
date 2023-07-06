@@ -1,6 +1,6 @@
 
 import pytest
-from spike_plotter import SpikePlotter
+from spikeanalysis.spike_plotter import SpikePlotter
 
 
 def test_spikePlotter_attributes():

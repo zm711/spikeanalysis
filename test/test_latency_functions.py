@@ -1,4 +1,4 @@
-from analysis_utils import latency_functions as lf
+from spikeanalysis.analysis_utils import latency_functions as lf
 
 import numpy as np
 

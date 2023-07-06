@@ -3,7 +3,7 @@ import os
 import pytest
 from pathlib import Path
 
-from stimulus_data import StimulusData
+from spikeanalysis.stimulus_data import StimulusData
 
 
 @pytest.fixture
@@ -31,9 +31,10 @@ def test_digitize_analog_data(stim):
     
     print(stim.dig_analog_events)
     assert isinstance(stim.dig_analog_events, dict)
-    assert 'events' in stim.dig_analog_events[0].keys()
-    assert 'lengths' in stim.dig_analog_events[0].keys()
-    assert 'trial_groups' in stim.dig_analog_events[0].keys()
+    print(stim.dig_analog_events.keys())
+    assert 'events' in stim.dig_analog_events['0'].keys()
+    assert 'lengths' in stim.dig_analog_events['0'].keys()
+    assert 'trial_groups' in stim.dig_analog_events['0'].keys()
 
 
 def test_value_round(stim):
@@ -53,9 +54,62 @@ def test_calculate_events(stim):
 
 def test_get_raw_digital_events(stim):
     stim.get_raw_digital_data()
+    print(stim._raw_digital_data)
+    assert len(stim._raw_digital_data)==62080
+    assert stim._raw_digital_data[-1]==1
+    assert stim._raw_digital_data[0]==0
+    
+    
 
-    assert np.isnan(stim._raw_digital_data)
+def test_final_digital_data(stim):
+    stim.get_raw_digital_data()
+    stim.get_final_digital_data()
+    assert np.shape(stim.digital_data)==(1,62080)
+    assert stim.digital_data[0, -1] == 0.0
+    assert stim.dig_in_channels[0]['native_channel_name'] == 'DIGITAL-IN-01'
+    
 
+def test_generate_digital_events(stim):
+
+    stim.get_raw_digital_data()
+    stim.get_final_digital_data()
+    stim.generate_digital_events()
+
+    print(stim.digital_events)
+    print(stim.digital_channels)
+    assert stim.digital_events['DIGITAL-IN-01']['events'][0]==15000
+    assert stim.digital_events['DIGITAL-IN-01']['lengths'][0]==14999,14999
+    assert stim.digital_events['DIGITAL-IN-01']['trial_groups'][0]==1.
+    assert stim.digital_channels[0]=='DIGITAL-IN-01'
+
+
+def test_get_stimulus_channels(stim):
+
+    stim.get_raw_digital_data()
+    stim.get_final_digital_data()
+    stim.generate_digital_events()
+    stim_dict= stim.get_stimulus_channels()
+    assert 'DIGITAL-IN-01' in stim_dict.keys()
+
+def test_set_trial_groups(stim):
+
+    stim.get_raw_digital_data()
+    stim.get_final_digital_data()
+    stim.generate_digital_events()
+    trial_dict = {'DIGITAL-IN-01': np.array([3., 4.,])}
+    stim.set_trial_groups(trial_dict)
+
+    assert stim.digital_events['DIGITAL-IN-01']['trial_groups'][0]==3.
+    assert stim.digital_events['DIGITAL-IN-01']['trial_groups'][1]==4.
+
+def test_set_stimulus_name(stim):
+    stim.get_raw_digital_data()
+    stim.get_final_digital_data()
+    stim.generate_digital_events()
+    stim_name = {'DIGITAL-IN-01': 'TEST'}
+    stim.set_stimulus_name(stim_name)
+
+    assert stim.digital_events['DIGITAL-IN-01']['stim']=='TEST'
 
 def test_read_intan_header(stim):
     file_name = stim._filename
@@ -68,27 +122,3 @@ def test_read_intan_header(stim):
     assert header['sample_rate'] == 3000.0
     assert header['num_samples_per_data_block'] == 128
 
-"""
-
-
-
-@pytest.fixture()
-def get_raw_digital_data(stim):
-
-    stim.get_raw_digital_data()
-    stim.get_final_digital_data()
-    return stim
-
-
-def test_get_final_digital_data(stim, get_raw_digital_data):
-    stim.get_raw_digital_data()
-    stim.get_final_digital_data()
-    
-    stim.generate_digital_events()
-
-    assert stim.digital_channels[0]=='DIGITAL-IN-01'
-
-    for value in ('events, lengths, trial_groups'):
-        assert value in stim.digital_events['DIGITAL-IN-01'].keys()
-
-"""

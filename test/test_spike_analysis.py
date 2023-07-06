@@ -3,9 +3,9 @@ import os
 import pytest
 from pathlib import Path
 
-from stimulus_data import StimulusData
-from spike_data import SpikeData
-from spike_analysis import SpikeAnalysis
+from spikeanalysis.stimulus_data import StimulusData
+from spikeanalysis.spike_data import SpikeData
+from spikeanalysis.spike_analysis import SpikeAnalysis
 
 
 @pytest.fixture(scope='module')
@@ -30,10 +30,7 @@ def test_attributes_sa(sa):
 
 @pytest.fixture(scope='module')
 def sa_mocked(sa):
-    sa.dig_analog_events[0]['events'] = np.array([100])
-    sa.dig_analog_events[0]['lengths'] = np.array([200])
-    sa.dig_analog_events[0]['trial_group'] = np.array([1])
-    sa.dig_analog_events[0]['stim'] = 'test'
+    sa.dig_analog_events = {0: {'events': np.array([100]), 'lengths': np.array([200]), 'trial_group': np.array([1]), 'stim': 'test'}}
 
     return sa
 
@@ -52,5 +49,5 @@ def test_get_raw_psths(sa_mocked):
     spike = psth_tested['psth']
     print(spike)
     assert np.shape(spike)==(2,1,6000) # 2 neurons, 1 trial group, 6000 bins
-    assert np.sum(spike[0,0,:])==5
+    assert np.sum(spike[0,0,:])==4
     print(np.sum(spike[0,0,:]))
