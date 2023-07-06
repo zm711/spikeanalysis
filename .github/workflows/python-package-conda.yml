@@ -1,6 +1,10 @@
 name: Python Package using Conda
 
-on: [push]
+on:
+  pull_request:
+    types: [synchronize, opened, reopened]
+    branchs:
+      - main
 
 jobs:
   build-linux:
