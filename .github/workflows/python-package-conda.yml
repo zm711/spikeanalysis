@@ -3,7 +3,7 @@ name: Python Package using Conda
 on:
   pull_request:
     types: [synchronize, opened, reopened]
-    branchs:
+    branches:
       - main
 
 jobs:
@@ -22,9 +22,17 @@ jobs:
       run: |
         # $CONDA is an environment variable pointing to the root of the miniconda directory
         echo $CONDA/bin >> $GITHUB_PATH
-    - name: Install dependencies
+    - uses: conda-incubator/setup-miniconda@v2
+      with:
+       environment-file: test_env.yml
+    - name: Install package
       run: |
-        conda env update --file environment.yml --name base
+        pip install git+https://github.com/NeuralEnsemble/python-neo.git
+        pip install git+https://github.com/zm711/spikeanalysis.git
+    - name: Configure Git
+      run: |
+        git config --global user.email "sa@fake.com"
+        git config --global user.name "sa CI"
     - name: Test with pytest
       run: |
         conda install pytest
