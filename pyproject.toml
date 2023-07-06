@@ -11,21 +11,22 @@ requires-python = ">=3.9"
 
 dependencies = [
   "numpy",
-  "neo>=0.11.1"
-  "tqdm"
+  "neo>=0.11.1",
+  "tqdm",
   "scipy",
-  "matplotlib"
-  "pandas"
-  "numba"
+  "matplotlib",
+  "pandas",
+  "numba",
 ]
+
 [build-system]
-requires=["setuptools>=62.0"]
+requires = ["setuptools>=62.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.exclue-package-data]
-spikeanalysis= ["**/test/*]
+spikeanalysis = ["**/test/*]
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["spikeanalysis"]
+include = ["spikeanalysis*"]
 namespaces = false
