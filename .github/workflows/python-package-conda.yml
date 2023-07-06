@@ -24,7 +24,7 @@ jobs:
         echo $CONDA/bin >> $GITHUB_PATH
     - name: Install dependencies
       run: |
-        conda env create --file environment.yml --name base
+        conda env update --file test_env.yml --name base
 
     - name: Configure Git
       run: |
