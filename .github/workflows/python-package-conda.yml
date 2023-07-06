@@ -3,7 +3,7 @@ name: Python Package using Conda
 on:
   pull_request:
     types: [synchronize, opened, reopened]
-    branchs:
+    branches:
       - main
 
 jobs:
@@ -24,7 +24,12 @@ jobs:
         echo $CONDA/bin >> $GITHUB_PATH
     - name: Install dependencies
       run: |
-        conda env update --file environment.yml --name base
+        conda env create --file environment.yml
+        conda activate spikeanalysis_env
+    - name: Configure Git
+      run: |
+        git config --global user.email "sa@fake.com"
+        git config --global user.name "sa CI"
     - name: Test with pytest
       run: |
         conda install pytest
