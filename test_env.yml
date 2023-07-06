@@ -12,6 +12,4 @@ dependencies:
   - scikit-learn
   - git
   - pip
-  - pip:
-    - git+https://github.com/NeuralEnsemble/python-neo.git
-    - git+https://github.com/zm711/spikeanalysis.git
+
