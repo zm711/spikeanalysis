@@ -5,9 +5,15 @@ pythonpath = [
 
 [project]
 name = "spikeanalysis"
-author = {name="Zach McKenzie"}
+authors = [{name="Zach McKenzie", email=""}]
 description = "Analysis of Spike Trains"
 requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3 :: Only",
+    "License :: OSI Approved :: GPL3 License",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Indepedent"
+    ]
 
 dependencies = [
   "numpy",
