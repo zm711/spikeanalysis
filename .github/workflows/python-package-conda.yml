@@ -22,14 +22,18 @@ jobs:
       run: |
         # $CONDA is an environment variable pointing to the root of the miniconda directory
         echo $CONDA/bin >> $GITHUB_PATH
-    - name: Install dependencies
+    - name: Prepare environment
       run: |
-        conda env create --file environment.yml
+        conda env create --file env_testing.yml
         conda activate spikeanalysis_env
     - name: Configure Git
       run: |
         git config --global user.email "sa@fake.com"
         git config --global user.name "sa CI"
+    - name: Install packages
+      run: |
+        pip install neo
+        pip install git+https://github.com/zm711/spikeanalysis.git
     - name: Test with pytest
       run: |
         conda install pytest
