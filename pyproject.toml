@@ -34,5 +34,6 @@ build-backend = "setuptools.build_meta"
 spikeanalysis = ["**/test/*"]
 
 [tool.setuptools.packages.find]
-where = ["spikeanalysis/src"]
+where = ["src"]
+include = ["spikeanalysis*"]
 namespaces = false
