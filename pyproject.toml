@@ -23,8 +23,8 @@ dependencies = [
 requires = ["setuptools>=62.0"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.exclue-package-data]
-spikeanalysis = ["**/test/*]
+[tool.setuptools.exclude-package-data]
+spikeanalysis = ["**/test/*"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
