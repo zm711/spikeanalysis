@@ -33,6 +33,8 @@ class PlotterBase:
             self.cmap = kwargs['cmap']
         if 'title' in kwargs:
             self.title = kwargs['title']
+        if 'figsize' in kwargs:
+            self.figsize = kwargs['figsize']
         
 
 
