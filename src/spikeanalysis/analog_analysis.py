@@ -65,19 +65,19 @@ class AnalogAnalysis:
         sta = {}
         for row in range(np.shape(analog_data)[0]):
             sta[str(row)] = {}
-            sta[str(row)]['mean'] = np.zeros((len(cluster_ids), int(time_after+time_before)))
-            sta[str(row)]['std'] = np.zeros((len(cluster_ids), int(time_after+time_before)))
+            sta[str(row)]['mean'] = np.zeros((len(cluster_ids), int(time_after+time_before+1)))
+            sta[str(row)]['std'] = np.zeros((len(cluster_ids), int(time_after+time_before+1)))
             ana_data = analog_data[row]
 
             
             for cluster_number, cluster in enumerate(cluster_ids):
                 these_spikes = spike_times[spike_clusters==cluster]
-                stim_form = np.zeros((len(these_spikes), int(time_after+time_before)))
+                stim_form = np.zeros((len(these_spikes), int(time_after+time_before+1)))
             
                 for idx, spike in enumerate(tqdm(these_spikes)):
 
                     start = int(spike-time_before)
-                    end = int(spike+time_after)
+                    end = int(spike+time_after+1)
                     try:
                         stim_form[idx] = ana_data[start:end]
                     except ValueError:

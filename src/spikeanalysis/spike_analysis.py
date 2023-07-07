@@ -351,7 +351,7 @@ class SpikeAnalysis:
             self.z_windows[stim] = z_window_current
 
             new_bin_number = np.int32((n_bins * bin_size) / time_bin_current)
-
+        
             if new_bin_number != n_bins:
                 psth = hf.convert_to_new_bins(psth, new_bin_number)
                 bins = hf.convert_bins(bins, new_bin_number)
@@ -366,10 +366,10 @@ class SpikeAnalysis:
                 bsl_trial = bsl_psth[:, trials == trial, :]
                 mean_fr = np.mean(np.sum(bsl_trial, axis=2), axis=1) / ((bsl_current[1] - bsl_current[0]))
                 std_fr = np.std(np.sum(bsl_trial, axis=2), axis=1) / ((bsl_current[1] - bsl_current[0]))
-
                 z_trial = z_psth[:, trials == trial, :] / time_bin_current
 
                 z_trials = hf.z_score_values(z_trial, mean_fr, std_fr)
+                
 
                 z_scores[stim][:, trials == trial, :] = z_trials[:, :, :]
 
