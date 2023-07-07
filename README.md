@@ -9,7 +9,7 @@ occur. Finally plotting classes allow for easy plotting of the data.
 
 Currently there is no pypi or conda-forge package. So installation should be from repo. For automatic install with conda 
 copy:
-[`environment.yml`](https://raw.githubusercontent.com/zm711/spikeanalysis/environment.yml)
+[`environment.yml`](https://raw.githubusercontent.com/zm711/spikeanalysis/main/environment.yml)
 Then cd to folder containing the yaml and in terminal or Anaconda Prompt type
 
 ```sh
