@@ -7,9 +7,6 @@ dependencies:
   - scipy
   - matplotlib
   - numba
-  - seaborn
   - pandas
-  - scikit-learn
-  - git
   - pip
 
