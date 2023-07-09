@@ -11,5 +11,6 @@ from `pypi` or `conda-forge`. Instead it is build with the included
 `environment.yml`
 
 .. code-block:: console
+    
     (base) $ conda create env -f environment.yml
 
