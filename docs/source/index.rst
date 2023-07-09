@@ -14,9 +14,11 @@ Check out the :doc:`usage` section for installation instructions :ref:`install <
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
+   usage
+   submodules/index
 
 
 Indices and tables
@@ -27,9 +29,3 @@ Indices and tables
 * :ref:`search`
 
 
-Contents
---------
-
-.. toctree::
-   usage
-   submodules/index
