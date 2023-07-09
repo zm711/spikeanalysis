@@ -21,3 +21,6 @@ def test_SpikePlotter_wrong_kwarg():
     with pytest.raises(AssertionError):
         plotter = SpikePlotter(None, **{'x': 5})
 
+def test_wrong_init():
+    with pytest.raises(AssertionError):
+        plotter = SpikePlotter(1)

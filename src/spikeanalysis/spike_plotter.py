@@ -24,7 +24,7 @@ class SpikePlotter(PlotterBase):
     """SpikePlotter is a plotting class which allows for plotting of PSTHs, z score heatmaps
     in the future it will plot other values"""
 
-    def __init__(self, analysis: SpikeAnalysis, **kwargs):
+    def __init__(self, analysis: Optional[SpikeAnalysis]=None, **kwargs):
         """
         SpikePlotter requires a SpikeAnalysis object
 
@@ -43,9 +43,10 @@ class SpikePlotter(PlotterBase):
         if kwargs:
             self._check_kwargs(**kwargs)
             self._set_kwargs(**kwargs)
-
-        assert isinstance(analysis, SpikeAnalysis), 'analysis must be a SpikeAnalysis dataset'
-        self.data = analysis
+        
+        if analysis is not None:
+            assert isinstance(analysis, SpikeAnalysis), 'analysis must be a SpikeAnalysis dataset'
+            self.data = analysis
 
     def __repr__(self):
         var_methods = dir(self)
@@ -53,6 +54,12 @@ class SpikePlotter(PlotterBase):
         methods = list(set(var_methods) - set(var))
         final_methods = [method for method in methods if "plot" in method]
         return f"The methods are {final_methods}"
+
+    def set_analysis(self, analysis: SpikeAnalysis):
+
+        assert isinstance(analysis, SpikeAnalysis), "analysis must be a SpikeAnaysis dataset"
+        self.data = analysis
+        
 
     def plot_zscores(self, figsize: Optional[tuple] = (24, 10), sorting_index: Optional[int] = None):
         """
