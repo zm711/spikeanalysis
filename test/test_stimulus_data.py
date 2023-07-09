@@ -9,13 +9,18 @@ from spikeanalysis.stimulus_data import StimulusData
 @pytest.fixture
 def stim(scope='module'):
     
-    
     directory = Path(__file__).parent.resolve() / 'test_data'
     stimulus = StimulusData(file_path = directory)
     stimulus.create_neo_reader()
     
 
     return stimulus
+
+def test_dir_assertion():
+    # this tests for checking for the raw file
+    # currently this is just *.rhd
+    with pytest.raises(Exception):
+        _ = StimulusData(file_path = '')
 
 
 def test_get_analog_data(stim):
@@ -41,8 +46,11 @@ def test_value_round(stim):
 
     value = stim._valueround(1.73876, precision=2, base = 0.25)
     print(value)
-    assert value == 1.75
+    assert value == 1.75, 'failed to round up'
 
+    value2 = stim._valueround(1.5101010, precision=2, base=0.25)
+    print(value2)
+    assert value2 == 1.50, 'failed to round down'
 
 def test_calculate_events(stim):
     array = np.array([0,0,0,1,1,1,0,0,0])
@@ -121,4 +129,5 @@ def test_read_intan_header(stim):
     assert header['version'] ==  {'major': 3, 'minor': 2}
     assert header['sample_rate'] == 3000.0
     assert header['num_samples_per_data_block'] == 128
+
 

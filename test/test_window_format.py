@@ -1,6 +1,6 @@
 from spikeanalysis.utils import verify_window_format
 
-
+import pytest
 
 def test_verify_window_one_stim():
 
@@ -22,3 +22,7 @@ def test_verify_window_input_multi_stim():
     assert len(windows)==2
     assert windows[0][0] == 0
     assert windows[1][1] == 2
+
+def test_assertion_works():
+    with pytest.raises(AssertionError):
+        _ = verify_window_format(window=[[0,1], [0,2]], num_stim=3)

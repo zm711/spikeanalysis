@@ -3,7 +3,7 @@ from typing import Optional, Union
 import numpy as np
 import matplotlib.pyplot as plt
 
-from .utils import verify_window_format, guassian_smoothing
+from .utils import verify_window_format, gaussian_smoothing
 
 try:
     import seaborn as sns
@@ -24,7 +24,7 @@ class SpikePlotter(PlotterBase):
     """SpikePlotter is a plotting class which allows for plotting of PSTHs, z score heatmaps
     in the future it will plot other values"""
 
-    def __init__(self, analysis: SpikeAnalysis, **kwargs):
+    def __init__(self, analysis: Optional[SpikeAnalysis]=None, **kwargs):
         """
         SpikePlotter requires a SpikeAnalysis object
 
@@ -37,15 +37,16 @@ class SpikePlotter(PlotterBase):
             the change value e.g. {'dpi': 300}
 
         """
-        # assert isinstance(analysis, SpikeAnalysis), "please enter a SpikeAnalysis object"
+        
 
         PlotterBase.__init__(self)
         if kwargs:
             self._check_kwargs(**kwargs)
-        if kwargs:
             self._set_kwargs(**kwargs)
-
-        self.data = analysis
+        
+        if analysis is not None:
+            assert isinstance(analysis, SpikeAnalysis), 'analysis must be a SpikeAnalysis dataset'
+            self.data = analysis
 
     def __repr__(self):
         var_methods = dir(self)
@@ -53,6 +54,12 @@ class SpikePlotter(PlotterBase):
         methods = list(set(var_methods) - set(var))
         final_methods = [method for method in methods if "plot" in method]
         return f"The methods are {final_methods}"
+
+    def set_analysis(self, analysis: SpikeAnalysis):
+
+        assert isinstance(analysis, SpikeAnalysis), "analysis must be a SpikeAnaysis dataset"
+        self.data = analysis
+        
 
     def plot_zscores(self, figsize: Optional[tuple] = (24, 10), sorting_index: Optional[int] = None):
         """
@@ -320,7 +327,7 @@ class SpikePlotter(PlotterBase):
             stderr = np.zeros((len(tg_set), len(bins)))
             event_len = np.zeros((len(tg_set)))
             for cluster_number in range(np.shape(psth)[0]):
-                smoothed_psth = guassian_smoothing(psth[cluster_number], bin_size, sm_std)
+                smoothed_psth = gaussian_smoothing(psth[cluster_number], bin_size, sm_std)
 
                 for trial_number, trial in enumerate(tg_set):
                     mean_smoothed_psth[trial_number] = np.mean(smoothed_psth[trial_groups == trial], axis=0)
