@@ -49,12 +49,11 @@ def test_value_round(stim):
     assert value == 1.75
 
 
-def test_value_round_array():
-    from spikeanalysis.stimulus_data import _valueround
+def test_value_round_array(stim):
 
     test_array = np.array([1.6583, 1.10000])
 
-    final_array = _valueround(test_array, )
+    final_array = stim._valueround(test_array, )
 
     assert final_array[0]==1.75, "round up"
     assert final_array[1]==1.00, "round down"

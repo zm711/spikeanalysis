@@ -44,7 +44,7 @@ class SpikePlotter(PlotterBase):
             self._check_kwargs(**kwargs)
             self._set_kwargs(**kwargs)
 
-        assert isinstance(analysis, spikeanalysis.SpikeAnalysis), 'analysis must be a SpikeAnalysis dataset'
+        assert isinstance(analysis, SpikeAnalysis), 'analysis must be a SpikeAnalysis dataset'
         self.data = analysis
 
     def __repr__(self):
