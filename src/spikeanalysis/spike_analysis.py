@@ -351,7 +351,7 @@ class SpikeAnalysis:
             self.z_windows[stim] = z_window_current
 
             new_bin_number = np.int32((n_bins * bin_size) / time_bin_current)
-        
+
             if new_bin_number != n_bins:
                 psth = hf.convert_to_new_bins(psth, new_bin_number)
                 bins = hf.convert_bins(bins, new_bin_number)
@@ -369,7 +369,6 @@ class SpikeAnalysis:
                 z_trial = z_psth[:, trials == trial, :] / time_bin_current
 
                 z_trials = hf.z_score_values(z_trial, mean_fr, std_fr)
-                
 
                 z_scores[stim][:, trials == trial, :] = z_trials[:, :, :]
 
@@ -606,7 +605,7 @@ class SpikeAnalysis:
 
         """
 
-        assert dataset=='psth', "z-score is wip please only use psth for now"
+        assert dataset == "psth", "z-score is wip please only use psth for now"
         try:
             import pandas as pd
         except ImportError:
@@ -633,7 +632,7 @@ class SpikeAnalysis:
 
         windows = verify_window_format(window=window, num_stim=self.NUM_STIM)
         if time_bin_ms is not None:
-            if isinstance(time_bin_ms, (float,int)):
+            if isinstance(time_bin_ms, (float, int)):
                 time_bin_size = [time_bin_ms / 1000] * self.NUM_STIM
             else:
                 assert (
@@ -780,7 +779,6 @@ class SpikeAnalysis:
                 current_z_params = z_parameters[stim]
 
                 for key, value in current_z_params.items():
-                    
                     current_window = value["time"]
                     current_score = value["score"]
                     current_n_bins = value["n_bins"]

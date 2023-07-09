@@ -20,7 +20,6 @@ def spike_times_to_bins(
     return bin_array, bin_centers
 
 
-
 def rasterize(time_stamps: np.array) -> tuple[np.array, np.array]:
     x_out = np.empty((len(time_stamps) * 3))
     x_out[:] = np.NaN
@@ -97,7 +96,6 @@ def ordhist(
     nbins: int,
     counts: np.array,
 ) -> np.array:
-
     max_value = min_value + size * nbins
     j_min = 0
     for ind_i in range(ndata1):
@@ -110,7 +108,7 @@ def ordhist(
             if diff >= min_value:
                 counts[int((diff - min_value) / size)] += 1
                 if diff == len(counts):
-                    counts[len(counts)-1] +=1
+                    counts[len(counts) - 1] += 1
     return counts
 
 
@@ -127,25 +125,19 @@ def binhist(
     for ind_i in range(ndata1):
         for ind_j in range(ndata2):
             for ind_k in range(nbins):
-                if (
-                    data1[ind_i] - data2[ind_j] >= bins[ind_k]
-                    and (data1[ind_i] - data2[ind_j]) > bins[ind_k + 1]
-                ):
+                if data1[ind_i] - data2[ind_j] >= bins[ind_k] and (data1[ind_i] - data2[ind_j]) > bins[ind_k + 1]:
                     counts[ind_k] += 1
     return counts
 
 
 @jit(nopython=True)
-def histdiff(
-    time_stamps: np.array, events: np.array, bin_borders: np.array
-) -> tuple[np.array, np.array]:
+def histdiff(time_stamps: np.array, events: np.array, bin_borders: np.array) -> tuple[np.array, np.array]:
     data1 = time_stamps
     ndata1 = len(data1)
     data2 = events
     ndata2 = len(data2)
     nbins = len(bin_borders)
     print(nbins)
-    
 
     if nbins == 1:
         min_value, max_value = findext(data1, ndata1, data2, ndata2)
@@ -154,16 +146,16 @@ def histdiff(
         nbins = len(bin_borders) - 1
         bins = bin_borders
         size = bins[1] - bins[0]
-        
+
         for index in range(1, nbins):
             if abs(bins[index + 1] - bins[index] - size) > (1e-3 * size):
                 size = 0
                 break
         if size:
             min_value = bins[0]
-            
+
     bin_centers = bin_borders[:-1] + np.diff(bin_borders) / 2
-    counts = np.zeros((nbins), dtype = np.int32)
+    counts = np.zeros((nbins), dtype=np.int32)
 
     if size:
         if check_order(data1, ndata1, data2, ndata2):
@@ -217,9 +209,7 @@ def convert_bins(bins: np.array, bin_number: np.int32) -> np.array:
 
 
 @jit(nopython=True)
-def z_score_values(
-    z_trial: numba.float32[:, :, :], mean_fr: numba.float32[:], std_fr: numba.float32[:]
-) -> np.array:
+def z_score_values(z_trial: numba.float32[:, :, :], mean_fr: numba.float32[:], std_fr: numba.float32[:]) -> np.array:
     z_trials = np.zeros(np.shape(z_trial))
     for idx in range(len(mean_fr)):
         for idy in range(np.shape(z_trial)[1]):

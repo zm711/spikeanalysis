@@ -157,7 +157,6 @@ class SpikeData:
 
         self.spike_times = self.raw_spike_times / self._sampling_rate
 
-
     def refractory_violation(self, ref_dur_ms: float):
         """
 
@@ -325,7 +324,6 @@ class SpikeData:
         from .utils import NumpyEncoder
         import json
 
-        
         current_dir = os.getcwd()
         self._goto_file_path()
         try:
