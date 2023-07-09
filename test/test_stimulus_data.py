@@ -50,7 +50,7 @@ def test_value_round(stim):
 
     value2 = stim._valueround(1.5101010, precision=2, base=0.25)
     print(value2)
-    assert value == 1.50, 'failed to round down'
+    assert value2 == 1.50, 'failed to round down'
 
 def test_calculate_events(stim):
     array = np.array([0,0,0,1,1,1,0,0,0])
