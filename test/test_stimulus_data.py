@@ -17,7 +17,9 @@ def stim(scope='module'):
     return stimulus
 
 def test_dir_assertion():
-    with pytest.raises(AssertionError):
+    # this tests for checking for the raw file
+    # currently this is just *.rhd
+    with pytest.raises(Exception):
         _ = StimulusData(file_path = '')
 
 
@@ -46,6 +48,16 @@ def test_value_round(stim):
     print(value)
     assert value == 1.75
 
+
+def test_value_round_array():
+    from spikeanalysis.stimulus_data import _valueround
+
+    test_array = np.array([1.6583, 1.10000])
+
+    final_array = _valueround(test_array, )
+
+    assert final_array[0]==1.75, "round up"
+    assert final_array[1]==1.00, "round down"
 
 def test_calculate_events(stim):
     array = np.array([0,0,0,1,1,1,0,0,0])
@@ -126,12 +138,3 @@ def test_read_intan_header(stim):
     assert header['num_samples_per_data_block'] == 128
 
 
-def test_value_round():
-    from spikeanalysis.stimulus_data import _value_round
-
-    test_array = np.array([1.6583, 1.10000])
-
-    final_array = _value_round(test_array, )
-
-    assert final_array[0]==1.75, "round up"
-    assert final_array[1]==1.00, "round down"
