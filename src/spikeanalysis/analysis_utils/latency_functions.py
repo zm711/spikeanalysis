@@ -3,9 +3,7 @@ from numba import jit
 from scipy import stats
 
 
-def latency_core_stats(
-        bsl_fr:float, firing_data:np.array, time_bin_size:float
-):
+def latency_core_stats(bsl_fr: float, firing_data: np.array, time_bin_size: float):
     """idea modified from Chase and Young, 2007: PNAS
 p_tn(>=n) = 1 - sum_m_n-1 ((rt)^m e^(-rt))/m!"""
 
@@ -13,24 +11,21 @@ p_tn(>=n) = 1 - sum_m_n-1 ((rt)^m e^(-rt))/m!"""
     for trial in range(np.shape(firing_data)[0]):
         for n_bin in range(np.shape(firing_data)[1] - 1):
             final_prob = 1 - stats.poisson.cdf(
-                np.sum(firing_data[trial][: n_bin + 1]) - 1,
-                bsl_fr * ((n_bin + 1) * time_bin_size),
+                np.sum(firing_data[trial][: n_bin + 1]) - 1, bsl_fr * ((n_bin + 1) * time_bin_size),
             )
             if final_prob <= 10e-6:
                 break
 
-        if n_bin == np.shape(firing_data)[1]-1:
+        if n_bin == np.shape(firing_data)[1] - 1:
             latency[trial] = np.nan
         else:
             latency[trial] = (n_bin + 1) * time_bin_size
-            
-    return latency
-    
 
-@jit(nopython =True)
-def latency_median(
-    firing_counts: np.array, time_bin_size: float
-):
+    return latency
+
+
+@jit(nopython=True)
+def latency_median(firing_counts: np.array, time_bin_size: float):
     """"According to Mormann et al. 2008 if neurons fire less than 2Hz they won't really 
 follow a poisson distribution and so instead just take latency to first spike as the 
 latency and then get the median of the trials"""
@@ -41,6 +36,6 @@ latency and then get the median of the trials"""
         if len(min_spike_time) == 0:
             latency[trial] = np.nan
         else:
-            latency[trial] = (np.min(min_spike_time) + 1) * time_bin_size    
+            latency[trial] = (np.min(min_spike_time) + 1) * time_bin_size
 
     return latency

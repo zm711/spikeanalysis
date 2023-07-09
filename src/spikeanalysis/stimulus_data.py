@@ -117,9 +117,7 @@ class StimulusData:
 
         if HAVE_ANALOG:
             self.digitize_analog_data(
-                analog_index=stim_index,
-                stim_length_seconds=stim_length_seconds,
-                stim_name=stim_name,
+                analog_index=stim_index, stim_length_seconds=stim_length_seconds, stim_name=stim_name,
             )
         if HAVE_DIGITAL:
             self.get_final_digital_data()
@@ -153,9 +151,7 @@ class StimulusData:
         adc_stream = [idx for idx, name in enumerate(stream_list) if "ADC" in name.upper()]
         assert len(adc_stream) > 0, "There is no analog data"
         adc_stream = adc_stream[0]
-        adc_data = self.reader.get_analogsignal_chunk(
-            stream_index=adc_stream,
-        )
+        adc_data = self.reader.get_analogsignal_chunk(stream_index=adc_stream,)
 
         final_adc = np.squeeze(
             self.reader.rescale_signal_raw_to_float(adc_data, stream_index=adc_stream, dtype="float64")
@@ -274,11 +270,7 @@ class StimulusData:
         values = np.zeros((len(dig_in_channels), len(self._raw_digital_data)))
         for value in range(len(dig_in_channels)):
             values[value, :] = np.not_equal(  # this operation comes from the python Intan code
-                np.bitwise_and(
-                    self._raw_digital_data,
-                    (1 << dig_in_channels[value]["native_order"]),
-                ),
-                0,
+                np.bitwise_and(self._raw_digital_data, (1 << dig_in_channels[value]["native_order"]),), 0,
             )
         self.digital_data = values
         self.dig_in_channels = dig_in_channels
@@ -546,10 +538,9 @@ class StimulusData:
             header["notch_filter_frequency"] = 60
         freq["notch_filter_frequency"] = header["notch_filter_frequency"]
 
-        (
-            freq["desired_impedance_test_frequency"],
-            freq["actual_impedance_test_frequency"],
-        ) = struct.unpack("<ff", fid.read(8))
+        (freq["desired_impedance_test_frequency"], freq["actual_impedance_test_frequency"],) = struct.unpack(
+            "<ff", fid.read(8)
+        )
 
         note1 = self._read_qstring(fid)
         note2 = self._read_qstring(fid)
@@ -598,11 +589,9 @@ class StimulusData:
         for signal_group in tqdm(range(1, number_of_signal_groups + 1)):
             signal_group_name = self._read_qstring(fid)
             signal_group_prefix = self._read_qstring(fid)
-            (
-                signal_group_enabled,
-                signal_group_num_channels,
-                signal_group_num_amp_channels,
-            ) = struct.unpack("<hhh", fid.read(6))
+            (signal_group_enabled, signal_group_num_channels, signal_group_num_amp_channels,) = struct.unpack(
+                "<hhh", fid.read(6)
+            )
 
             if (signal_group_num_channels > 0) and (signal_group_enabled > 0):
                 for signal_channel in range(0, signal_group_num_channels):

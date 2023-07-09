@@ -157,7 +157,6 @@ class SpikeData:
 
         self.spike_times = self.raw_spike_times / self._sampling_rate
 
-
     def refractory_violation(self, ref_dur_ms: float):
         """
 
@@ -325,7 +324,6 @@ class SpikeData:
         from .utils import NumpyEncoder
         import json
 
-        
         current_dir = os.getcwd()
         self._goto_file_path()
         try:
@@ -350,13 +348,7 @@ class SpikeData:
         shape = (self._binary_file_info["n_channels"], n_samples)
         offset = self._binary_file_info["offset"]
 
-        binary_memmap = np.memmap(
-            filename=filename,
-            dtype=dtype,
-            offset=offset,
-            shape=shape,
-            order="F",
-        )
+        binary_memmap = np.memmap(filename=filename, dtype=dtype, offset=offset, shape=shape, order="F",)
 
         cluster_ids = self._cids
         n_clusters = len(cluster_ids)

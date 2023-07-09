@@ -24,7 +24,7 @@ class SpikePlotter(PlotterBase):
     """SpikePlotter is a plotting class which allows for plotting of PSTHs, z score heatmaps
     in the future it will plot other values"""
 
-    def __init__(self, analysis: Optional[SpikeAnalysis]=None, **kwargs):
+    def __init__(self, analysis: Optional[SpikeAnalysis] = None, **kwargs):
         """
         SpikePlotter requires a SpikeAnalysis object
 
@@ -37,15 +37,14 @@ class SpikePlotter(PlotterBase):
             the change value e.g. {'dpi': 300}
 
         """
-        
 
-        PlotterBase.__init__(self) # checks for kwargs
+        PlotterBase.__init__(self)  # checks for kwargs
         if kwargs:
             self._check_kwargs(**kwargs)
             self._set_kwargs(**kwargs)
-        
+
         if analysis is not None:
-            assert isinstance(analysis, SpikeAnalysis), 'analysis must be a SpikeAnalysis dataset'
+            assert isinstance(analysis, SpikeAnalysis), "analysis must be a SpikeAnalysis dataset"
             self.data = analysis
 
     def __repr__(self):
@@ -59,7 +58,6 @@ class SpikePlotter(PlotterBase):
 
         assert isinstance(analysis, SpikeAnalysis), "analysis must be a SpikeAnaysis dataset"
         self.data = analysis
-
 
     def plot_zscores(self, figsize: Optional[tuple] = (24, 10), sorting_index: Optional[int] = None):
         """
@@ -146,32 +144,17 @@ class SpikePlotter(PlotterBase):
                 if idx == 0:
                     sub_ax.set_ylabel(y_axis, fontsize="small")
                 sub_ax.axvline(
-                    zero_point,
-                    0,
-                    np.shape(sorted_z_scores)[0],
-                    color="black",
-                    linestyle=":",
-                    linewidth=0.5,
+                    zero_point, 0, np.shape(sorted_z_scores)[0], color="black", linestyle=":", linewidth=0.5,
                 )
                 sub_ax.axvline(
-                    end_point,
-                    0,
-                    np.shape(sorted_z_scores)[0],
-                    color="black",
-                    linestyle=":",
-                    linewidth=0.5,
+                    end_point, 0, np.shape(sorted_z_scores)[0], color="black", linestyle=":", linewidth=0.5,
                 )
                 self._despine(sub_ax)
                 sub_ax.spines["bottom"].set_visible(False)
                 sub_ax.spines["left"].set_visible(False)
             plt.tight_layout()
             cax = fig.add_axes(
-                [
-                    sub_ax.get_position().x1 + 0.01,
-                    sub_ax.get_position().y0,
-                    0.02,
-                    sub_ax.get_position().height,
-                ]
+                [sub_ax.get_position().x1 + 0.01, sub_ax.get_position().y0, 0.02, sub_ax.get_position().height,]
             )
             cax.spines["bottom"].set_visible(False)
             plt.colorbar(im, cax=cax, label="Z scores")  # Similar to fig.colorbar(im, cax = cax)
@@ -429,33 +412,16 @@ class SpikePlotter(PlotterBase):
                 ax.set_xticklabels([round(bins[i * bins_length], 4) if i < 7 else z_window[1] for i in range(7)])
                 ax.set_ylabel(y_axis, fontsize="small")
                 ax.axvline(
-                    zero_point,
-                    0,
-                    np.shape(sorted_z_scores)[0],
-                    color="black",
-                    linestyle=":",
-                    linewidth=0.5,
+                    zero_point, 0, np.shape(sorted_z_scores)[0], color="black", linestyle=":", linewidth=0.5,
                 )
                 ax.axvline(
-                    end_point,
-                    0,
-                    np.shape(sorted_z_scores)[0],
-                    color="black",
-                    linestyle=":",
-                    linewidth=0.5,
+                    end_point, 0, np.shape(sorted_z_scores)[0], color="black", linestyle=":", linewidth=0.5,
                 )
                 self._despine(ax)
                 ax.spines["bottom"].set_visible(False)
                 ax.spines["left"].set_visible(False)
                 plt.tight_layout()
-                cax = fig.add_axes(
-                    [
-                        ax.get_position().x1 + 0.01,
-                        ax.get_position().y0,
-                        0.02,
-                        ax.get_position().height,
-                    ]
-                )
+                cax = fig.add_axes([ax.get_position().x1 + 0.01, ax.get_position().y0, 0.02, ax.get_position().height,])
                 cax.spines["bottom"].set_visible(False)
                 plt.colorbar(im, cax=cax, label="Z scores")  # Similar to fig.colorbar(im, cax = cax)
                 plt.title(f"{stimulus}")
