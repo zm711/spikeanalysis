@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 
 class SpikeData:
-    """class for loading "phy" type data files including generating some qc metrics and raw
+    """Class for loading "phy" type data files including generating some qc metrics and raw
     waveforms. To be used by SpikeAnalysis"""
 
     def __init__(self, file_path: Union[str, Path]):

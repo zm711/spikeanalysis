@@ -214,7 +214,7 @@ class StimulusData:
     def _valueround(self, x: float, precision: int = 2, base: float = 0.25) -> float:
         """
         Utility function to round values for generating distinct trial grouping for events
-        based on their analog voltages
+        based on their analog voltages. Currently rounds to 25mV
 
         Parameters
         ----------

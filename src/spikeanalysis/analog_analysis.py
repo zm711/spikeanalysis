@@ -12,6 +12,7 @@ from .utils import verify_window_format
 _possible_qc = ("generate_pcs", "refractory_violation", "generate_qcmetrics", "qc_preprocessing")
 
 class AnalogAnalysis:
+    """Class for analyzing analog stimulus data along with spiking data"""
 
     def __init__(self, sp: SpikeData, event_times: StimulusData):
 

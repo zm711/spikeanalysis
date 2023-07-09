@@ -59,6 +59,17 @@ def verify_window_format(window: Union[list,list[list]], num_stim: int)->list[li
 
 
 def gaussian_smoothing(array: np.array, bin_size: float, std: float) -> np.array:
+        """Utility function for performing a smotthing convolution for 
+        generating firing rate values.
+        
+        Parameters
+        ----------
+        array: np.array
+            The array to be smoothed
+        bin_size: float
+            The bin size to convert to firing rate units
+        std: float
+            The std over which to smooth"""
         from scipy import signal
 
         gaussian_window = signal.windows.gaussian(round(std), (std - 1) / 6)

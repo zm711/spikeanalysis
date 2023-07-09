@@ -39,7 +39,7 @@ class SpikePlotter(PlotterBase):
         """
         
 
-        PlotterBase.__init__(self)
+        PlotterBase.__init__(self) # checks for kwargs
         if kwargs:
             self._check_kwargs(**kwargs)
             self._set_kwargs(**kwargs)
@@ -59,7 +59,7 @@ class SpikePlotter(PlotterBase):
 
         assert isinstance(analysis, SpikeAnalysis), "analysis must be a SpikeAnaysis dataset"
         self.data = analysis
-        
+
 
     def plot_zscores(self, figsize: Optional[tuple] = (24, 10), sorting_index: Optional[int] = None):
         """
