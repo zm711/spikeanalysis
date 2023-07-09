@@ -67,6 +67,7 @@ be optionally specified for depths to be real depth in tissue. If this isn't giv
 contact of the probe.
 
 .. code-block:: python
+    
     spikes.get_waveforms()
     spikes.get_waveform_values(depth=1000)
     

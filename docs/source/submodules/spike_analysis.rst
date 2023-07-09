@@ -11,7 +11,6 @@ Setting Stimulus and Spike Data
 
 .. code-block:: python
 
-
     # stim = StimulusData
     # spikes = SpikeData
     from spikeanalysis.spike_analysis import SpikeAnalysis
