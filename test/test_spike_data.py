@@ -17,7 +17,6 @@ def test_import_SpikeData():
 
 @pytest.fixture
 def spikes():
-
     from spikeanalysis.spike_data import SpikeData
 
     directory = Path(__file__).parent.resolve() / "test_data"
@@ -27,7 +26,6 @@ def spikes():
 
 
 def test_SpikeData_attributes(spikes):
-
     assert spikes.raw_spike_times[0] == 100, "spike times loading didn't work"
     assert spikes.spike_clusters[0] != spikes.spike_clusters[2], "spike clusters not working"
     assert len(np.unique(spikes._spike_templates)) == 1, "templates loaded incorrectly"
@@ -41,7 +39,6 @@ def test_SpikeData_attributes(spikes):
 
 
 def test_samples_to_seconds(spikes):
-
     spikes.samples_to_seconds()
     spike_times = spikes.spike_times
 
@@ -49,7 +46,6 @@ def test_samples_to_seconds(spikes):
 
 
 def test_refractory_violations(spikes):
-
     spikes.spike_clusters = spikes._spike_templates
     spikes._cids = [1]
     spikes.refractory_violation(ref_dur_ms=3000)
@@ -59,7 +55,6 @@ def test_refractory_violations(spikes):
 
 
 def test_get_file_size(spikes):
-
     spikes._goto_file_path()
     size = spikes._get_file_size()
     spikes._return_to_dir(CURRENT_DIR)
@@ -68,7 +63,6 @@ def test_get_file_size(spikes):
 
 
 def test_read_cgs(spikes):
-
     spikes._goto_file_path()
     cids, cgs = spikes._read_cgs()
     spikes._return_to_dir(CURRENT_DIR)
@@ -81,7 +75,6 @@ def test_read_cgs(spikes):
 
 
 def test_find_index(spikes):
-
     test_matrix = np.array([[0, 1], [3, 2]])
     print(test_matrix)
     r, c = spikes._find_index(test_matrix)
@@ -94,8 +87,17 @@ def test_find_index(spikes):
 
 
 def test_count_unique(spikes):
-
-    test_matrix = np.array([1, 2, 3, 2, 1, 2, 2,])
+    test_matrix = np.array(
+        [
+            1,
+            2,
+            3,
+            2,
+            1,
+            2,
+            2,
+        ]
+    )
     print(test_matrix)
     val, inst = spikes._count_unique(test_matrix)
 

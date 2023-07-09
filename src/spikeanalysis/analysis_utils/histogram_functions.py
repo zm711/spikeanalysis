@@ -96,7 +96,6 @@ def ordhist(
     nbins: int,
     counts: np.array,
 ) -> np.array:
-
     max_value = min_value + size * nbins
     j_min = 0
     for ind_i in range(ndata1):
@@ -115,7 +114,13 @@ def ordhist(
 
 @jit(nopython=True)
 def binhist(
-    data1: np.array, ndata1: int, data2: np.array, ndata2: int, bins: np.array, nbins: int, counts: np.array,
+    data1: np.array,
+    ndata1: int,
+    data2: np.array,
+    ndata2: int,
+    bins: np.array,
+    nbins: int,
+    counts: np.array,
 ) -> np.array:
     for ind_i in range(ndata1):
         for ind_j in range(ndata2):
@@ -164,7 +169,10 @@ def histdiff(time_stamps: np.array, events: np.array, bin_borders: np.array) -> 
 
 
 @jit(nopython=True)
-def convert_to_new_bins(array: numba.int32[:, :, :], bin_number: np.int32,) -> np.array:
+def convert_to_new_bins(
+    array: numba.int32[:, :, :],
+    bin_number: np.int32,
+) -> np.array:
     new_array = np.zeros((np.shape(array)[0], np.shape(array)[1], bin_number), dtype=np.int32)
     bin_modulo = int(np.shape(array)[2] / bin_number)
 

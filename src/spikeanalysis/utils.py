@@ -11,7 +11,6 @@ class NumpyEncoder(json.JSONEncoder):
 
 
 def jsonify_parameters(parameters: dict):
-
     try:
         with open("analysis_parameters.json", "r") as read_file:
             old_params = json.load(read_file)
@@ -26,8 +25,7 @@ def jsonify_parameters(parameters: dict):
 
 
 def verify_window_format(window: Union[list, list[list]], num_stim: int) -> list[list]:
-
-    """Utility function for making sure window format is correct for analysis 
+    """Utility function for making sure window format is correct for analysis
     and plotting functions
 
     Parameters
@@ -37,7 +35,7 @@ def verify_window_format(window: Union[list, list[list]], num_stim: int) -> list
         each containing their own (start, stop)
     num_stim: int
         The number of stimuli being analyzed
-        
+
     Returns
     -------
     windows: list[list]
@@ -56,17 +54,17 @@ def verify_window_format(window: Union[list, list[list]], num_stim: int) -> list
 
 
 def gaussian_smoothing(array: np.array, bin_size: float, std: float) -> np.array:
-    """Utility function for performing a smotthing convolution for 
-        generating firing rate values.
-        
-        Parameters
-        ----------
-        array: np.array
-            The array to be smoothed
-        bin_size: float
-            The bin size to convert to firing rate units
-        std: float
-            The std over which to smooth"""
+    """Utility function for performing a smotthing convolution for
+    generating firing rate values.
+
+    Parameters
+    ----------
+    array: np.array
+        The array to be smoothed
+    bin_size: float
+        The bin size to convert to firing rate units
+    std: float
+        The std over which to smooth"""
     from scipy import signal
 
     gaussian_window = signal.windows.gaussian(round(std), (std - 1) / 6)

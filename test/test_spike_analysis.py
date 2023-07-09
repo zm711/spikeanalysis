@@ -25,12 +25,10 @@ def sa():
 
 
 def test_init_sa(sa):
-
     assert isinstance(sa, SpikeAnalysis), "Failed init"
 
 
 def test_attributes_sa(sa):
-
     assert sa.HAVE_DIG_ANALOG
     assert len(sa.raw_spike_times) == 10
 
@@ -45,9 +43,9 @@ def sa_mocked(sa):
 
 
 def test_get_raw_psths(sa_mocked):
-
     sa_mocked.get_raw_psth(
-        window=[0, 300], time_bin_ms=50,
+        window=[0, 300],
+        time_bin_ms=50,
     )
 
     psth = sa_mocked.psths
@@ -100,7 +98,6 @@ def test_z_score_data(sa):
 
 
 def test_get_interspike_intervals(sa):
-
     sa.get_interspike_intervals()
 
     assert isinstance(sa.isi_raw, dict), "check function exists and returns the dict"
@@ -111,12 +108,12 @@ def test_get_interspike_intervals(sa):
     neuron_1 = sa.isi_raw[1]["isi"]
 
     nptest.assert_array_equal(
-        neuron_1, np.array([100, 300, 400, 100], dtype=np.uint64),
+        neuron_1,
+        np.array([100, 300, 400, 100], dtype=np.uint64),
     ), "Failed finding isi for neurons"
 
 
 def test_compute_event_interspike_intervals(sa_mocked):
-
     sa_mocked.get_interspike_intervals()
     sa_mocked.compute_event_interspike_intervals(200)
 

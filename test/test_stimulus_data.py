@@ -8,7 +8,6 @@ from spikeanalysis.stimulus_data import StimulusData
 
 @pytest.fixture
 def stim(scope="module"):
-
     directory = Path(__file__).parent.resolve() / "test_data"
     stimulus = StimulusData(file_path=directory)
     stimulus.create_neo_reader()
@@ -31,7 +30,6 @@ def test_get_analog_data(stim):
 
 
 def test_digitize_analog_data(stim):
-
     stim.get_analog_data()
     stim.digitize_analog_data()
 
@@ -44,7 +42,6 @@ def test_digitize_analog_data(stim):
 
 
 def test_value_round(stim):
-
     value = stim._valueround(1.73876, precision=2, base=0.25)
     print(value)
     assert value == 1.75, "failed to round up"
@@ -79,7 +76,6 @@ def test_final_digital_data(stim):
 
 
 def test_generate_digital_events(stim):
-
     stim.get_raw_digital_data()
     stim.get_final_digital_data()
     stim.generate_digital_events()
@@ -93,7 +89,6 @@ def test_generate_digital_events(stim):
 
 
 def test_get_stimulus_channels(stim):
-
     stim.get_raw_digital_data()
     stim.get_final_digital_data()
     stim.generate_digital_events()
@@ -102,11 +97,17 @@ def test_get_stimulus_channels(stim):
 
 
 def test_set_trial_groups(stim):
-
     stim.get_raw_digital_data()
     stim.get_final_digital_data()
     stim.generate_digital_events()
-    trial_dict = {"DIGITAL-IN-01": np.array([3.0, 4.0,])}
+    trial_dict = {
+        "DIGITAL-IN-01": np.array(
+            [
+                3.0,
+                4.0,
+            ]
+        )
+    }
     stim.set_trial_groups(trial_dict)
 
     assert stim.digital_events["DIGITAL-IN-01"]["trial_groups"][0] == 3.0

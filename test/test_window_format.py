@@ -4,14 +4,12 @@ import pytest
 
 
 def test_verify_window_one_stim():
-
     windows = verify_window_format(window=[0, 1], num_stim=1)
 
     assert windows == [[0, 1]]
 
 
 def test_verify_window_multi_stim():
-
     windows = verify_window_format(window=[0, 1], num_stim=3)
 
     assert len(windows) == 3, "did not generate three stimuli"

@@ -39,7 +39,6 @@ class IntrinsicPlotter(PlotterBase):
             self._set_kwargs(**kwargs)
 
     def plot_acs(self, sp: Union[SpikeData, SpikeAnalysis], ref_dur_ms: float = 2.0):
-
         from .analysis_utils import histogram_functions as hf
 
         try:
@@ -69,7 +68,6 @@ class IntrinsicPlotter(PlotterBase):
                 bin_centers_vals = np.concatenate((-np.flip(bin_centers), bin_centers))
                 stairs_val = np.concatenate((np.flip(spike_counts), spike_counts))
             else:
-
                 bin_centers_vals = np.concatenate((-np.flip(bin_centers[:81]), bin_centers[:81]))
                 stairs_val = np.concatenate((np.flip(spike_counts[:81]), spike_counts[:81]))
 
@@ -117,7 +115,6 @@ class IntrinsicPlotter(PlotterBase):
         mean_waveforms = np.nanmean(waveforms, axis=1)
 
         for cluster in range(np.shape(waveforms)[0]):
-
             max_val = np.argwhere(mean_waveforms[cluster] == np.min(mean_waveforms[cluster]))[0]
             max_channel = max_val[0]
 
@@ -147,7 +144,6 @@ class IntrinsicPlotter(PlotterBase):
             plt.show()
 
     def plot_pcs(self, sp: Optional[SpikeData]):
-
         spike_clusters = sp.spike_clusters
         cluster_ids = list(sorted(set(spike_clusters)))
         spike_templates = sp._spike_templates
@@ -188,7 +184,6 @@ class IntrinsicPlotter(PlotterBase):
             plt.show()
 
     def plot_spike_depth_fr(self, sp: Optional[SpikeData]):
-
         depths = sp.waveform_depth
         cids = sp._cids
         spike_clusters = sp.spike_clusters

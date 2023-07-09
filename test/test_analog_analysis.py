@@ -24,12 +24,10 @@ def ana():
 
 
 def test_analog_analysis_init(ana):
-
     assert isinstance(ana, AnalogAnalysis), "Failed initialization"
 
 
 def test_spike_triggered_average(ana):
-
     ana.cluster_ids = np.array([0, 1, 2])
     ana.raw_spike_times = np.array([2, 10, 14])
     ana._sampling_rate = 1

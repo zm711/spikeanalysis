@@ -3,7 +3,6 @@ from spikeanalysis.analysis_utils import histogram_functions as hf
 
 
 def test_convert_to_new_bins():
-
     histogram = np.ones((3, 4, 100))
 
     new_bins = hf.convert_to_new_bins(histogram, 10)
@@ -17,7 +16,6 @@ def test_convert_to_new_bins():
 
 
 def test_convert_to_new_bins_():
-
     test = np.array([[[1, 1, 0, 0], [0, 1, 0, 0]]])
 
     new_bins = hf.convert_to_new_bins(test, 2)
@@ -28,7 +26,6 @@ def test_convert_to_new_bins_():
 
 
 def test_convert_bins():
-
     bins = np.linspace(0, 9, 10)
 
     new_bins = hf.convert_bins(bins, 4)
@@ -38,7 +35,6 @@ def test_convert_bins():
 
 
 def test_convert_bins_complex():
-
     bins = np.linspace(-10, 10, 101)
 
     new_bins = hf.convert_bins(bins, 10)
@@ -47,7 +43,6 @@ def test_convert_bins_complex():
 
 
 def test_spike_times_to_bins():
-
     spike_times = np.array([1000, 1001, 1002, 100000000], dtype=np.uint64)
     events = np.array([999], dtype=np.int32)
     start = np.int32(0)
@@ -87,7 +82,6 @@ def test_hist_diff_simple_vector():
 
 
 def test_hist_diff_simple_scalars():
-
     test_array = np.array([1, 2, 3, 4, 5])
     ref_pt = np.array([1, 5])
     bins = np.array([0, 1, 2])
@@ -103,7 +97,6 @@ def test_hist_diff_simple_scalars():
 
 
 def test_hist_diff():
-
     spike_times = np.array([1000, 1001, 1002, 1010], dtype=np.uint64)
     events = np.array([999, 1030], dtype=np.int32)
     start = np.int32(0)
@@ -115,7 +108,8 @@ def test_hist_diff():
 
     binned_array, bin_centers = hf.histdiff(spike_times, events, bin_borders)
     print(
-        "binned_array: ", binned_array,
+        "binned_array: ",
+        binned_array,
     )
     print("bin_centers: ", bin_centers)
     assert binned_array[1] == 2, "counting is wrong"

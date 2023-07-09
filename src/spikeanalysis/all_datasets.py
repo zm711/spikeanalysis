@@ -18,7 +18,6 @@ class AllDatasets(SpikeAnalysis, SpikeData, StimulusData):
         self.spike_analyis = []
 
         for filename in filenames:
-
             spikes = SpikeData(filename)
             spikes.run_all(**spike_kwargs)
             stim = StimulusData(filename)
@@ -55,7 +54,6 @@ class AllDatasets(SpikeAnalysis, SpikeData, StimulusData):
         dataset="z_scores",
         num_shuffle: int = 300,
     ):
-
         for spiketrain in self.spike_analysis:
             spiketrain.get_raw_psth(psth_window, psth_time_bin_ms)
             spiketrain.z_score_data(z_time_bin_ms, bsl_window, z_window)
@@ -65,6 +63,5 @@ class AllDatasets(SpikeAnalysis, SpikeData, StimulusData):
             spiketrain.latencies(lat_bsl_window, lat_time_bin_ms, num_shuffle)
 
     def merge_datasets(self):
-
         for stimulus in self.spike_analysis[0].psths.keys():
             raise Exception("not implemented")

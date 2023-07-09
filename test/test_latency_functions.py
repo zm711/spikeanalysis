@@ -12,7 +12,6 @@ def test_latency_latency_core():
 
 
 def test_latency_core_no_lat():
-
     test_array = np.array([0, 0, 1, 0, 0, 0, 1, 0, 0, 0])
     test_array = np.expand_dims(test_array, axis=0)
     lat = lf.latency_core_stats(10, test_array, time_bin_size=1)
@@ -21,8 +20,18 @@ def test_latency_core_no_lat():
 
 
 def test_latency_median():
-
-    test_array = np.array([0, 0, 1, 0, 0, 0, 0, 0,])
+    test_array = np.array(
+        [
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+        ]
+    )
     test_array = np.expand_dims(test_array, axis=0)
     lat = lf.latency_median(test_array, time_bin_size=1)
     print(lat)
@@ -30,8 +39,18 @@ def test_latency_median():
 
 
 def test_latency_nan():
-
-    test_array = np.array([0, 0, 0, 0, 0, 0, 0, 0,])
+    test_array = np.array(
+        [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        ]
+    )
     test_array = np.expand_dims(test_array, axis=0)
     lat = lf.latency_median(test_array, time_bin_size=1)
     print(lat)

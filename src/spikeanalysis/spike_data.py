@@ -348,7 +348,13 @@ class SpikeData:
         shape = (self._binary_file_info["n_channels"], n_samples)
         offset = self._binary_file_info["offset"]
 
-        binary_memmap = np.memmap(filename=filename, dtype=dtype, offset=offset, shape=shape, order="F",)
+        binary_memmap = np.memmap(
+            filename=filename,
+            dtype=dtype,
+            offset=offset,
+            shape=shape,
+            order="F",
+        )
 
         cluster_ids = self._cids
         n_clusters = len(cluster_ids)

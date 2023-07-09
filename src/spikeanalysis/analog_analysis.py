@@ -16,7 +16,6 @@ class AnalogAnalysis:
     """Class for analyzing analog stimulus data along with spiking data"""
 
     def __init__(self, sp: SpikeData, event_times: StimulusData):
-
         try:
             self.spike_times = sp.spike_times
         except AttributeError:
@@ -34,7 +33,6 @@ class AnalogAnalysis:
             )
             self.qc_threshold = np.array([True for _ in self._cids])
         try:
-
             sp.set_qc()
             sp.denoise_data()
         except:
@@ -50,9 +48,10 @@ class AnalogAnalysis:
             raise Exception("This class is for analysis of analog-based data")
 
     def spike_triggered_average(
-        self, time_before_ms, time_after_ms,
+        self,
+        time_before_ms,
+        time_after_ms,
     ):
-
         time_before = time_before_ms / 1000 * self._sampling_rate
         time_after = time_after_ms / 1000 * self._sampling_rate
 
@@ -77,7 +76,6 @@ class AnalogAnalysis:
                 stim_form = np.zeros((len(these_spikes), int(time_after + time_before + 1)))
 
                 for idx, spike in enumerate(tqdm(these_spikes)):
-
                     start = int(spike - time_before)
                     end = int(spike + time_after + 1)
                     try:

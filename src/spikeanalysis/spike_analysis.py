@@ -128,7 +128,9 @@ class SpikeAnalysis:
             print("There is no raw analog data provided. Run get_analog_data if needed.")
 
     def get_raw_psth(
-        self, window: Union[list, list[list]], time_bin_ms: float = 1.0,
+        self,
+        window: Union[list, list[list]],
+        time_bin_ms: float = 1.0,
     ):
         """
         function for generating the raw psth with spike counts for each bin
@@ -182,7 +184,12 @@ class SpikeAnalysis:
                 window_start = np.int64(current_window[0] * self._sampling_rate)
                 window_end = np.int64(current_window[1] * self._sampling_rate)
                 psth = np.zeros(
-                    (len(cluster_ids), len(events), int((window_end - window_start) / time_bin_size),), dtype=np.int32,
+                    (
+                        len(cluster_ids),
+                        len(events),
+                        int((window_end - window_start) / time_bin_size),
+                    ),
+                    dtype=np.int32,
                 )
 
                 psths[stim_name] = {}
@@ -224,7 +231,12 @@ class SpikeAnalysis:
                 window_start = np.int64(current_window[0] * self._sampling_rate)
                 window_end = np.int64(current_window[1] * self._sampling_rate)
                 psth = np.zeros(
-                    (len(cluster_ids), len(events), int((window_end - window_start) / time_bin_size),), dtype=np.int32,
+                    (
+                        len(cluster_ids),
+                        len(events),
+                        int((window_end - window_start) / time_bin_size),
+                    ),
+                    dtype=np.int32,
                 )
 
                 psths[stim_name] = {}
@@ -411,7 +423,12 @@ class SpikeAnalysis:
                 bins = hf.convert_bins(bins, new_bin_number)
 
             bsl_shuffled = (
-                np.random.rand(np.shape(psth)[0], len(trial_set), num_shuffles,) * (current_bsl[1] - current_bsl[0])
+                np.random.rand(
+                    np.shape(psth)[0],
+                    len(trial_set),
+                    num_shuffles,
+                )
+                * (current_bsl[1] - current_bsl[0])
                 + current_bsl[0]
             )
 
@@ -421,7 +438,10 @@ class SpikeAnalysis:
             }
 
             bsl_values = np.mean(
-                np.sum(psth[:, :, np.logical_and(bins >= current_bsl[0], bins <= current_bsl[1])], axis=2,)
+                np.sum(
+                    psth[:, :, np.logical_and(bins >= current_bsl[0], bins <= current_bsl[1])],
+                    axis=2,
+                )
                 / (current_bsl[1] - current_bsl[0]),
                 axis=1,
             )
@@ -441,11 +461,10 @@ class SpikeAnalysis:
                             bsl_fr, psth_by_trial[:, bins >= 0], time_bin_size
                         )
                         for shuffle in tqdm(range(num_shuffles)):
-                            self.latency[stim]["latency_shuffled"][idx, trials == trial, shuffle] = (
-                                1000
-                                * lf.latency_core_stats(
-                                    bsl_fr, psth_by_trial[:, bins >= bsl_shuffled_trial_cluster[shuffle]], time_bin_size
-                                )
+                            self.latency[stim]["latency_shuffled"][
+                                idx, trials == trial, shuffle
+                            ] = 1000 * lf.latency_core_stats(
+                                bsl_fr, psth_by_trial[:, bins >= bsl_shuffled_trial_cluster[shuffle]], time_bin_size
                             )
 
                     else:
@@ -453,11 +472,10 @@ class SpikeAnalysis:
                             psth_by_trial[:, bins >= 0], time_bin_size
                         )
                         for shuffle in tqdm(range(num_shuffles)):
-                            self.latency[stim]["latency_shuffled"][idx, trials == trial, shuffle] = (
-                                1000
-                                * lf.latency_median(
-                                    psth_by_trial[:, bins >= bsl_shuffled_trial_cluster[shuffle]], time_bin_size
-                                )
+                            self.latency[stim]["latency_shuffled"][
+                                idx, trials == trial, shuffle
+                            ] = 1000 * lf.latency_median(
+                                psth_by_trial[:, bins >= bsl_shuffled_trial_cluster[shuffle]], time_bin_size
                             )
 
     def get_interspike_intervals(self):
@@ -761,7 +779,6 @@ class SpikeAnalysis:
                 current_z_params = z_parameters[stim]
 
                 for key, value in current_z_params.items():
-
                     current_window = value["time"]
                     current_score = value["score"]
                     current_n_bins = value["n_bins"]

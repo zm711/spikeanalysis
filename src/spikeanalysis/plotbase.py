@@ -26,12 +26,10 @@ class PlotterBase:
         raise ("Not Implemented")
 
     def _check_kwargs(self, **kwargs):
-
         for key in kwargs:
             assert key in self._possible_kwargs, f"{key} is not a possible kwarg"
 
     def _set_kwargs(self, **kwargs):
-
         if "dpi" in kwargs:
             self.dpi = kwargs["dpi"]
         if "x_axis" in kwargs:
