@@ -32,3 +32,4 @@ Contents
 
 .. toctree::
    usage
+   submodules/index
