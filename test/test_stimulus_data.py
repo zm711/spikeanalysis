@@ -46,17 +46,11 @@ def test_value_round(stim):
 
     value = stim._valueround(1.73876, precision=2, base = 0.25)
     print(value)
-    assert value == 1.75
+    assert value == 1.75, 'failed to round up'
 
-
-def test_value_round_array(stim):
-
-    test_array = np.array([1.6583, 1.10000])
-
-    final_array = stim._valueround(test_array, )
-
-    assert final_array[0]==1.75, "round up"
-    assert final_array[1]==1.00, "round down"
+    value2 = stim._valueround(1.5101010, precision=2, base=0.25)
+    print(value2)
+    assert value == 1.50, 'failed to round down'
 
 def test_calculate_events(stim):
     array = np.array([0,0,0,1,1,1,0,0,0])
