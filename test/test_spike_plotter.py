@@ -16,8 +16,8 @@ def test_SpikePlotter_kwargs():
     assert plotter.x_axis == 'Time (ms)'
     assert plotter.figsize == (10,8)
 
-@pytest.mark.xfail(reason='Checking to make sure only appropriate kwargs can be passed')
-def test_SpikePlotter_wrong_kwarg():
-    plotter = SpikePlotter(None, **{'x': 5})
 
-    assert plotter.x == 5
+def test_SpikePlotter_wrong_kwarg():
+    with pytest.raises(AssertionError):
+        plotter = SpikePlotter(None, **{'x': 5})
+

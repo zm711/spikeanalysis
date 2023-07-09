@@ -1,8 +1,7 @@
-from .plotbase import PlotterBase
-from .spike_data import SpikeData
-from .spike_analysis import SpikeAnalysis
-import matplotlib.pyplot as plt
+from typing import Union, Optional
 
+import numpy as np
+import matplotlib.pyplot as plt
 try:
     import seaborn as sns
     HAVE_SNS = True
@@ -10,14 +9,16 @@ except ImportError:
     print("Please install seaborn for full functionality")
     HAVE_SNS = False
 
+from .plotbase import PlotterBase
+from .spike_data import SpikeData
+from .spike_analysis import SpikeAnalysis
 from .analysis_utils import histogram_functions as hf
-import numpy as np
-from typing import Union, Optional
+
 
 class IntrinsicPlotter(PlotterBase):
     """Class for plotting acgs, waveforms, cdfs"""
 
-    def __init__(self, sp: Optional[SpikeData] = None, **kwargs):
+    def __init__(self, **kwargs):
         """
         loading plotting parameters for use with all plots in session
 
@@ -30,16 +31,16 @@ class IntrinsicPlotter(PlotterBase):
             None
         """
         PlotterBase.__init__(self)
+
         if kwargs:
             self._check_kwargs(**kwargs)
-        if kwargs:
             self._set_kwargs(**kwargs)
 
-        if sp is not None:
-            self.data = sp
 
     def plot_acs(self, sp: Union[SpikeData, SpikeAnalysis], ref_dur_ms: float = 2.0):
+
         from .analysis_utils import histogram_functions as hf
+
         try:
             spike_times = sp.spike_times
         except AttributeError:
@@ -47,7 +48,7 @@ class IntrinsicPlotter(PlotterBase):
 
         spike_clusters = sp.spike_clusters
         try:
-            if isinstance(sp, SpikeAnalysis):
+            if isinstance(sp, spikeanalysis.SpikeAnalysis):
                 cluster_ids = sp.cluster_ids
             else:
                 cluster_ids = sp._cids[sp._qc_threshold]
@@ -152,16 +153,12 @@ class IntrinsicPlotter(PlotterBase):
             plt.figure(dpi=self.dpi)
             plt.show()
 
-    def plot_pcs(self, sp: Optional[SpikeData]=None):
+    def plot_pcs(self, sp: Optional[SpikeData]):
 
-        if sp is None:
-            try:
-                spike_clusters = self.data.spike_clusters
-                cluster_ids = list(sorted(set(spike_clusters)))
-                spike_templates = self.data._spike_templates
-            except AttributeError:
-                raise Exception("Either initialize with a SpikeData object or enter the SpikeData object in method call")
-            
+            spike_clusters = sp.spike_clusters
+            cluster_ids = list(sorted(set(spike_clusters)))
+            spike_templates = sp._spike_templates
+
             try:
                 pc_feat = self.data.pc_feat
                 pc_feat_ind = self.data.pc_feat_ind
@@ -197,20 +194,13 @@ class IntrinsicPlotter(PlotterBase):
                 plt.figure(dpi =self.dpi)
                 plt.show()
 
-    def plot_spike_depth_fr(self, sp: Optional[SpikeData]=None):
+    def plot_spike_depth_fr(self, sp: Optional[SpikeData]):
 
-        if sp is None:
-            depths = self.data.waveform_depth
-            cids = self.data._cids
-            spike_clusters = self.data.spike_clusters
-            self.data.samples_to_seconds()
-            spike_times = self.data.spike_times
-        else:
-            depths = sp.waveform_depth
-            cids = sp._cids
-            spike_clusters = sp.spike_clusters
-            sp.samples_to_seconds()
-            spike_times = sp.spike_times
+        depths = sp.waveform_depth
+        cids = sp._cids
+        spike_clusters = sp.spike_clusters
+        sp.samples_to_seconds()
+        spike_times = sp.spike_times
 
         fig, ax = plt.subplots(figsize=self.figsize)
 

@@ -1,4 +1,3 @@
-
 import numpy as np
 import os
 import pytest
@@ -6,11 +5,14 @@ from pathlib import Path
 
 CURRENT_DIR = os.getcwd()
 
+"""All data has been mocked out and can be read in the .txt file"""
+
 def test_import_SpikeData():
     try:
         from spikeanalysis.spike_data import SpikeData
     except:
         assert False, "import failed"
+
 
 @pytest.fixture
 def spikes():
@@ -19,13 +21,11 @@ def spikes():
     directory = Path(__file__).parent.resolve() / 'test_data'
     spikes = SpikeData(file_path = directory)
     
-
     return spikes
 
 
 def test_SpikeData_attributes(spikes):
     
-
     assert spikes.raw_spike_times[0]==100, "spike times loading didn't work"
     assert spikes.spike_clusters[0]!=spikes.spike_clusters[2], "spike clusters not working"
     assert len(np.unique(spikes._spike_templates)) == 1, "templates loaded incorrectly"
@@ -35,11 +35,10 @@ def test_SpikeData_attributes(spikes):
     assert spikes._sampling_rate == 100, "sample rate incorrectly determined"
 
     assert np.shape(spikes.x_coords) == (4,), "channel map incorrectly read"
-    assert len(spikes._cids) == 2, "cids no loaded correctly"
+    assert len(spikes._cids) == 2, "cids not loaded correctly"
 
 def test_samples_to_seconds(spikes):
     
-
     spikes.samples_to_seconds()
     spike_times = spikes.spike_times
 
@@ -77,7 +76,6 @@ def test_read_cgs(spikes):
 
 def test_find_index(spikes):
 
-
     test_matrix = np.array([[0,1],[3,2]])
     print(test_matrix)
     r, c = spikes._find_index(test_matrix)
@@ -90,7 +88,6 @@ def test_find_index(spikes):
 
 
 def test_count_unique(spikes):
-
 
     test_matrix = np.array([1,2,3,2,1,2,2,])
     print(test_matrix)

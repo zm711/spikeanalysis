@@ -9,13 +9,16 @@ from spikeanalysis.stimulus_data import StimulusData
 @pytest.fixture
 def stim(scope='module'):
     
-    
     directory = Path(__file__).parent.resolve() / 'test_data'
     stimulus = StimulusData(file_path = directory)
     stimulus.create_neo_reader()
     
 
     return stimulus
+
+def test_dir_assertion():
+    with pytest.raises(AssertionError):
+        _ = StimulusData(file_path = '')
 
 
 def test_get_analog_data(stim):
@@ -122,3 +125,13 @@ def test_read_intan_header(stim):
     assert header['sample_rate'] == 3000.0
     assert header['num_samples_per_data_block'] == 128
 
+
+def test_value_round():
+    from spikeanalysis.stimulus_data import _value_round
+
+    test_array = np.array([1.6583, 1.10000])
+
+    final_array = _value_round(test_array, )
+
+    assert final_array[0]==1.75, "round up"
+    assert final_array[1]==1.00, "round down"

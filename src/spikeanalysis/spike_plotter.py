@@ -3,7 +3,7 @@ from typing import Optional, Union
 import numpy as np
 import matplotlib.pyplot as plt
 
-from .utils import verify_window_format, guassian_smoothing
+from .utils import verify_window_format, gaussian_smoothing
 
 try:
     import seaborn as sns
@@ -37,14 +37,14 @@ class SpikePlotter(PlotterBase):
             the change value e.g. {'dpi': 300}
 
         """
-        # assert isinstance(analysis, SpikeAnalysis), "please enter a SpikeAnalysis object"
+        
 
         PlotterBase.__init__(self)
         if kwargs:
             self._check_kwargs(**kwargs)
-        if kwargs:
             self._set_kwargs(**kwargs)
 
+        assert isinstance(analysis, spikeanalysis.SpikeAnalysis), 'analysis must be a SpikeAnalysis dataset'
         self.data = analysis
 
     def __repr__(self):
@@ -320,7 +320,7 @@ class SpikePlotter(PlotterBase):
             stderr = np.zeros((len(tg_set), len(bins)))
             event_len = np.zeros((len(tg_set)))
             for cluster_number in range(np.shape(psth)[0]):
-                smoothed_psth = guassian_smoothing(psth[cluster_number], bin_size, sm_std)
+                smoothed_psth = gaussian_smoothing(psth[cluster_number], bin_size, sm_std)
 
                 for trial_number, trial in enumerate(tg_set):
                     mean_smoothed_psth[trial_number] = np.mean(smoothed_psth[trial_groups == trial], axis=0)

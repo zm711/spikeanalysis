@@ -58,7 +58,7 @@ def verify_window_format(window: Union[list,list[list]], num_stim: int)->list[li
     return windows
 
 
-def guassian_smoothing(array: np.array, bin_size: float, std: float) -> np.array:
+def gaussian_smoothing(array: np.array, bin_size: float, std: float) -> np.array:
         from scipy import signal
 
         gaussian_window = signal.windows.gaussian(round(std), (std - 1) / 6)
