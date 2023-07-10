@@ -1,4 +1,5 @@
 import json
+import os
 from .utils import NumpyEncoder
 from typing import Optional, Union
 
@@ -46,7 +47,6 @@ class StimulusData:
         if saved
 
         """
-        import os
 
         os.chdir(self._file_path)
         import glob
@@ -71,6 +71,7 @@ class StimulusData:
 
         with open("params.py", "r") as p:
             params = p.readlines()
+            print(params)
 
         sampling_rate = float(params[4].split()[-1])
         self.sample_frequency = sampling_rate
@@ -411,6 +412,8 @@ class StimulusData:
         Function for saving events in json for nested structures and .npy files for simple arrays
 
         """
+
+        os.chdir(self._file_path)
         try:
             _ = self.digital_events
 
