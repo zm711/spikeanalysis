@@ -71,7 +71,6 @@ class StimulusData:
 
         with open("params.py", "r") as p:
             params = p.readlines()
-            print(params)
 
         sampling_rate = float(params[4].split()[-1])
         self.sample_frequency = sampling_rate
