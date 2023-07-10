@@ -241,7 +241,7 @@ class IntrinsicPlotter(PlotterBase):
                 np.squeeze(pc_feat[:, this_feat, :]), nspikes * n_pc_chans, order="F"
             )
 
-        S = csr_matrix(pc_feat_rs, (row_inds, col_inds), shape=(nspikes, int(nchans * n_per_chan)), dtype="float")
+        S = csr_matrix((pc_feat_rs, (row_inds, col_inds)), shape=(nspikes, int(nchans * n_per_chan)), dtype="float")
         sparse_pc_feat = S.toarray()
 
         return sparse_pc_feat

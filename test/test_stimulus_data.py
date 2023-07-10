@@ -41,6 +41,39 @@ def test_digitize_analog_data(stim):
     assert "trial_groups" in stim.dig_analog_events["0"].keys()
 
 
+def test_json_writer(stim, tmp_path):
+    stim.get_analog_data()
+    stim.digitize_analog_data()
+    print(stim._file_path)
+    stim._file_path = stim._file_path / tmp_path
+    print(stim._file_path)
+    stim.save_events()
+    have_json = False
+    print(stim._file_path)
+    for file in os.listdir(stim._file_path):
+        print(file)
+        if "json" in file:
+            have_json = True
+
+    assert have_json, "file not written"
+
+    del stim.dig_analog_events
+
+    try:
+        _ = stim.dig_analog_events
+        assert False, "test setup failure"
+    except AttributeError:
+        # need to create dummy params.py for this function call
+        with open("params.py", "w") as p:
+            p.writelines(["Test 0\n", "Test 1\n", "Test 2\n", "Test 3\n", "Test 4\n"])
+
+        stim.get_all_files()  # read json and params.py
+        assert stim.dig_analog_events, "json not read"
+        assert isinstance(stim.dig_analog_events, dict)
+        assert "events" in stim.dig_analog_events["0"].keys()
+        assert stim.sample_frequency
+
+
 def test_value_round(stim):
     value = stim._valueround(1.73876, precision=2, base=0.25)
     print(value)
@@ -93,6 +126,7 @@ def test_get_stimulus_channels(stim):
     stim.get_final_digital_data()
     stim.generate_digital_events()
     stim_dict = stim.get_stimulus_channels()
+    assert isinstance(stim_dict, dict)
     assert "DIGITAL-IN-01" in stim_dict.keys()
 
 
