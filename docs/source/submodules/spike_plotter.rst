@@ -76,6 +76,7 @@ Raster plots are plots, which represent each action potential of a neuron as a b
 :code:`window` can either be one global window for all stimulus or a list of lists with each nested list given the window for a substimulus
 
 .. code-block:: python
+    
     plotter.plot_raster(window = [-10,10]) # ten seconds before and after stimulus onset
 
 
