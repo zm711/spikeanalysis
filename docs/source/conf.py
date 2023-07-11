@@ -38,7 +38,7 @@ extensions = ["sphinx_rtd_theme", "sphinx.ext.autodoc", "sphinx.ext.autosummary"
 templates_path = ["_templates"]
 
 master_doc = "index"
-
+autodoc_mock_imports = ['pandas', 'seaborn', 'numba', 'matplotlib', 'scipy', 'neo']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
