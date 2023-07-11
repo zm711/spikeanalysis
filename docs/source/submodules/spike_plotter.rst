@@ -32,7 +32,62 @@ datasets.
     plotter2.set_analysis(analysis=spiketrain2)
 
 
+To initialize with dataset:
+
+.. code-block:: python
+
+    plotter = SpikePlotter(analysis=spiketrain, **{"figsize": (20,16)})
+
 Using the :code:`SpikePlotter` Class
 ------------------------------------
 
-Once the class is initialized various plotting fuctions can be used. 
+Once the class is initialized various plotting fuctions can be used: :code:`plot_zscores`, :code:`plot_raster`, :code:`plot_sm_fr`, and
+:code:`plot_z_scores_ind`. These functions provide common summary plotting options for data in a controllable way. Each function has its
+own section below.
+
+
+Plotting Z scores
+-----------------
+
+Two functions are provided to generate z score heatmaps: :code:`plot_zscores` and :code:`plot_z_scores_ind`. First :code:`plot_zscores` switches
+the default :code:`figsize` to (24,10) because it separates data by trial groupings. This requires a long, but not tall figure. It also
+has an optional :code:`sorting_index`, which allows for the choosing which trial group to sort on. This sorting allows for the same unit to be
+represented on the same row of the heatmap for each trial group to compare the same unit across trials. Trial groups are sorted by size so to sort
+by the smallest trial group one would use :code:`sorting_index = 0`, etc. Since it is sometimes nice to plot trial groups individually rather
+than all on the same figures this can be accomplished with :code:`plot_z_scores_ind`. The one issue with :code:`plot_z_scores_ind` is that it sorts
+each trial group individually, so that units are not on the same rows and cannot be directly compared by just aligning the figures.
+
+.. code-block:: python
+
+    plotter.plot_zscores(sorting_index = 1) # sort by 2nd trial group
+    plotter.plot_zscores(sorting_index = None) # auto sorts by largest trial group
+
+or to see individually
+
+.. code-block:: python
+
+    plotter.plot_z_scores_ind()
+
+Plotting Raster plots
+---------------------
+
+Raster plots are plots, which represent each action potential of a neuron as a bar with time on the X access and events on the y axis. The function
+:code:`plot_raster` aligns a raster plot based on the :code:`window` as well as highlighting the start and end of each stimulus bout (with red lines)
+:code:`window` can either be one global window for all stimulus or a list of lists with each nested list given the window for a substimulus
+
+.. code-block:: python
+    plotter.plot_raster(window = [-10,10]) # ten seconds before and after stimulus onset
+
+
+Plotting smoothed firing rate
+-----------------------------
+
+Firing rates of a neuron are often given in Hz or spikes/second. Because counting firing rates in bins can lead to some variability, especially in 
+very small bin size, this function uses a Gaussian smoothing filter convolved over each trial group to reduce this variability for plotting. The trial groups
+are colored from cool to hot with rainbow colors, but if this is not desired the default cmap can be loaded during the initialization :code:`kwargs` with
+:code:`{'cmap': 'vlag'}`. Similarly to the raster a :code:`window` should be given. 
+
+.. code-block:: python
+
+    plotter.plot_sm_fr(window=[-10, 10], sm_time_ms = 50) # ten seconds before and after stimulus
+                                                          # smoothing over ~ 50 ms for each bin
