@@ -19,6 +19,7 @@ Check out the :doc:`usage` section for installation instructions :ref:`install <
 
    usage
    submodules/index
+   API
 
 
 Indices and tables

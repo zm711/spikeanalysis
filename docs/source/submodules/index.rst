@@ -10,3 +10,4 @@ Submodules
    spike_analysis
    spike_plotter
    intrinsic_plotter
+   analog_analysis

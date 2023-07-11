@@ -143,14 +143,14 @@ class IntrinsicPlotter(PlotterBase):
             plt.figure(dpi=self.dpi)
             plt.show()
 
-    def plot_pcs(self, sp: Optional[SpikeData]):
+    def plot_pcs(self, sp: SpikeData):
         spike_clusters = sp.spike_clusters
         cluster_ids = list(sorted(set(spike_clusters)))
         spike_templates = sp._spike_templates
 
         try:
-            pc_feat = self.data.pc_feat
-            pc_feat_ind = self.data.pc_feat_ind
+            pc_feat = sp.pc_feat
+            pc_feat_ind = sp.pc_feat_ind
         except AttributeError:
             raise Exception("The SpikeData object does not have pc feats. Run generate_pcs first.")
 
@@ -183,7 +183,7 @@ class IntrinsicPlotter(PlotterBase):
             plt.figure(dpi=self.dpi)
             plt.show()
 
-    def plot_spike_depth_fr(self, sp: Optional[SpikeData]):
+    def plot_spike_depth_fr(self, sp: SpikeData):
         depths = sp.waveform_depth
         cids = sp._cids
         spike_clusters = sp.spike_clusters
@@ -203,7 +203,29 @@ class IntrinsicPlotter(PlotterBase):
         ax.title("depth by firing rate")
         plt.show()
 
-    def _sparse_pcs(self, pc_feat, pc_feat_ind, templates, n_per_chan, n_pc_chans):
+    def _sparse_pcs(
+        self, pc_feat: np.array, pc_feat_ind: np.array, templates: np.array, n_per_chan: int, n_pc_chans: int
+    ) -> np.array:
+        """Utility function to create a sparse matrix representation of the pc spaces.
+
+        Parameters
+        ----------
+        pc_feat: np.array
+            The pc feature matrix
+        pc_feat_ind: np.array
+            The other pc feature matrix, from Phy
+        templates: np.array
+            The array of template identities for each spike
+        n_per_chan: int
+            The number of pcs to use per channel
+        n_pc_chans: int
+            The number of channels to use
+
+        Returns
+        -------
+        sparse_pc: np.array
+            A sparse matrix (csr_matrix) converted to an np.array"""
+
         from scipy.sparse import csr_matrix
 
         n_pc_chans = np.min([n_pc_chans, np.shape(pc_feat)[2]])

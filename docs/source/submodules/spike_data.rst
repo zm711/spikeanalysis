@@ -15,6 +15,12 @@ that are created post-Phy curation. For Windows this may need to prepended by an
     from spikeanalysis.spike_data import SpikeData
     spikes = SpikeData(file_path = "path/to/data")
 
+For Windows I recommend
+
+.. code-block:: python
+
+    spikes = SpikeData(file_path = r"path\to\data") # prevents improper escaping
+
 Refractory violations
 ---------------------
 
