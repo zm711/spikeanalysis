@@ -124,6 +124,32 @@ def test_compute_event_interspike_intervals(sa_mocked):
     # add mocked up test
 
 
+def test_trial_correlation_exception(sa):
+    with pytest.raises(Exception):
+        sa.trial_correlation(window=[0, 100], time_bin_ms=50, dataset="random")
+
+    with pytest.raises(AssertionError):
+        sa.trial_correlation(window=[0, 100], time_bin_ms=0.00001)  # should assert wrong bin size
+
+
+def test_trial_correlation(sa):
+    sa.dig_analog_events = {
+        "0": {
+            "events": np.array([100, 200]),
+            "lengths": np.array([100, 100]),
+            "trial_groups": np.array([1, 1]),
+            "stim": "test",
+        }
+    }
+    sa.get_raw_psth(window=[0, 300], time_bin_ms=50)
+    sa.trial_correlation(window=[0, 100], time_bin_ms=50)
+
+    assert isinstance(sa.correlations, dict)
+
+    print(sa.correlations)
+    nptest.assert_allclose(sa.correlations["test"], np.array([[0.24849699], [0.59899749]]))
+
+
 def test_generate_z_scores(sa, tmp_path):
     os.chdir(tmp_path)
     sample_z = sa._generate_sample_z_parameter()

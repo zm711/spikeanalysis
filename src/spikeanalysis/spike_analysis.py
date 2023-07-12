@@ -656,13 +656,15 @@ class SpikeAnalysis:
                 trial_groups = self.dig_analog_events[str(idx - self.NUM_DIG)]["trial_groups"]
             current_window = windows[idx]
             current_data = data[stimulus]
-            correlations[stimulus] = np.zeros((np.shape(current_data)[0], len(set(trial_groups))))
+
             if dataset == "psth":
-                current_bins = current_data[stimulus]["bins"]
-                current_data = current_data[stimulus]["psth"]
+                current_bins = current_data["bins"]
+                current_data = current_data["psth"]
             else:
                 current_bins = bins[stimulus]
+            correlations[stimulus] = np.zeros((np.shape(current_data)[0], len(set(trial_groups))))
             n_bins = len(current_bins)
+
             time_bin_current = time_bin_size[idx]
             bin_size = current_bins[1] - current_bins[0]
             if time_bin_current is None:
