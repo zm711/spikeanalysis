@@ -125,8 +125,6 @@ def test_compute_event_interspike_intervals(sa_mocked):
 
 
 def test_generate_z_scores(sa, tmp_path):
-
-    
     os.chdir(tmp_path)
     sample_z = sa._generate_sample_z_parameter()
 
@@ -150,20 +148,18 @@ def test_generate_z_scores(sa, tmp_path):
 
 
 def test_get_key_for_stim(sa):
-    
     mocked_digital_events = {"DIG-IN-01": {"stim": "test"}}
 
     sa.digital_events = mocked_digital_events
-    stim_name = "test" # from mocked data
-    channel = "DIG-IN-01" # from mocked data
+    stim_name = "test"  # from mocked data
+    channel = "DIG-IN-01"  # from mocked data
 
     stim_dict = sa._get_key_for_stim()
 
-    assert stim_dict[stim_name]== channel, "getting key failed."
+    assert stim_dict[stim_name] == channel, "getting key failed."
 
 
 def test_failed_responsive_neurons(sa, tmp_path):
-
     os.chdir(tmp_path)
 
     with pytest.raises(Exception):
@@ -173,9 +169,9 @@ def test_failed_responsive_neurons(sa, tmp_path):
 def test_responsive_neurons(sa):
     os.chdir(sa._file_path)
     # test for onset
-    mocked_z_scores = {'test': np.random.normal(scale=0.5,size=(4,3,1000))}
-    mocked_z_scores["test"][0,0, 100:200]= 10
-    mocked_z_bins = {'test': np.linspace(-10, 90, num=1000)}
+    mocked_z_scores = {"test": np.random.normal(scale=0.5, size=(4, 3, 1000))}
+    mocked_z_scores["test"][0, 0, 100:200] = 10
+    mocked_z_bins = {"test": np.linspace(-10, 90, num=1000)}
     print(sa._file_path)
     print(os.getcwd())
     sa.z_scores = mocked_z_scores
@@ -189,24 +185,22 @@ def test_responsive_neurons(sa):
 
     assert isinstance(resp_neurons, dict)
     print(resp_neurons)
-    
+
     sample_keys = ["inhibitory", "sustained", "onset", "onset-offset", "relief"]
 
     for key in resp_neurons["test"].keys():
         assert key in sample_keys, "should return boolean for each key"
 
     print(resp_neurons["test"]["onset"])
-    assert resp_neurons["test"]["onset"][0,0]
-    assert resp_neurons["test"]["onset"][0,1]==False
+    assert resp_neurons["test"]["onset"][0, 0]
+    assert resp_neurons["test"]["onset"][0, 1] == False
 
     # test for negative z scores
-    sa.z_scores["test"][0,0, 100:200] = -3
+    sa.z_scores["test"][0, 0, 100:200] = -3
 
     sa.get_responsive_neurons()
 
     inhib_neurons = sa.responsive_neurons
 
-    assert np.sum(inhib_neurons["test"]['onset'])==0
-    assert np.sum(inhib_neurons["test"]["inhibitory"]) !=0
-
-    
+    assert np.sum(inhib_neurons["test"]["onset"]) == 0
+    assert np.sum(inhib_neurons["test"]["inhibitory"]) != 0
