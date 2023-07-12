@@ -26,7 +26,9 @@ class SpikePlotter(PlotterBase):
 
     def __init__(self, analysis: Optional[SpikeAnalysis] = None, **kwargs):
         """
-        SpikePlotter requires a SpikeAnalysis object
+        SpikePlotter requires a SpikeAnalysis object, which can be set during init
+        or in the set_analysis function. Not including the SpikeAnalysis object
+        allows the same set of kwargs to be used for multiple datasets.
 
         Parameters
         ----------
@@ -55,12 +57,29 @@ class SpikePlotter(PlotterBase):
         return f"The methods are {final_methods}"
 
     def set_analysis(self, analysis: SpikeAnalysis):
+        """
+        Set the SpikeAnalysis object for plotting
+
+        Parameters
+        ----------
+        analysis: spikeanalysis.SpikeAnalysis
+            The SpikeAnalysis object for plotting
+
+        """
         assert isinstance(analysis, SpikeAnalysis), "analysis must be a SpikeAnaysis dataset"
         self.data = analysis
 
-    def plot_zscores(self, figsize: Optional[tuple] = (24, 10), sorting_index: Optional[int] = None):
+    def plot_zscores(
+        self,
+        figsize: Optional[tuple] = (24, 10),
+        sorting_index: Optional[int] = None,
+        z_bar: Optional[list[int]] = None,
+    ):
         """
-        Function to plot heatmaps of z scored firing rate.
+        Function to plot heatmaps of z scored firing rate. All trial groups are plotted on the same axes.
+        So it is best to have a figsize that wide to fit all different trial groups. In this plot each
+        row across all heat maps is the same unit/neuron and all plots share the same min/max z score
+        colormap.
 
         Parameters
         ----------
@@ -68,6 +87,8 @@ class SpikePlotter(PlotterBase):
             Matplotlib figsize tuple. For multiple trial groups bigger is better. The default is (24, 10).
         sorting_index : Optional[int], optional
             The trial group to sort all values on. The default is None (which uses the largest trial group).
+        z_bar: list[int]
+            If given a list with min z score for the cbar at index 0 and the max at index 1. Overrides cbar generation
 
         """
 
@@ -88,6 +109,9 @@ class SpikePlotter(PlotterBase):
             y_axis = "Units"
         else:
             y_axis = self.y_axis
+
+        if z_bar is not None:
+            assert len(z_bar) == 2, f"Please give z_bar as [min, max], you entered {z_bar}"
 
         stim_lengths = self._get_event_lengths()
 
@@ -117,7 +141,10 @@ class SpikePlotter(PlotterBase):
 
             sorted_z_scores = sub_zscores[z_score_sorting_index, :, :]
 
-            if np.max(sorted_z_scores) > 30:
+            if z_bar is not None:
+                vmax = z_bar[1]
+                vmin = z_bar[0]
+            elif np.max(sorted_z_scores) > 30:
                 vmax = 10
                 vmin = -10
             else:
@@ -371,7 +398,18 @@ class SpikePlotter(PlotterBase):
                 plt.figure(dpi=self.dpi)
                 plt.show()
 
-    def plot_z_scores_ind(self):
+    def plot_z_scores_ind(self, z_bar: Optional[list[int]] = None):
+        """
+        Function for plotting z scored heatmaps by trial group rather than all trial groups on the same set of axes. In
+        This function all data is ordered based on the most responsive unit/trial group. Rows can be different units
+        since each trial group is handled individually. Scaling is also handled individual some the max/min values
+        represented by the color map may be different between trial groups.
+
+        Parameters
+        ----------
+        z_bar: list[int]
+            If given a list with min z score for the cbar at index 0 and the max at index 1. Overrides cbar generation
+        """
         try:
             z_scores = self.data.z_scores
         except AttributeError:
@@ -386,6 +424,9 @@ class SpikePlotter(PlotterBase):
             y_axis = "Units"
         else:
             y_axis = self.y_axis
+
+        if z_bar is not None:
+            assert len(z_bar) == 2, f"Please give z_bar as [min, max], you entered {z_bar}"
 
         stim_lengths = self._get_event_lengths()
 
@@ -413,7 +454,10 @@ class SpikePlotter(PlotterBase):
 
                 sorted_z_scores = sub_zscores[z_score_sorting_index, trial_idx, :]
 
-                if np.max(sorted_z_scores) > 30:
+                if z_bar is not None:
+                    vmax = z_bar[1]
+                    vmin = z_bar[0]
+                elif np.max(sorted_z_scores) > 30:
                     vmax = 10
                     vmin = -10
                 else:
@@ -461,11 +505,12 @@ class SpikePlotter(PlotterBase):
 
     def _get_event_lengths(self) -> dict:
         """
-        Utility function to get the event lengths and convert from samples to seconds
+        Utility function to get the event lengths and convert from samples to seconds on a trial
+        group basis
 
         Returns
         -------
-        lengths: dict
+        stim_lengths: dict
            A dictionary of the lengths of events that can indexed into with plotting functions
 
         """
@@ -494,6 +539,13 @@ class SpikePlotter(PlotterBase):
         return stim_lengths
 
     def _get_event_lengths_all(self) -> dict:
+        """Utility function to return stimulus lengths on an event based rather than on a trial group
+        basis. This returns the length of each event.
+
+        Returns
+        -------
+        stim_lengths: dict
+            dictionary of stimulus lengths on a per event basis"""
         stim_lengths = {}
         try:
             stim_dict = self.data._get_key_for_stim()

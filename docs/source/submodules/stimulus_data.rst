@@ -19,9 +19,29 @@ prepend "r" to the file path to generate the raw file path.
 
 .. code-block:: python
 
-    from spikeanalysis.stimulus_data import StimulusData
+    from spikeanalysis import StimulusData
     stim = StimulusData(file_path = 'path/to/raw/data')
 
+Or for Windows
+
+.. code-block:: python
+
+    from spikeanalysis import StimulusData
+    stim = StimulusData(file_path = r"path\to\raw\data") # r prevents escaping
+
+First Processing Step for Both Analog and Digital data
+------------------------------------------------------
+
+Under the hood :code:`spikeanalysis` uses :code:`NEO` in order to read the :code:`.rhd` file. The benefit of :code:`Neo`
+is that it uses a memorymap to prevent the whole file from being loaded into RAM during loading of the stimuli. Since
+the large majority of the :code:`.rhd` file is the :code:`amplifier_data` which is used for spike sorting, but not needed
+for this specific step, we can load the stimulus data from extremely large files even with relatively small amounts of RAM.
+**note this is bandwidth limited** so loading from a local drive will be faster than over a network connection. The first
+step is to create the :code:`NEO` reader.
+
+.. code-block:: python
+
+    stim.create_neo_reader() # creates the memmap for future functions
 
 Processing Analog Stimulus data
 -------------------------------
@@ -54,6 +74,7 @@ a key of the Intan channel and a value of the desired trial groups as an :code:`
 they can be returned using :code:`get_stimulus_channels`. Finally stimulus' should be named with :code:`set_stimulus_name`.
 
 .. code:-block:: python
+
     stim_dict = stim.get_stimluus_channels()
     stim.set_trial_groups(trial_dictionary=trial_dictionary) # dict as explained above
     sitm.set_stimulus_names(stim_names = name_dictionary) # same keys with str values
@@ -66,3 +87,47 @@ One final utility function :code:`generate_stimulus_trains` allows the conversio
 in the case of optogenetic trains rather than looking at :code:`events`, :code:`trains` should be used. This code loads the 
 :code:`trains` into the :code:`events`. To do this a :code:`channel_name`, a :code:`stim_freq` (frequency of stimulus) and 
 :code:`stim_time_secs` (length of the train) must be given.
+
+
+Saving files for easy loading
+-----------------------------
+
+After generating all raw analog, digital event data, and analog event data, a save function is provided which will store the 
+dictionary of event data as :code:`json` and the raw analog data as a :code:`.npy` binary file in the root folder. It is as 
+simple as 
+
+.. code-block:: python
+
+    stim.save_events()
+
+
+Loading previous data
+---------------------
+
+Because generating the memmap file, loading the data, parsing the data, etc is a time consuming process if previous data has
+been saved in the :code:`.rhd` containing directory the :code:`get_all_files()` function allows for loading in any previously
+generated stimulus data. To load it simply requires:
+
+.. code-block:: python
+
+    stim.get_all_files()
+
+
+
+Convenience Pipeline
+--------------------
+
+With so many functions to run to process digital vs analog data a simple pipeline is included in the class to do most of the work
+automatically. It also helps clean up the :code:`NEO` reader memmap which can hold onto a small amount of RAM if not cleaned up. This
+pipeline is triggered with :code:`run_all` and only requires the insertion of the :code:`analog data` parameters :code:`stim_length_seconds`
+and :code:`stim_name`. Currently the :code:`trial groups` and :code:`stimulus names` for the digital data must occur outside of the pipeline.
+And remember to :code:`save_events`.
+
+.. code-block:: python
+
+    from spikeanalysis import StimulusData
+    stim = StimulusData(file_path='home/myawesomedata')
+    stim.run_all(stim_length_seconds=10, stim_name=['ana1'])
+    stim.set_trial_groups(trial_dictionary=my_dictionary)
+    stim.set_stimulus_names(stim_names=my_name_dictionary)
+    stim.save_events()
