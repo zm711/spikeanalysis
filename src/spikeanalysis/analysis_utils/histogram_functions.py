@@ -48,20 +48,6 @@ def check_order(data1: np.array, ndata1: int, data2: np.array, ndata2: int) -> i
 
 
 @jit(nopython=True)
-def findext(data1: np.array, ndata1: int, data2: np.array, ndata2: int) -> tuple[float, float]:
-    min_value = data1[0] - data2[0]
-    max_value = data1[0] - data2[0]
-    for ind_i in range(1, ndata1):
-        for ind_j in range(1, ndata2):
-            diff = data1[ind_i] - data2[ind_j]
-            if diff < min_value:
-                min_value = diff
-            if diff > max_value:
-                max_value = diff
-    return min_value, max_value
-
-
-@jit(nopython=True)
 def reghist(
     data1: np.array,
     ndata1: int,
@@ -125,7 +111,7 @@ def binhist(
     for ind_i in range(ndata1):
         for ind_j in range(ndata2):
             for ind_k in range(nbins):
-                if data1[ind_i] - data2[ind_j] >= bins[ind_k] and (data1[ind_i] - data2[ind_j]) > bins[ind_k + 1]:
+                if data1[ind_i] - data2[ind_j] >= bins[ind_k] and (data1[ind_i] - data2[ind_j]) < bins[ind_k + 1]:
                     counts[ind_k] += 1
     return counts
 
@@ -136,23 +122,17 @@ def histdiff(time_stamps: np.array, events: np.array, bin_borders: np.array) -> 
     ndata1 = len(data1)
     data2 = events
     ndata2 = len(data2)
-    nbins = len(bin_borders)
-    print(nbins)
 
-    if nbins == 1:
-        min_value, max_value = findext(data1, ndata1, data2, ndata2)
-        size = (max_value - min_value) / nbins
-    else:
-        nbins = len(bin_borders) - 1
-        bins = bin_borders
-        size = bins[1] - bins[0]
+    nbins = len(bin_borders) - 1
+    bins = bin_borders
+    size = bins[1] - bins[0]
 
-        for index in range(1, nbins):
-            if abs(bins[index + 1] - bins[index] - size) > (1e-3 * size):
-                size = 0
-                break
-        if size:
-            min_value = bins[0]
+    for index in range(1, nbins):
+        if abs(bins[index + 1] - bins[index] - size) > (1e-3 * size):
+            size = 0
+            break
+    if size:
+        min_value = bins[0]
 
     bin_centers = bin_borders[:-1] + np.diff(bin_borders) / 2
     counts = np.zeros((nbins), dtype=np.int32)

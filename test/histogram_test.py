@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.testing as nptest
 from spikeanalysis.analysis_utils import histogram_functions as hf
 
 
@@ -116,3 +117,84 @@ def test_hist_diff():
     assert binned_array[0] == 0, "counting is wrong"
     assert np.isclose(bin_centers[0], 0.5), "bin centers wrong"
     assert np.isclose(bin_centers[1], 1.5), "bin centers wrong"
+
+
+def test_rasterize():
+    time_stamps = np.array([0, 1, 2, 3, 4, 5])
+
+    xx, yy = hf.rasterize(time_stamps)
+    print(xx)
+    print(yy)
+    assert len(xx[0]) == 3 * len(time_stamps)
+
+    for value in range(np.max(time_stamps)):
+        assert np.count_nonzero(xx[0] == value) == 2, "every value should appear twice"
+
+    assert yy[0, 0] == 0, "yy should provide a floor"
+    assert yy[0, 1] == 1, "yy should provide a ceiling"
+
+
+def test_check_order():
+    data1 = np.array([1, 2, 3])
+    data2 = np.array([1, 2, 3])
+    ndata1 = 3
+    ndata2 = 3
+    # check order success
+    assert hf.check_order(data1, ndata1, data2, ndata2)
+
+    # check order failure data 1
+    data1 = np.array([2, 1, 3])
+    assert hf.check_order(data1, ndata1, data2, ndata2) == 0
+    # check order failure other data location
+    assert hf.check_order(data2, ndata1, data1, ndata2) == 0
+
+
+def test_z_score_values():
+    z_trial = np.ones((3, 4, 10), dtype=np.float32)
+    z_trial[0, 0, 9] = 10
+    z_trial[2, 2, 2] = -5
+    mean_fr = np.zeros(3, dtype=np.float32)
+    std_fr = np.ones(3, dtype=np.float32)
+
+    z_trials = hf.z_score_values(z_trial, mean_fr, std_fr)
+
+    assert np.shape(z_trials) == (3, 4, 10), "Shape should not change"
+    assert z_trials[0, 0, 0] == 1
+    assert z_trials[0, 0, 9] == 10
+    assert z_trials[2, 2, 2] == -5
+
+    mean_fr2 = np.ones(3, dtype=np.float32)
+    std_fr2 = 0.5 * np.ones(3, dtype=np.float32)
+
+    z_trials_2 = hf.z_score_values(z_trial, mean_fr2, std_fr2)
+    assert z_trials_2[0, 0, 9] == 18
+    assert z_trials_2[2, 2, 2] == -12
+
+
+def test_binhist():
+    data1 = np.array([1, 3, 5, 7])
+    ndata1 = 4
+    data2 = np.array([3, 5])
+    ndata2 = 2
+    bins = np.array([1, 2, 3])
+    nbins = 2
+    counts = np.zeros((nbins), dtype=np.int32)
+
+    counts = hf.binhist(data1, ndata1, data2, ndata2, bins, nbins, counts)
+
+    print(counts)
+    nptest.assert_array_equal(counts, np.array([0, 2]))
+
+
+def test_ordhist():
+    data1 = np.array([1, 2, 3, 4])
+    ndata1 = 4
+    min_val = 1
+    size = 1
+    nbins = 3
+    counts = np.zeros((nbins), dtype=np.int32)
+
+    counts = hf.ordhist(data1, ndata1, data1, ndata1, min_val, size, nbins, counts)
+
+    print(counts)
+    nptest.assert_array_equal(counts, np.array([3, 2, 2]))
