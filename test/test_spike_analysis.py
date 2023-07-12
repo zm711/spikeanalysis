@@ -122,3 +122,91 @@ def test_compute_event_interspike_intervals(sa_mocked):
     print(sa_mocked.isi)
     # todo
     # add mocked up test
+
+
+def test_generate_z_scores(sa, tmp_path):
+
+    
+    os.chdir(tmp_path)
+    sample_z = sa._generate_sample_z_parameter()
+
+    assert isinstance(sample_z, dict), "format wrong"
+
+    sub_sample_z = sample_z["all"]
+
+    sample_keys = ["inhibitory", "sustained", "onset", "onset-offset", "relief"]
+
+    for key in sample_keys:
+        assert key in sub_sample_z.keys(), f"{key} not present in sample and should be"
+
+    print(os.getcwd())
+    have_json = False
+
+    for file in os.listdir(sa._file_path):
+        print(file)
+        if "json" in file:
+            have_json = True
+    assert have_json, "file not written"
+
+
+def test_get_key_for_stim(sa):
+    
+    mocked_digital_events = {"DIG-IN-01": {"stim": "test"}}
+
+    sa.digital_events = mocked_digital_events
+    stim_name = "test" # from mocked data
+    channel = "DIG-IN-01" # from mocked data
+
+    stim_dict = sa._get_key_for_stim()
+
+    assert stim_dict[stim_name]== channel, "getting key failed."
+
+
+def test_failed_responsive_neurons(sa, tmp_path):
+
+    os.chdir(tmp_path)
+
+    with pytest.raises(Exception):
+        sa.get_responsive_neurons()
+
+
+def test_responsive_neurons(sa):
+    os.chdir(sa._file_path)
+    # test for onset
+    mocked_z_scores = {'test': np.random.normal(scale=0.5,size=(4,3,1000))}
+    mocked_z_scores["test"][0,0, 100:200]= 10
+    mocked_z_bins = {'test': np.linspace(-10, 90, num=1000)}
+    print(sa._file_path)
+    print(os.getcwd())
+    sa.z_scores = mocked_z_scores
+    sa.z_bins = mocked_z_bins
+
+    print(mocked_z_scores)
+    print(mocked_z_bins)
+
+    sa.get_responsive_neurons()
+    resp_neurons = sa.responsive_neurons
+
+    assert isinstance(resp_neurons, dict)
+    print(resp_neurons)
+    
+    sample_keys = ["inhibitory", "sustained", "onset", "onset-offset", "relief"]
+
+    for key in resp_neurons["test"].keys():
+        assert key in sample_keys, "should return boolean for each key"
+
+    print(resp_neurons["test"]["onset"])
+    assert resp_neurons["test"]["onset"][0,0]
+    assert resp_neurons["test"]["onset"][0,1]==False
+
+    # test for negative z scores
+    sa.z_scores["test"][0,0, 100:200] = -3
+
+    sa.get_responsive_neurons()
+
+    inhib_neurons = sa.responsive_neurons
+
+    assert np.sum(inhib_neurons["test"]['onset'])==0
+    assert np.sum(inhib_neurons["test"]["inhibitory"]) !=0
+
+    

@@ -718,12 +718,12 @@ class SpikeAnalysis:
             }
         }
 
-        with open("z_parameters.json") as write_file:
+        with open("z_parameters.json", "w") as write_file:
             json.dump(example_z_parameter, write_file)
 
         return example_z_parameter
 
-    def responsive_neurons(self, z_parameters: Optional[dict] = None):
+    def get_responsive_neurons(self, z_parameters: Optional[dict] = None):
         """
         function for assessing only responsive neurons based on z scored parameters.
 
@@ -758,48 +758,52 @@ class SpikeAnalysis:
 
         if len(parameter_file) > 0:
             with open("z_parameters.json") as read_file:
-                z_parameters = json.read(read_file)
+                z_parameters = json.load(read_file)
         else:
             z_parameters = z_parameters
-
+        
         if "all" in z_parameters.keys():
             SAME_PARAMS = True
         else:
             SAME_PARAMS = False
-
+        
         self.responsive_neurons = {}
         for stim in self.z_scores.keys():
+            
             self.responsive_neurons[stim] = {}
-
             bins = self.z_bins[stim]
             current_z_scores = self.z_scores[stim]
+
             if SAME_PARAMS:
                 current_z_params = z_parameters["all"]
+                
             else:
                 current_z_params = z_parameters[stim]
+                
+            for key, value in current_z_params.items():
+                
+                current_window = value["time"]
+                current_score = value["score"]
+                current_n_bins = value["n_bins"]
+                if len(current_window) == 2:
+                    window_index = np.logical_and(bins > current_window[0], bins < current_window[1])
+                elif len(current_window) == 4:
+                    window_index = np.logical_and(bins > current_window[0], bins < current_window[1]) | np.logical_and(bins > current_window[2], bins < current_window[3])
+                    
+                else:
+                    raise Exception(
+                        f"Not implmented for window of size {len(current_window)} possible lengths are 2 or 4"
+                    )
 
-                for key, value in current_z_params.items():
-                    current_window = value["time"]
-                    current_score = value["score"]
-                    current_n_bins = value["n_bins"]
-                    if len(current_window) == 2:
-                        window_index = bins[np.logical_and(bins > current_window[0], bins < current_window[1])]
-                    elif len(current_window) == 4:
-                        window_index = bins[
-                            np.logical_and(bins > current_window[0], bins < current_window[1])
-                            or np.logical_and(bins > current_window[2], bins < current_window[3])
-                        ]
-                    else:
-                        raise Exception(
-                            f"Not implmented for window of size {len(current_window)} possible lengths are 2 or 4"
-                        )
-
-                    current_z_scores_sub = current_z_scores[:, :, window_index]
-
+                current_z_scores_sub = current_z_scores[:, :, window_index]
+                if current_score > 0 or 'inhib' not in key.lower():
                     z_above_threshold = np.sum(np.where(current_z_scores_sub > current_score, 1, 0), axis=2)
-                    responsive_neurons = np.where(z_above_threshold > current_n_bins, True, False)
+                else:
+                    z_above_threshold = np.sum(np.where(current_z_scores_sub < current_score, 1, 0), axis=2)
+                    
+                responsive_neurons = np.where(z_above_threshold > current_n_bins, True, False)
 
-                    self.responsive_neurons[stim][key] = responsive_neurons
+                self.responsive_neurons[stim][key] = responsive_neurons
 
     def save_parameters(self):
         raise Exception("not implemented")
