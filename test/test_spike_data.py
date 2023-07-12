@@ -8,13 +8,6 @@ CURRENT_DIR = os.getcwd()
 """All data has been mocked out and can be read in the .txt file"""
 
 
-def test_import_SpikeData():
-    try:
-        from spikeanalysis.spike_data import SpikeData
-    except:
-        assert False, "import failed"
-
-
 @pytest.fixture
 def spikes():
     from spikeanalysis.spike_data import SpikeData

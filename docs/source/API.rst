@@ -17,3 +17,4 @@ spikeanalysis
     .. autoclass:: SpikePlotter
         :members:
     .. autoclass:: AnalogAnalysis
+        :members:

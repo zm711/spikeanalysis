@@ -80,6 +80,13 @@ class SpikeData:
         return f"The methods are {final_methods}"
 
     def set_caching(self, cache: bool = True):
+        """Function for determining whether to save data generated from session or not.
+
+        Parameters
+        ----------
+        cache: bool
+            Whether to save all data generated during this session, default True"""
+
         self.CACHING = cache
 
     def run_all(
@@ -92,6 +99,27 @@ class SpikeData:
         set_caching: bool = True,
         depth: float = 0,
     ):
+        """Pipeline function to run all functionality of SpikeData in a row including
+        change chaching state, doing refractory periods, qcmetrics, denoising data,
+        and getting waveform values.
+
+        Parameters
+        ----------
+        ref_dur_ms: float
+            Refractory period time in ms
+        idthres: float
+            the isolation distance cutoff value to use (ID values vary from 0 to + inf)
+        rpv: float
+            the refractory period violation fraction allowed: 0.02 would be 2% violations
+        sil: float
+            the silhouette score allowed -1 (bad) to 1 (perfect)
+        recurated: bool
+            If more Phy curation has occurred such that any cached or currently loaded values
+            need to be overwritten (True), Default False
+        set_caching: bool
+            Whether to save files for future analysis, default True
+        depth: float
+            The depth of the probe in order to provide 'Real' depth rather than distance from probe"""
         current_dir = os.getcwd()
         self._goto_file_path()
         try:
@@ -149,9 +177,6 @@ class SpikeData:
         """
         utility function which converts spike_times from samples to seconds
 
-        Returns
-        -------
-        None.
 
         """
 

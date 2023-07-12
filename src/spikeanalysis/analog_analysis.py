@@ -16,6 +16,16 @@ class AnalogAnalysis:
     """Class for analyzing analog stimulus data along with spiking data"""
 
     def __init__(self, sp: SpikeData, event_times: StimulusData):
+        """SpikeData and StimulusData, but be provided for analog analysis. Importantly
+        there muust be StimlusData.analog_data present.
+
+        Parameters
+        ----------
+        sp: spikeanalysis.SpikeData
+            The spike data to perform the analysis on
+        event_times: spikeanalysis.StimulusData
+            The stimulus data to perform the analysis on"""
+
         try:
             self.spike_times = sp.spike_times
         except AttributeError:
@@ -49,9 +59,18 @@ class AnalogAnalysis:
 
     def spike_triggered_average(
         self,
-        time_before_ms,
-        time_after_ms,
+        time_before_ms: float,
+        time_after_ms: float,
     ):
+        """Function for calculating STAs
+
+        Parameters
+        ----------
+        time_before_ms: float
+            The time before spike timestamp to assess
+        time_after_ms: float
+            The time after spike timestamp to assess"""
+
         time_before = time_before_ms / 1000 * self._sampling_rate
         time_after = time_after_ms / 1000 * self._sampling_rate
 

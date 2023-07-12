@@ -12,7 +12,7 @@ that are created post-Phy curation. For Windows this may need to prepended by an
 
 .. code-block:: python
 
-    from spikeanalysis.spike_data import SpikeData
+    from spikeanalysis import SpikeData
     spikes = SpikeData(file_path = "path/to/data")
 
 For Windows I recommend
@@ -20,6 +20,29 @@ For Windows I recommend
 .. code-block:: python
 
     spikes = SpikeData(file_path = r"path\to\data") # prevents improper escaping
+
+Saving Data
+-----------
+
+Upon loading a data directory the :code:`CACHING` state is :code:`False` for each :code:`SpikeData` object. This
+is for the case where the user is memory constrained. In order to save data to be able to reload qc values and 
+waveform values in the future the :code:`CACHING` should be set to true. This is done with :code:`set_caching`
+
+.. code-block:: python
+
+    spikes.set_caching(cache=True) # files will be saved
+
+If the user decides after this they don't want to save data or they are just doing exploratory analysis the same
+method can be used to switching caching to False
+
+.. code-block:: python
+
+    spikes.set_cahcing(cache=False) # files will not be saved
+
+
+Caching the data is done as either :code:`json` or :code:`.npy` depending on whether the data being saved is a 
+:code:`dict` or a :code:`numpy.array`, respectively.
+
 
 Refractory violations
 ---------------------
@@ -38,12 +61,12 @@ Generating PCs
 
 :code:`Phy` has principal components files, but these files do not update after curation, so the function :code:`generate_pcs`
 will generate the new PC values based on the manual curation. Once the post-curation PCs have been generated both Isolation 
-Distance as well as Silhouette Score can be calculated with :code:`generate_qcmetrics`.
+Distance (ref) as well as Silhouette Score (ref) can be calculated with :code:`generate_qcmetrics`.
 
 .. code-block:: python
 
-    spikes.generate_pcs()
-    spikes.generate_qcmetrics()
+    spikes.generate_pcs() # organize curated data
+    spikes.generate_qcmetrics() # Isolation distance and Silhouette Score
 
 Creating a quality control threshold
 ------------------------------------
@@ -61,6 +84,20 @@ removes any units labeled as :code:`noise` in :code:`Phy`. Finally the mask can 
     spikes.set_qc()
 
 
+Denoising Data
+--------------
+
+:code:`Phy` allows for the labeling of the curated data. :code:`spikeanalysis` only uses one of these labels: :code:`noise`. The 
+goal is to remove multiunit and have only "good" units, which in :code:`spikeanalysis` is done with the :code:`pc_metrics` and 
+the :code:`refractory period violations`. But certain types of artifacts (ie optogenetic stimulus) artifacts can actually have
+great qc metrics since they are so distinct from the "good" units. So in order to remove these high-qc, but artifact-based 
+units, you add a noise label in :code:`Phy` (see Phy instructions) and then run the helper function :code:`denoise_data` to 
+remove anything you want to be removed regardless of quality values.
+
+.. code-block:: python
+
+    spikes.denoise_data() # remove units labeled as Phy noise
+
 Raw waveforms
 -------------
 
@@ -77,6 +114,25 @@ contact of the probe.
     spikes.get_waveforms()
     spikes.get_waveform_values(depth=1000)
     
+
+Pipeline Function
+-----------------
+
+For users wanting to use all the functionality of :code:`SpikeData` an easy to use pipeline will run all functions automatically. (This
+also means the user doesn't need to remember a bunch of function names.) This function is called :code:`run_all` and will request all
+parameters to be provided. Example below will all values included.
+
+.. code-block:: python
+
+    spikes.run_all(
+        ref_dur_ms=2, # 2 ms refractory period
+        idthres=20, # isolation distance 20--need an empiric number from your data
+        rpv=0.02, # 2% the amount of spikes violating the 2ms refractory period allowed
+        sil=0.45, # silhouette score (-1,1) with values above 0 indicates better and better clustering
+        recurated= False, # I haven't recurated my data
+        set_caching = True, # I want to save data for future use
+        depth= 500, # probe inserted 500 um deep
+    )
 
 References
 ----------

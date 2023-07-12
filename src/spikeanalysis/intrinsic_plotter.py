@@ -105,6 +105,14 @@ class IntrinsicPlotter(PlotterBase):
             plt.show()
 
     def plot_waveforms(self, sp: SpikeData):
+        """
+        Function for plotting the raw waveforms (not templates) collected from the binary file
+
+        Parameters
+        ----------
+        sp: spikeanalysis.SpikeData
+            A SpikeData object which has raw waveform values loaded"""
+
         waveforms = sp.waveforms
 
         if len(sp._cids) != np.shape(waveforms)[0]:  # if not same need to run set_qc
@@ -144,6 +152,16 @@ class IntrinsicPlotter(PlotterBase):
             plt.show()
 
     def plot_pcs(self, sp: SpikeData):
+        """Plotting function to give represent a cluster vs all other clusters in its top two
+        PCs. If the top two PCs describe a large portion of variability this is accurate assesment
+        of cluster quality otherwise it is a poor assessment of cluster quality.
+
+        Parameters
+        ----------
+        sp: spikeanalysis.SpikeData
+            The SpikeData over which to determine PCs. The SpikeData must have pc features
+            so `generate_pcs` should be run before using this function."""
+
         spike_clusters = sp.spike_clusters
         cluster_ids = list(sorted(set(spike_clusters)))
         spike_templates = sp._spike_templates
@@ -184,6 +202,15 @@ class IntrinsicPlotter(PlotterBase):
             plt.show()
 
     def plot_spike_depth_fr(self, sp: SpikeData):
+        """Function for plotting the firing rates at all depths of a recording. If depth was
+        set during the SpikeData.get_waveform_values then this is true depth in the tissue. If
+        not then the depth is relatively to the 0 point of the probe.
+
+        Parameters
+        ----------
+        sp: spikeanalysis.SpikeData
+            The SpikeData object to obtain firing rates and depths from"""
+
         depths = sp.waveform_depth
         cids = sp._cids
         spike_clusters = sp.spike_clusters
