@@ -17,7 +17,7 @@ def latency_core_stats(bsl_fr: float, firing_data: np.array, time_bin_size: floa
             if final_prob <= 10e-6:
                 break
 
-        if n_bin == np.shape(firing_data)[1] - 1:
+        if n_bin == np.shape(firing_data)[1] - 2:  # need to go to second last bin
             latency[trial] = np.nan
         else:
             latency[trial] = (n_bin + 1) * time_bin_size

@@ -1,0 +1,20 @@
+name: spikeanalysis_dev
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - numpy
+  - scipy
+  - matplotlib
+  - numba
+  - seaborn
+  - pandas
+  - scikit-learn
+  - git
+  - black
+  - pytest
+  - pytest-cov
+  - pip
+  - pip:
+    - git+https://github.com/NeuralEnsemble/python-neo.git

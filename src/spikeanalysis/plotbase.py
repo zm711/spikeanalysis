@@ -14,6 +14,8 @@ class PlotterBase:
         title: Optional[str] = None,
         cmap: Optional[str] = None,
     ):
+        """Base class to assess kwargs values for all plotting classess"""
+
         self.dpi = dpi
         self.figsize = figsize
         self.x_axis = x_axis
@@ -21,9 +23,6 @@ class PlotterBase:
         self.title = title
         self.cmap = cmap
         self._possible_kwargs = _possible_kwargs
-
-    def _create_axis(self):
-        raise ("Not Implemented")
 
     def _check_kwargs(self, **kwargs):
         for key in kwargs:
