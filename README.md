@@ -1,6 +1,8 @@
 # spikeanalysis
 
 [![Testing with Conda](https://github.com/zm711/spikeanalysis/actions/workflows/python-package-conda.yml/badge.svg)](https://github.com/zm711/spikeanalysis/actions/workflows/python-package-conda.yml)
+[![Documentation Status](https://readthedocs.org/projects/spikeanalysis/badge/?version=latest)](https://spikeanalysis.readthedocs.io/en/latest/?badge=latest)
+
 
 Pure python implementation for analyzing `Phy` style *in vivo* electrophysiology data. Currently designed for **Intan** stimulus data
 but with plans to expand to other recording systems (using `Neo` for reading *ephys* data, so just need wrapper to expand). There
