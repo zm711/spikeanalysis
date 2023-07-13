@@ -54,3 +54,19 @@ def test_spike_triggered_average(ana):
     print(sta_values)
     nptest.assert_array_equal(sta_values["0"]["mean"][0], np.array([1.5, 2.0, 1.5]))
     nptest.assert_array_equal(sta_values["0"]["std"][0], np.array([0.5, 1, 0.5]))
+
+
+def test_analog_analysis_init():
+    directory = Path(__file__).parent.resolve() / "test_data"
+    stimulus2 = StimulusData(file_path=directory)
+    del stimulus2.analog_data
+    spikes = SpikeData(file_path=directory)
+    with pytest.raises(Exception):
+        _ = AnalogAnalysis(sp=spikes, event_times=stimulus2)
+
+
+def test_stimulus_distribution(ana):
+    ana.analog_data = np.array([0, 1, 1, 1, 0, 0, 0, 0, 0, 2, 3, 2, 0, 0])
+    stim_dist = ana.stimulus_distribution()
+    print
+    assert isinstance(stim_dist, dict)
