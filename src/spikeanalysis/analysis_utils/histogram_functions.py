@@ -66,7 +66,7 @@ def reghist(
             if diff < min_value or diff > max_value:
                 continue
             if diff == len(counts):
-                counts[len(counts)-1]+=1
+                counts[len(counts) - 1] += 1
             else:
                 counts[int((diff - min_value) / size)] += 1
 
@@ -94,11 +94,11 @@ def ordhist(
         for ind_j in range(j_min, ndata2):
             diff = data1[ind_i] - data2[ind_j]
             if diff == len(counts):
-                counts[len(counts)-1]+=1
+                counts[len(counts) - 1] += 1
             else:
                 if diff >= min_value:
                     counts[int((diff - min_value) / size)] += 1
-           
+
     return counts
 
 
