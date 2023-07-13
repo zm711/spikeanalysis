@@ -1,5 +1,5 @@
-from spikeanalysis.utils import verify_window_format, gaussian_smoothing
-
+from spikeanalysis.utils import verify_window_format, gaussian_smoothing, jsonify_parameters
+import os
 import pytest
 import numpy as np
 
@@ -68,3 +68,8 @@ def test_gaussian_smoothing_with_time():
 
     assert np.max(sm_array) > np.max(big_bin_sm_array)
     assert np.min(sm_array) > np.min(big_bin_sm_array)
+
+
+def test_jsonify_parameters(tmp_path):
+    os.chdir(tmp_path)
+    jsonify_parameters({"test": "test1"})

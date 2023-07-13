@@ -138,6 +138,26 @@ def test_hist_diff():
     assert np.isclose(bin_centers[0], 0.5), "bin centers wrong"
     assert np.isclose(bin_centers[1], 1.5), "bin centers wrong"
 
+def test_hist_diff_reg():
+    # this should use the reghist algorithm
+    spike_times = np.array([1000,1002, 1001, 1010], dtype = np.uint64)
+    events = np.array([999, 1030], dtype=np.int32)
+    start = np.int32(0)
+    end = np.int32(2)
+    time_bin_size = np.int32(1)
+    bin_number = abs((end - start) / time_bin_size) + 1
+    bin_borders = np.linspace(start, end, num=int(bin_number))
+    print("bin borders: ", bin_borders)
+    binned_array, bin_centers = hf.histdiff(spike_times, events, bin_borders)
+    print(
+        "binned_array: ",
+        binned_array,
+    )
+    print("bin_centers: ", bin_centers)
+    assert binned_array[1] == 2, "counting is wrong"
+    assert binned_array[0] == 0, "counting is wrong"
+    assert np.isclose(bin_centers[0], 0.5), "bin centers wrong"
+    assert np.isclose(bin_centers[1], 1.5), "bin centers wrong"
 
 def test_rasterize():
     time_stamps = np.array([0, 1, 2, 3, 4, 5])
@@ -217,4 +237,34 @@ def test_ordhist():
     counts = hf.ordhist(data1, ndata1, data1, ndata1, min_val, size, nbins, counts)
 
     print(counts)
-    nptest.assert_array_equal(counts, np.array([3, 2, 2]))
+    nptest.assert_array_equal(counts, np.array([3, 2, 1]))
+
+
+def test_orderhist_late_events():
+    data1 = np.array([1,2,3,4, 10])
+    ndata1 = 4
+    data2 = np.array([3, 7])
+    ndata2 = 1
+    min_val = 1
+    size = 1
+    nbins = 3
+    counts = np.zeros((nbins), dtype = np.int32)
+    counts = hf.ordhist(data1, ndata1, data2, ndata2, min_val, size, nbins, counts)
+    print(counts)
+    nptest.assert_array_equal(counts, np.array([1,0,0]))
+
+
+def test_reg_hist():
+
+    data1 = np.array([1,2,4,3])
+    ndata1 = 4
+    data2 = np.array([2,3])
+    ndata2 = 2
+    min_value = 1
+    size = 1
+    nbins = 3
+    counts = np.zeros((nbins), dtype=np.int32)
+
+    counts = hf.reghist(data1, ndata1, data2, ndata2, min_value, size, nbins, counts)
+    print(counts)
+    nptest.assert_array_equal(counts, np.array([2,1,0]))

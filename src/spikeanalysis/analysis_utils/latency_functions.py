@@ -9,15 +9,15 @@ def latency_core_stats(bsl_fr: float, firing_data: np.array, time_bin_size: floa
 
     latency = np.zeros((np.shape(firing_data)[0]))
     for trial in range(np.shape(firing_data)[0]):
-        for n_bin in range(np.shape(firing_data)[1] - 1):
+        for n_bin in range(np.shape(firing_data)[1]-1):
             final_prob = 1 - stats.poisson.cdf(
                 np.sum(firing_data[trial][: n_bin + 1]) - 1,
                 bsl_fr * ((n_bin + 1) * time_bin_size),
             )
             if final_prob <= 10e-6:
                 break
-
-        if n_bin == np.shape(firing_data)[1] - 1:
+        
+        if n_bin == np.shape(firing_data)[1] - 2: # need to go to second last bin
             latency[trial] = np.nan
         else:
             latency[trial] = (n_bin + 1) * time_bin_size
