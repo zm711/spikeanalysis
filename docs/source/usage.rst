@@ -26,6 +26,7 @@ Required
 * numba
 * pandas
 * neo 
+* tqdm
 
 Optional (included in :code:`environment.yml`)
 
@@ -48,6 +49,44 @@ pandas is currently only used for one correlation function, but I plan to add a 
 pandas or polar extensively. 
 seaborn is mostly unused, but I may make more use of it in the future
 sklearn is completely unused, but I have plans for it.
+
+Development
+-----------
+
+Since :code:`analysis` is still in alpha development, there is a separate :code:`environment_dev.yml`, which
+will create an environment called :code:`spikeanalysis_dev` with all the dependencies above with the additions
+of:
+
+* black
+* pytest
+* pytest-cov
+
+In order to install in editable mode the :code:`yml` does not install :code:`spikeanalysis` itself, so one should
+do the following
+
+.. code-block:: bash
+
+    (base) $ conda create env -f environment_dev.yml
+    (base) $ conda activate spikeanalysis_dev
+    (spikeanalysis_dev) $ pip install -e git+https://github.com/zm711/spikeanalysis.git
+
+Commits and Testing
+-------------------
+
+Before committing any code lint with :code:`Black`. This can be done within the dev environment. Of note
+:code:`--exclude params.py`, must be included since this data requires :code:`''` and :code:`Black` will
+switch them to :code:`""`. the :code:`params.py` is part of the stimulated data for test.
+
+.. code-block:: bash
+
+    (spikeanalysis_dev) $ black spikeanalysis --exclude params.py
+
+
+Testing should be done with :code:`pytest`. If it in your local github folder do the following.
+
+.. code-block:: bash
+
+    (spikeanalysis_dev) $ pytest --cov=spikeanalysis spikeanalysis
 
 
 
