@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.testing as nptest
+import pytest
 from spikeanalysis.analysis_utils import histogram_functions as hf
 
 
@@ -43,6 +44,14 @@ def test_convert_bins_complex():
     assert np.isclose(new_bins[0], -8.0, rtol=1e-05)
 
 
+def test_convert_bins_failure():
+    bins = np.linspace(-10, 10, 100)
+    bin_number = 1000
+
+    with pytest.raises(Exception):
+        new_bins = hf.convert_bins(bins, bin_number)
+
+
 def test_spike_times_to_bins():
     spike_times = np.array([1000, 1001, 1002, 100000000], dtype=np.uint64)
     events = np.array([999], dtype=np.int32)
@@ -66,6 +75,17 @@ def test_spike_times_to_bins_simple():
     binned_array, _ = hf.spike_times_to_bins(test_array, ref_pt, 1, 0, 2)
     print("binned_array:", binned_array)
     assert binned_array[0, 0] == 1
+
+
+def test_spike_times_to_bins_failure():
+    time_stamps = np.array([])
+    events = np.linspace(0, 5, 5)
+    bin_size = 50
+    start = 0
+    end = 100
+    bin_array, _ = hf.spike_times_to_bins(time_stamps, events, bin_size, start, end)
+
+    assert np.sum(bin_array) == 0
 
 
 def test_hist_diff_simple_vector():
