@@ -22,7 +22,7 @@ virtual environment choose whatever you want):
 
 .. code-block:: bash
 
-    $ pip install -f requirements.txt
+    $ pip install -r requirements.txt
     $ pip install git+https://github.com/NeuralEnsemble/python-neo.git
     $ pip install git+https://github.com/zm711/spikeanalysis.git
 
