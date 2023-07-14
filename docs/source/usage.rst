@@ -6,7 +6,7 @@ Usage
 Installation
 ------------
 
-spikeanalysis is currently in alpha and so can not be installed
+:code:`spikeanalysis` is currently in alpha and so can not be installed
 from :code:`pypi` or :code:`conda-forge`. Instead it is build with the included
 :code:`environment.yml`
 
@@ -14,6 +14,17 @@ from :code:`pypi` or :code:`conda-forge`. Instead it is build with the included
     
     (base) $ conda create env -f environment.yml
 
+Alternatively if working in a non-conda system. Pip installation works as well. In 
+this case you can creatae whatever desired virtual environment followed by installing
+the requirements file :code:`requirements.txt`. Note this requires having :code:`git` 
+installed. To do this installation (note it is recommended to create some kind of 
+virtual environment choose whatever you want):
+
+.. code-block:: bash
+
+    $ pip install -f requirements.txt
+    $ pip install git+https://github.com/NeuralEnsemble/python-neo.git
+    $ pip install git+https://github.com/zm711/spikeanalysis.git
 
 Dependencies
 ------------
