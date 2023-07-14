@@ -1,6 +1,7 @@
 # spikeanalysis
 
 [![Testing with Conda](https://github.com/zm711/spikeanalysis/actions/workflows/python-package-conda.yml/badge.svg)](https://github.com/zm711/spikeanalysis/actions/workflows/python-package-conda.yml)
+[![Install and Build Pip](https://github.com/zm711/spikeanalysis/actions/workflows/python-package.yml/badge.svg)](https://github.com/zm711/spikeanalysis/actions/workflows/python-package.yml)
 [![Documentation Status](https://readthedocs.org/projects/spikeanalysis/badge/?version=latest)](https://spikeanalysis.readthedocs.io/en/latest/?badge=latest)
 
 
