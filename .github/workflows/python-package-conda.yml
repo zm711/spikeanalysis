@@ -1,4 +1,4 @@
-name: Install and Testing
+name: Install and Testing with Conda
 
 on:
   pull_request:
