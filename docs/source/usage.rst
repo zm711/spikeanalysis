@@ -51,6 +51,7 @@ There are only four required packages
 * scipy
 * numba
 * neo
+* tqdm
 
 I prefer to build :code:`Neo` from source since it is still actively being developed and I'm 
 working to update the :code:`IntanRawIO`
