@@ -27,8 +27,8 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        pip git+https://github.com/NeuralEnsemble/python-neo.git
-        pip git+https://github.com/zm711/spikeanalysis.git
+        pip install git+https://github.com/NeuralEnsemble/python-neo.git
+        pip install git+https://github.com/zm711/spikeanalysis.git
     - name: Test with pytest
       run: |
         pytest
