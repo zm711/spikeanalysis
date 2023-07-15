@@ -15,9 +15,10 @@ def stim(scope="module"):
     return stimulus
 
 
-def test_dir_assertion():
+def test_dir_assertion(tmp_path):
     # this tests for checking for the raw file
     # currently this is just *.rhd
+    os.chdir(tmp_path)
     with pytest.raises(Exception):
         _ = StimulusData(file_path="")
 

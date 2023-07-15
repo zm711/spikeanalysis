@@ -96,3 +96,85 @@ def test_count_unique(spikes):
 
     assert len(val) == 3, "there are three unique values"
     assert inst[1] == 4, "there are four 2's"
+
+
+def test_set_cache(spikes):
+    assert spikes.CACHING == False
+    spikes.set_caching()
+    assert spikes.CACHING
+    spikes.set_caching(cache=False)
+    assert spikes.CACHING == False
+
+
+def test_generate_qc_metrics_error(spikes):
+    with pytest.raises(Exception):
+        spikes.generate_qcmetrics()
+
+
+def test_get_waveforms_read_json(spikes, tmp_path):
+    import json
+    from spikeanalysis.utils import NumpyEncoder
+
+    os.chdir(tmp_path)
+    wfs = np.random.rand(3, 4, 4, 82)
+
+    with open("waveforms.json", "w") as write_file:
+        json.dump(wfs, write_file, cls=NumpyEncoder)
+
+    file_path = spikes._file_path
+    spikes._file_path = spikes._file_path / tmp_path
+    spikes.get_waveforms()
+    spikes._file_path = file_path
+    os.chdir(spikes._file_path)
+    assert isinstance(spikes.waveforms, np.ndarray)
+
+
+def test_set_qc_error(spikes):
+    with pytest.raises(Exception):
+        spikes.set_qc()
+
+
+def test_save_qc_parameters_error(spikes):
+    with pytest.raises(Exception):
+        spikes.save_qc_parameters()
+
+
+def gaussian_pcs(distance=10):
+    cluster_1 = np.random.normal(size=(50, 12))
+    cluster_2 = np.random.normal(loc=distance, size=(150, 12))
+    pc_feat = np.concatenate((cluster_1, cluster_2))
+    labels = np.concatenate(
+        (
+            np.zeros(
+                50,
+            ),
+            np.ones(
+                150,
+            ),
+        )
+    )
+    return pc_feat, labels
+
+
+def test_isolation_distance(spikes):
+    pc_feat, labels = gaussian_pcs(10)
+    id_0 = spikes._isolation_distance(pc_feat, labels, 0)
+    pc_feat1, labels1 = gaussian_pcs(100)
+    id_1 = spikes._isolation_distance(pc_feat1, labels1, 0)
+
+    assert id_1 > id_0
+
+
+def test_isolation_distance_failure(spikes):
+    pc_feat, labels = gaussian_pcs(10)
+    id_0 = spikes._isolation_distance(pc_feat, labels, 1)
+    assert np.isnan(id_0)
+
+
+def test_simplified_silhouette_score(spikes):
+    pc_feat, labels = gaussian_pcs(10)
+    id_0 = spikes._simplified_silhouette_score(pc_feat, labels, 0)
+    pc_feat1, labels1 = gaussian_pcs(100)
+    id_1 = spikes._simplified_silhouette_score(pc_feat1, labels1, 0)
+
+    assert id_1 > id_0

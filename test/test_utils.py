@@ -1,4 +1,5 @@
-from spikeanalysis.utils import verify_window_format, gaussian_smoothing, jsonify_parameters
+from spikeanalysis.utils import verify_window_format, gaussian_smoothing, jsonify_parameters, NumpyEncoder
+import json
 import os
 import pytest
 import numpy as np
@@ -73,3 +74,22 @@ def test_gaussian_smoothing_with_time():
 def test_jsonify_parameters(tmp_path):
     os.chdir(tmp_path)
     jsonify_parameters({"test": "test1"})
+
+
+def test_updata_jsonify_parameters(tmp_path):
+    os.chdir(tmp_path)
+
+    params = {"Test": [1, 2, 3]}
+    with open("analysis_parameters.json", "w") as write_file:
+        json.dump(params, write_file)
+
+    new_params = {"Test2": [4, 5, 6]}
+
+    jsonify_parameters(new_params)
+
+    with open("analysis_parameters.json", "r") as read_file:
+        final_params = json.load(read_file)
+
+    for key, value in zip(["Test", "Test2"], [[1, 2, 3], [4, 5, 6]]):
+        assert key in final_params.keys()
+        assert value in final_params.values()
