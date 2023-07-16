@@ -186,31 +186,29 @@ def test_qc_preprocessing_exceptions(spikes):
 
 
 def test_qc_preprocessing(spikes, tmp_path):
-
     file_path = spikes._file_path
     spikes._file_path = spikes._file_path / tmp_path
     os.chdir(spikes._file_path)
     id = np.array([10, 30, 20])
-    sil = np.array([.1, .4, .5])
+    sil = np.array([0.1, 0.4, 0.5])
     ref = np.array([0.3, 0.001, 0.1])
 
-    np.save('isolation_distances.npy', id)
-    np.save('silhouette_scores.npy', sil)
-    np.save('refractory_period_violations.npy', ref)
-    spikes.CACHING=True
-    spikes.qc_preprocessing(15, .02, 0.35)
+    np.save("isolation_distances.npy", id)
+    np.save("silhouette_scores.npy", sil)
+    np.save("refractory_period_violations.npy", ref)
+    spikes.CACHING = True
+    spikes.qc_preprocessing(15, 0.02, 0.35)
 
     assert isinstance(spikes._qc_threshold, np.ndarray)
 
-    assert spikes._qc_threshold[0]==False
-    assert spikes._qc_threshold[1]==True
-    assert spikes._qc_threshold[2]==False
+    assert spikes._qc_threshold[0] == False
+    assert spikes._qc_threshold[1] == True
+    assert spikes._qc_threshold[2] == False
     spikes._file_path = file_path
     os.chdir(file_path)
 
 
 def test_generate_qcmetrics(spikes, tmp_path):
-    
     file_path = spikes._file_path
 
     spikes._file_path = spikes._file_path / tmp_path
@@ -221,21 +219,21 @@ def test_generate_qcmetrics(spikes, tmp_path):
     pc_feat = pc_feat.reshape(200, 3, 4)
 
     spikes.pc_feat = pc_feat
-    spikes.CACHING=True
+    spikes.CACHING = True
     spikes.generate_qcmetrics()
 
     assert isinstance(spikes.isolation_distances, np.ndarray)
-    assert len(spikes.isolation_distances)==2
+    assert len(spikes.isolation_distances) == 2
     assert isinstance(spikes.silhouette_scores, np.ndarray)
-    assert len(spikes.silhouette_scores)==2
+    assert len(spikes.silhouette_scores) == 2
 
     os.chdir(file_path)
 
-def test_get_waveform_values_data_organization(spikes):
 
-    waveforms = np.random.rand(2,10, 4, 82)
+def test_get_waveform_values_data_organization(spikes):
+    waveforms = np.random.rand(2, 10, 4, 82)
 
     spikes.waveforms = waveforms
-    spikes.get_waveform_values(depth = 0)
+    spikes.get_waveform_values(depth=0)
 
-    assert len(spikes.waveform_duration)==len(spikes.waveform_amplitude)==len(spikes.waveform_depth)
+    assert len(spikes.waveform_duration) == len(spikes.waveform_amplitude) == len(spikes.waveform_depth)
