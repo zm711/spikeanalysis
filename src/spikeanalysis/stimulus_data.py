@@ -51,7 +51,7 @@ class StimulusData:
         os.chdir(self._file_path)
         import glob
 
-        files = glob.glob("*json")
+        files = glob.glob("*events.json")
         assert len(files) > 0, "There are no previous files"
 
         files = "".join(files)
