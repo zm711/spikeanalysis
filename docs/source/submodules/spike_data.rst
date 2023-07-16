@@ -112,7 +112,7 @@ whether it would have better distance scores to the neighboring cluster :math:`b
 
     a(i) = \frac{1}{|C_K| - 1} \Sigma_{x \in C_K, x \neq i} distance(i, x)
 
-    b(i) = \frac{1}{|C_L| - 1} \Sigma_{x \in C_L} distance(i, x)
+    b(i) = \frac{1}{|C_L|} \Sigma_{x \in C_L} distance(i, x)
 
 The silhouette score is than:
 
