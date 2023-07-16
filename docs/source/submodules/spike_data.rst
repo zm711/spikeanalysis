@@ -127,6 +127,11 @@ This makes use of the centroid distance rather than pair wise. So,
 
     distance(i, \mu_{C_K})
 
+The general interpretation of the silhouette score is that :math:`-1` would indicate that a spike was placed in the wrong the cluster whereas a 
+score of :math:`1` is that a spike was put into the correct cluster. We can take the average of all these scores to get the average silhouette score
+to indicate the overall quality of a cluster. :math:`\frac{1}{n spikes} \Sigma s(i)` Thus similar to the per-spike basis the per-cluster score can 
+vary from :math:`-1` (bad cluster) to :math:`1` (great cluster) with intermediate values. 
+
 Denoising Data
 --------------
 
@@ -156,6 +161,20 @@ contact of the probe.
     
     spikes.get_waveforms()
     spikes.get_waveform_values(depth=1000)
+
+
+Waveform depth 
+^^^^^^^^^^^^^^
+
+Since sorting is performed relative to the :code:`channel_map`, the raw depth of each channel are given relative to the :math:`0`.
+Since this is typically the bottom of the probe the values are at the relative to the bottom of the probe. This can easily be 
+corrected. Determining the depth of a spike, though can be calculated a variety of different ways. Currently to keep the code 
+as understandable and maintainable a weighted average is used (faster, slightly less accurate) rather than a PC based approach
+(slower, slightly more accurate)
+
+.. math:: 
+
+    \frac{1}{\Sigma amplitudes} \Sigma amplitudes * y-coords
     
 
 Pipeline Function
