@@ -1,8 +1,3 @@
-.. spikeanalysis documentation master file, created by
-   sphinx-quickstart on Sun Jul  9 16:11:29 2023.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to spikeanalysis's documentation!
 =========================================
 
@@ -20,6 +15,7 @@ Check out the :doc:`usage` section for installation instructions :ref:`install <
    usage
    submodules/index
    API
+   references
 
 
 Indices and tables

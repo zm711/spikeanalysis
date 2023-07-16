@@ -49,7 +49,7 @@ Refractory violations
 
 A simple calcuation of refractory period violations for each unit based on the :code:`ref_dur_ms` given. Since
 neurons have refractory periods in which they can't fire units with too many violations are likely poorly separated
-or mis-curated. Calculated with the function :code:`refractory_violation`
+or mis-curated. Calculated with the function :code:`refractory_violation`. 
 
 .. code-block:: python
 
@@ -68,6 +68,7 @@ Distance (ref) as well as Silhouette Score (ref) can be calculated with :code:`g
     spikes.generate_pcs() # organize curated data
     spikes.generate_qcmetrics() # Isolation distance and Silhouette Score
 
+
 Creating a quality control threshold
 ------------------------------------
 
@@ -83,6 +84,48 @@ removes any units labeled as :code:`noise` in :code:`Phy`. Finally the mask can 
     spikes.qc_preprocessing(idthres = 10, rpv = 0.01, sil=0.45)
     spikes.set_qc()
 
+
+Isolation Distance
+^^^^^^^^^^^^^^^^^^
+
+Relies on the mahalobnis distance between clusters as a metric of clustering quality. Since this metric utilizes the covariance
+matrix of cluster distances it helps reduce less significant and highly coordinated PC spaces to reduce the curse of dimensionality
+as well as the fact that many contacts of the probes are in similar locations and so should have correlated PC spaces. The Isolation
+Distance relies on the mahalobnis distances and is reported as the smallest mahalobnis distance of the nearest spike not found in the 
+current cluster. Proposed by Harris et al (2001) and equation adapted from Schmitzer-Torbert et al (2005). Isolation distances can vary 
+from :math:`0` to :math:`\infty` with great distance indicating that clusters are farther apart in PC space.
+
+.. math::
+
+    {D^2}_{i,C} = (x_i - \mu_{c})^T \Sigma_c^{-1}(x_i - \mu_C)
+
+
+Silhouette Score
+^^^^^^^^^^^^^^^^
+
+Silhouette Score is another metric of clustering quality that seeks to determine the goodness of clustering. It is a metric that assesses
+the pointwise distances between every spike within a cluster compared to every other spike in the cluster as well as every other spike in
+the nearest other cluster. The basic idea is that for each spike we can determine whether it fits better within its assigned cluster :math:`a(i)` or 
+whether it would have better distance scores to the neighboring cluster :math:`b(i)`:
+
+.. math::
+
+    a(i) = \frac{1}{|C_K| - 1} \Sigma_{x \in C_K, x \neq i} distance(i, x)
+
+    b(i) = \frac{1}{|C_L| - 1} \Sigma_{x \in C_L} distance(i, x)
+
+The silhouette score is than:
+
+.. math::
+
+    s(i) = \frac{b(i) - a(i)}{max(a(i), b(i))}
+
+For :code:`spikenalysis`, rather than this implementation proposed by Rousseeuw, the simplified silhouette is used as proposed by Hruschka et al.
+This makes use of the centroid distance rather than pair wise. So,
+
+.. math::
+
+    distance(i, \mu_{C_K})
 
 Denoising Data
 --------------
@@ -137,4 +180,4 @@ parameters to be provided. Example below will all values included.
 References
 ----------
 
-TODO
+See references page.
