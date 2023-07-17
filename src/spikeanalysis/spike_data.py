@@ -284,7 +284,7 @@ class SpikeData:
                     ]
 
         if np.shape(pc_features)[1] != 3:
-            raise ("Error generating pc features")
+            raise Exception("Error generating pc features")
 
         self.pc_feat = new_feat
         self.pc_feat_ind = new_feat_ind

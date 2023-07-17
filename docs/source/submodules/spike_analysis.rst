@@ -71,7 +71,31 @@ Latency to first spike
 Another assessment of a neuron is the latency to fire after stimulus onset. Different populations require different mathematical models
 For neurons which follow a Poisson distribution a statistical test checking for the first deviation from this distribution can be used. 
 For neurons that are relatively quiescent, time to the first spike is more accurate. :code:`SpikeAnalysis` currently uses a cutoff of 2Hz
-baseline firing to determine which measurement to make for determining latency to fire.
+baseline firing to determine which measurement to make for determining latency to fire. The desired baseline window should be given, the
+:code:`time_bin_ms` allows for the calculation of the deviation from a Poisson (see note below) and the :code:`num_shuffles` indicates how
+many baseline shuffles to store.
+
+.. code-block:: python
+
+    spiketrain.latencies(bsl_window: [-30,-10], time_bin_ms = 50.0, num_shuffles 300)
+
+
+Above 2Hz Assuming a Poisson
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To do
+
+Below 2Hz Taking the first-spike
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If the mean firing rate is below 2Hz for the neurons, the first spike is taken to be the true first spike as related to the stimulus.
+
+
+Shuffled baseline
+^^^^^^^^^^^^^^^^^
+
+To allow for statistical tests to assess changes in latency to fire for a unit, a shuffled baseline is created at the same time. This is just
+based on a normal distribution of points before the onset of the stimulus.
 
 
 Interspike Interval

@@ -41,9 +41,10 @@ exclude_also = [
   "def __repr__",
 ]
 
+
 [tool.coverage.run]
 omit = [
-  "src/spikeanalysis/analysis_utils/histogram_functions.py",
-  "src/spikeanalysis/spike_plotter.py",
-  "src/spikeanalysis/intrinsic_plotter.py",
+  "src/spikeanalysis/analysis_utils/histogram_functions.py", # histogram functions are almost all numba-based
+  "src/spikeanalysis/spike_plotter.py", # no testing for actual plotting yet
+  "src/spikeanalysis/intrinsic_plotter.py", # no testing for plotting yet
 ]

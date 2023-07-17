@@ -117,9 +117,25 @@ def test_generate_digital_events(stim):
     print(stim.digital_events)
     print(stim.digital_channels)
     assert stim.digital_events["DIGITAL-IN-01"]["events"][0] == 15000
-    assert stim.digital_events["DIGITAL-IN-01"]["lengths"][0] == 14999, 14999
+    assert stim.digital_events["DIGITAL-IN-01"]["lengths"][0] == 14999
     assert stim.digital_events["DIGITAL-IN-01"]["trial_groups"][0] == 1.0
     assert stim.digital_channels[0] == "DIGITAL-IN-01"
+
+
+def test_generate_trains(stim):
+    stim.get_raw_digital_data()
+    stim.get_final_digital_data()
+    stim.generate_digital_events()
+    stim.generate_stimulus_trains(
+        channel_name="DIGITAL-IN-01",
+        stim_freq=1,
+        stim_time_secs=1,
+    )
+
+    print(stim.digital_events)
+    assert stim.digital_events["DIGITAL-IN-01"]["events"][0] == 15000, "should not change start of event"
+    assert stim.digital_events["DIGITAL-IN-01"]["lengths"][0] == 3000.0, "length should change"
+    assert stim.digital_events["DIGITAL-IN-01"]["stim_frequency"] == 1, "should write the stim frequency"
 
 
 def test_get_stimulus_channels(stim):
@@ -169,3 +185,11 @@ def test_read_intan_header(stim):
     assert header["version"] == {"major": 3, "minor": 2}
     assert header["sample_rate"] == 3000.0
     assert header["num_samples_per_data_block"] == 128
+
+
+def test_run_all(stim):
+    stim.run_all()
+
+    assert stim.analog_data.any()
+    assert isinstance(stim.dig_analog_events, dict)
+    assert isinstance(stim.digital_events, dict)
