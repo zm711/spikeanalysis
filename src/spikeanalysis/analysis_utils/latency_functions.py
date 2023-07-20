@@ -26,7 +26,7 @@ def latency_core_stats(bsl_fr: float, firing_data: np.array, time_bin_size: floa
 
 
 @jit(nopython=True)
-def latency_median(firing_counts: np.array, time_bin_size: float):
+def latency_median(firing_counts: np.array, time_bin_size: float): # pragma no cover
     """ "According to Mormann et al. 2008 if neurons fire less than 2Hz they won't really
     follow a poisson distribution and so instead just take latency to first spike as the
     latency and then get the median of the trials"""
