@@ -22,7 +22,7 @@ class StimulusData:
         file_path = Path(file_path)
         assert Path.is_dir(
             file_path
-        ), "Enter root directory with *rhd file. If having problems for \
+        ), "Enter root directory with *rhd/ephys file. If having problems for \
         windows append r in front of the str."
         self._file_path = file_path
         os.chdir(file_path)
@@ -128,11 +128,14 @@ class StimulusData:
 
         del self.reader  # reader and memmap heavy. Delete after this since not needed
 
-    def create_neo_reader(self):
+    def create_neo_reader(
+        self,
+    ):
         """
         Function that creates a Neo IntanRawIO reader and then parses the header
 
         """
+
         reader = neo.rawio.IntanRawIO(filename=self._filename)
         reader.parse_header()
 
@@ -229,8 +232,8 @@ class StimulusData:
                 self.dig_analog_events[str(row)]["stim"] = stim_name[row]
             else:
                 self.dig_analog_events[str(row)]["stim"] = str(row)
-            
-            if len(events)==0:
+
+            if len(events) == 0:
                 del self.dig_analog_events[str(row)]
 
     def _valueround(self, x: float, precision: int = 2, base: float = 0.25) -> float:
@@ -318,7 +321,7 @@ class StimulusData:
             self.digital_events[self.dig_in_channels[idx]["native_channel_name"]]["trial_groups"] = np.ones(
                 (len(events))
             )
-            if len(events)==0:
+            if len(events) == 0:
                 del self.digital_events[self.dig_in_channels[idx]["native_channel_name"]]
             else:
                 self.digital_channels.append(self.dig_in_channels[idx]["native_channel_name"])

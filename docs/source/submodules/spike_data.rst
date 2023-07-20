@@ -146,6 +146,18 @@ remove anything you want to be removed regardless of quality values.
 
     spikes.denoise_data() # remove units labeled as Phy noise
 
+
+Denoising data alters the values of :code:`spike_clusters`, :code:`raw_spike_times`, etc, so if testing multiple iterations of different qc metrics
+one should use :code:`reload_data` to "un"-denoise the data. This allows applying new :code:`qc` masks to the data while iterating through values. 
+For this reason the :code:`run_all` (see below) does not run :code:`denoise_data`. But do note that :code:`SpikeAnalysis` does run :code:`denoise_data`
+automatically, so if iterating with :code:`SpikeAnalysis` one should run :code:`reload_data`
+
+.. code-block:: python
+
+    spikes.reload_data()
+
+    
+
 Raw waveforms
 -------------
 

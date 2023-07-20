@@ -125,7 +125,7 @@ class SpikeData:
         try:
             self._qc_threshold = np.load("qc_threshold.npy")
             self._return_to_dir(current_dir)
-            if recurated==False:
+            if recurated == False:
                 return
             else:
                 raise FileNotFoundError
@@ -139,7 +139,6 @@ class SpikeData:
                 self.generate_qcmetrics()
             self.qc_preprocessing(idthres=idthres, rpv=rpv, sil=sil, recurated=recurated)
             self.set_qc()
-            self.denoise_data()
             self.get_waveforms()
             self.get_waveform_values(depth=depth)
             self._return_to_dir(current_dir)
@@ -176,6 +175,22 @@ class SpikeData:
         # if len(cids) > len(self._cids):
         #    cids = self._cids
         # self._cids = self._cids[np.isin(cids, noise_clusters, invert=True)]
+
+        self._return_to_dir(current_dir)
+
+    def reload_data(self):
+        """Function to reload raw values for after running denoise_data"""
+        current_dir = os.getcwd()
+        self._goto_file_path()
+        self.raw_spike_times = np.squeeze(np.load("spike_times.npy"))
+        self._spike_templates = np.squeeze(np.load("spike_templates.npy"))
+
+        if os.path.isfile("spike_clusters.npy"):
+            self.spike_clusters = np.squeeze(np.load("spike_clusters.npy"))
+        else:
+            self.spike_clusters = self._spike_templates
+
+        self._cids = np.array(list(set(self.spike_clusters)))
 
         self._return_to_dir(current_dir)
 

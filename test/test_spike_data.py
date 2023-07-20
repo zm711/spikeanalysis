@@ -55,6 +55,12 @@ def test_get_file_size(spikes):
     assert size == 1
 
 
+def test_reload_data(spikes):
+    del spikes.raw_spike_times
+    spikes.reload_data()
+    assert isinstance(spikes.raw_spike_times, np.ndarray)
+
+
 def test_read_cgs(spikes):
     spikes._goto_file_path()
     cids, cgs = spikes._read_cgs()
@@ -65,6 +71,10 @@ def test_read_cgs(spikes):
     assert cids[0] == 1, "cids issues"
     assert cids[1] == 2, "cids issues"
     assert cgs[0] == 2, "cgs issue"
+
+
+def test_denoise_data(spikes):
+    spikes.denoise_data()
 
 
 def test_find_index(spikes):

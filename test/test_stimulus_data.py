@@ -21,6 +21,7 @@ def ana_stim(
     scope="module",
 ):
     import copy
+
     stim1 = copy.deepcopy(stim)
     stim1.get_analog_data()
     stim1.analog_data[10000:16000] = 9.50
@@ -67,8 +68,6 @@ def test_get_analog_data_slice_none(stim):
 
 
 def test_digitize_analog_data(ana_stim):
-
-
     # test by creating actual analog events
     ana_stim.digitize_analog_data(stim_length_seconds=0.1, analog_index=0, stim_name=["test"])
     print(ana_stim.dig_analog_events)
