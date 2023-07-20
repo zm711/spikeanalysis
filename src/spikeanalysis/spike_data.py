@@ -125,12 +125,18 @@ class SpikeData:
         try:
             self._qc_threshold = np.load("qc_threshold.npy")
             self._return_to_dir(current_dir)
-            return
+            if recurated==False:
+                return
+            else:
+                raise FileNotFoundError
         except FileNotFoundError:
             self.set_caching(set_caching)
             self.refractory_violation(ref_dur_ms=ref_dur_ms)
-            self.generate_pcs()
-            self.generate_qcmetrics()
+            try:
+                _ = self._qc_threshold
+            except AttributeError:
+                self.generate_pcs()
+                self.generate_qcmetrics()
             self.qc_preprocessing(idthres=idthres, rpv=rpv, sil=sil, recurated=recurated)
             self.set_qc()
             self.denoise_data()
