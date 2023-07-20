@@ -37,11 +37,23 @@ is that it uses a memorymap to prevent the whole file from being loaded into RAM
 the large majority of the :code:`.rhd` file is the :code:`amplifier_data` which is used for spike sorting, but not needed
 for this specific step, we can load the stimulus data from extremely large files even with relatively small amounts of RAM.
 **note this is bandwidth limited** so loading from a local drive will be faster than over a network connection. The first
-step is to create the :code:`NEO` reader.
+step is to create the :code:`NEO` reader `NEO <https://neo.readthedocs.io/en/latest/>`_.
 
 .. code-block:: python
 
     stim.create_neo_reader() # creates the memmap for future functions
+
+
+Time Slice
+^^^^^^^^^^
+
+In the case of only wanting to analyze part of a recording a :code:`time_slice` can be used with
+the functions :code:`get_analog_data`, :code:`get_raw_digital_data`, and :code:`run_all`. The 
+general set-up of the :code:`time_slice` is to give the :code:`start` and the :code:`stop` within a
+sequence (start, stop). This needs to be given in seconds and default is :code:`(None, None)`. when
+:code:`None` indicates the beginning or ending of the recording depending on the positioning. For example,
+:code:`time_slice = (None, 10)` would go from the start of the recording to only 10 seconds into the 
+recording.
 
 Processing Analog Stimulus data
 -------------------------------
@@ -53,6 +65,13 @@ In order to assess analog stimulus data the data must first be read with :code:`
 
     stim.get_analog_data()
     stim.digitize_analog_data(stim_length_seconds = 5, stim_name = ['ana_stim']) # ensure length of stimulus is longer than value entered
+
+An example with a slice:
+
+.. code-block:: python
+    
+    stim.get_analog_data(time_slice=(None, 300)) # from start to 6 minutes into recording
+    stim.get_analog_data(time_slice=(60, None)) # ignore first minute of recording
 
 Processing Digital Stimulus data
 --------------------------------

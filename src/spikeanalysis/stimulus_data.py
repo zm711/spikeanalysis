@@ -63,11 +63,8 @@ class StimulusData:
         if "dig_analog" in files:
             with open("dig_analog_events.json") as read_file:
                 self.dig_analog_events = json.load(read_file)
-        try:
             raw_analog = glob.glob("raw_analog*")[0]
             self.analog_data = np.load(raw_analog)
-        except IndexError:
-            pass
 
         with open("params.py", "r") as p:
             params = p.readlines()
@@ -80,6 +77,7 @@ class StimulusData:
         stim_index: Optional[int] = None,
         stim_length_seconds: Optional[float] = None,
         stim_name: Optional[list] = None,
+        time_slice=(None, None),
     ):
         """
         Pipeline function to run through all steps necessary to load intan data
@@ -92,6 +90,8 @@ class StimulusData:
             The length (seconds) of the analog stimuli to digitize them. The default is None.
         stim_name : Optional[list], optional
             Name of the stimulus. The default is None.
+        time_slice: tuple[start, stop]
+            time slice of recording to use, given in seconds with start and stop
 
         """
 
@@ -103,12 +103,12 @@ class StimulusData:
 
         self.create_neo_reader()
         try:
-            self.get_analog_data()
+            self.get_analog_data(time_slice=time_slice)
             HAVE_ANALOG = True
         except AssertionError:
             HAVE_ANALOG = False
 
-        self.get_raw_digital_data()
+        self.get_raw_digital_data(time_slice=time_slice)
         try:
             len(np.isnan(self._raw_digital_data))
             HAVE_DIGITAL = True
@@ -141,13 +141,30 @@ class StimulusData:
         self.sample_frequency = sample_freq
         self.reader = reader
 
-    def get_analog_data(self):
+    def get_analog_data(self, time_slice=(None, None)):
         """
         Function to load analog data from an Intan file. Requires the IntanRawIO to be generated with
         `create_neo_reader`
 
+        Parameters
+        ----------
+        time_slice: tuple[start, stop]
+            time slice of the data to analyze given in seconds with format (start, stop)
+            None for start indicates start at 0, None for stop indicates go to end of
+            recording
+
         """
-        stream_list = list()
+
+        if time_slice[0] is not None:
+            i_start = int(np.rint(time_slice[0] * self.sample_frequency))
+        else:
+            i_start = None
+        if time_slice[1] is not None:
+            i_stop = int(np.rint(time_slice[1] * self.sample_frequency))
+        else:
+            i_stop = None
+
+        stream_list = []
         for value in self.reader.header["signal_streams"]:
             stream_list.append(str(value[0]))
         adc_stream = [idx for idx, name in enumerate(stream_list) if "ADC" in name.upper()]
@@ -155,6 +172,8 @@ class StimulusData:
         adc_stream = adc_stream[0]
         adc_data = self.reader.get_analogsignal_chunk(
             stream_index=adc_stream,
+            i_start=i_start,
+            i_stop=i_stop,
         )
 
         final_adc = np.squeeze(
@@ -179,8 +198,8 @@ class StimulusData:
             stim_length_seconds = 8 * self.sample_frequency
         else:
             stim_length_seconds *= self.sample_frequency
-        if analog_index:
-            current_analog_data = self.analog_data[analog_index, :]
+        if analog_index and len(np.shape(self.analog_data)) != 1:
+            current_analog_data = self.analog_data[:, analog_index]
         else:
             current_analog_data = self.analog_data
 
@@ -192,7 +211,6 @@ class StimulusData:
             self.dig_analog_events[str(row)] = {}
             sub_data = current_analog_data[:, row]
             filtered_analog_data = np.where(sub_data > 0.09, 1, 0)
-
             dig_ana_events, dig_ana_lengths = self._calculate_events(filtered_analog_data)
             events = dig_ana_events[dig_ana_lengths > stim_length_seconds]
             lengths = dig_ana_lengths[dig_ana_lengths > stim_length_seconds]
@@ -233,7 +251,7 @@ class StimulusData:
         """
         return round(base * round(float(x) / base), precision)
 
-    def get_raw_digital_data(self):
+    def get_raw_digital_data(self, time_slice=(None, None)):
         """
         This is a function that in the future will get the digital data, but currently due
         to the inability to grab digital from neo automatically. Calls on internal hack to
@@ -248,7 +266,7 @@ class StimulusData:
         # assert len(digital_stream) >0, "There is no digital-in data"
         # digital_stream = digital_stream[0]
         try:
-            digital_data = self._intan_neo_read_no_dig(self.reader)
+            digital_data = self._intan_neo_read_no_dig(self.reader, time_slice=time_slice)
         except:
             digital_data = np.nan
 
@@ -425,15 +443,11 @@ class StimulusData:
             _ = self.dig_analog_events
             with open("dig_analog_events.json", "w") as write_file:
                 json.dump(self.dig_analog_events, write_file, cls=NumpyEncoder)
+            np.save("raw_analog_data.npy", self.analog_data)
         except AttributeError:
             print("No analog events to save")
 
-        try:
-            np.save("raw_analog_data.npy", self.analog_data)
-        except AttributeError:
-            print("No raw analog data to save")
-
-    def _intan_neo_read_no_dig(self, reader: neo.rawio.IntanRawIO) -> np.array:
+    def _intan_neo_read_no_dig(self, reader: neo.rawio.IntanRawIO, time_slice=(None, None)) -> np.array:
         """
         Utility function that hacks the Neo memmap structure to be able to read
         digital events.
@@ -442,6 +456,10 @@ class StimulusData:
         ----------
         reader : neo.rawio.IntanRawIO
             The current file reader containing the memmap to the .rhd file.
+        time_slice: tuple[start, stop]
+            time slice of the data to analyze given in seconds with format (start, stop)
+            None for start indicates start at 0, None for stop indicates go to end of
+            recording
 
         Returns
         -------
@@ -453,8 +471,14 @@ class StimulusData:
         dig_size = digital_memmap.size
         dig_shape = digital_memmap.shape
         # below we have all the shaping information necessary
-        i_start = 0
-        i_stop = dig_size
+        if time_slice[0] is not None:
+            i_start = int(np.rint(time_slice[0] * self.sample_frequency))
+        else:
+            i_start = 0
+        if time_slice[1] is not None:
+            i_stop = int(np.rint(time_slice[1] * self.sample_frequency))
+        else:
+            i_stop = dig_size
         block_size = dig_shape[1]
         block_start = i_start // block_size
         block_stop = i_stop // block_size + 1

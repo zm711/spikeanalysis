@@ -16,7 +16,7 @@ Autocorrelograms are a way of displaying whether a unit is respecting the neuron
 over 0 that should have no counts within the refractory period and various counts within bins outside of the refractory period. This function requires
 :code:`SpikeData`, as well as the :code:`ref_dur_ms` (refractory period in milliseconds) to run. 
 
-**Of note** Different neurons have different refractory periods. 2 ms is relatively common, but this should be based on the system the user is studying.
+**Of note Different neurons have different refractory periods. 2 ms is relatively common, but this should be based on the system the user is studying.**
 
 
 .. code-block:: python
@@ -56,7 +56,7 @@ lamina of the cord has most of the units found during sorting.
 
 .. code-block:: python
 
-    iploter.plot_spike_dpeth_fr(sp=spikes) # spikes is SpikeData
+    iplotter.plot_spike_dpeth_fr(sp=spikes) # spikes is SpikeData
 
 CDF
 ---

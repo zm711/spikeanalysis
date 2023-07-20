@@ -30,6 +30,27 @@ def test_get_analog_data(stim):
     assert np.shape(stim.analog_data) == (62080,)
 
 
+def test_get_analog_data_time_slice(stim):
+    stim.get_analog_data(time_slice=(2.0, 8.0))
+    print(stim.analog_data)
+    assert np.shape(stim.analog_data) == (18000,)
+
+
+def test_get_analog_data_slice_none(stim):
+    stim.get_analog_data(
+        time_slice=(
+            None,
+            8.0,
+        )
+    )
+    print(stim.analog_data)
+    assert len(stim.analog_data) == 24000
+
+    stim.get_analog_data(time_slice=(2.0, None))
+    print(stim.analog_data)
+    assert len(stim.analog_data) == 56080
+
+
 def test_digitize_analog_data(stim):
     stim.get_analog_data()
     stim.digitize_analog_data()
@@ -40,6 +61,25 @@ def test_digitize_analog_data(stim):
     assert "events" in stim.dig_analog_events["0"].keys()
     assert "lengths" in stim.dig_analog_events["0"].keys()
     assert "trial_groups" in stim.dig_analog_events["0"].keys()
+    assert stim.dig_analog_events["0"]["stim"] == "0"
+
+    # test by creating actual analog events
+    stim.analog_data[10000:16000] = 9.50
+    stim.analog_data[9000:10000] = 0
+    stim.analog_data[16000:17000] = 0
+    stim.digitize_analog_data(stim_length_seconds=0.1, analog_index=0, stim_name=["test"])
+    print(stim.dig_analog_events)
+
+    assert stim.dig_analog_events["0"]["stim"] == "test"
+    assert stim.dig_analog_events["0"]["events"][1] == 9999
+    assert stim.dig_analog_events["0"]["lengths"][1] == 6000
+    assert stim.dig_analog_events["0"]["trial_groups"][1] == 38
+
+    stim.analog_data = np.expand_dims(stim.analog_data, axis=1)
+    stim.digitize_analog_data(stim_length_seconds=0.1, analog_index=0, stim_name=["test"])
+
+    # test stim_index with multiple columns (just test it doesn't error)
+    assert stim.dig_analog_events
 
 
 def test_json_writer(stim, tmp_path):
@@ -101,12 +141,55 @@ def test_get_raw_digital_events(stim):
     assert stim._raw_digital_data[0] == 0
 
 
+def test_get_raw_digital_events_slice(stim):
+    stim.get_raw_digital_data(
+        time_slice=(
+            2.0,
+            8.0,
+        )
+    )
+    print(stim._raw_digital_data)
+    assert len(stim._raw_digital_data) == 18000
+
+
+def test_get_raw_digital_events_slice_none(stim):
+    stim.get_raw_digital_data(
+        time_slice=(
+            None,
+            8.0,
+        )
+    )
+    print(stim._raw_digital_data)
+    assert len(stim._raw_digital_data) == 24000
+
+    stim.get_raw_digital_data(time_slice=(2.0, None))
+    print(stim._raw_digital_data)
+    assert len(stim._raw_digital_data) == 56080
+
+
+def test_get_raw_nan(stim):
+    import copy
+
+    stim2 = copy.deepcopy(stim)
+    del stim2.reader
+    stim2.get_raw_digital_data()
+
+    assert np.isnan(stim2._raw_digital_data)
+
+
 def test_final_digital_data(stim):
     stim.get_raw_digital_data()
     stim.get_final_digital_data()
     assert np.shape(stim.digital_data) == (1, 62080)
     assert stim.digital_data[0, -1] == 0.0
     assert stim.dig_in_channels[0]["native_channel_name"] == "DIGITAL-IN-01"
+
+
+def test_final_digital_data_failure(stim):
+    stim._raw_digital_data = np.nan
+
+    with pytest.raises(Exception):
+        stim.get_final_digital_data()
 
 
 def test_generate_digital_events(stim):
@@ -147,6 +230,11 @@ def test_get_stimulus_channels(stim):
     assert "DIGITAL-IN-01" in stim_dict.keys()
 
 
+def test_fail_stimulus_channels(stim):
+    with pytest.raises(Exception):
+        stim.get_stimulus_channels()
+
+
 def test_set_trial_groups(stim):
     stim.get_raw_digital_data()
     stim.get_final_digital_data()
@@ -163,6 +251,18 @@ def test_set_trial_groups(stim):
 
     assert stim.digital_events["DIGITAL-IN-01"]["trial_groups"][0] == 3.0
     assert stim.digital_events["DIGITAL-IN-01"]["trial_groups"][1] == 4.0
+
+
+def test_failed_trial_groups_stim_names(stim):
+    stim.get_raw_digital_data()
+    stim.get_final_digital_data()
+    stim.generate_digital_events()
+
+    with pytest.raises(Exception):
+        stim.set_trial_groups(trial_dictionary={"RANDOM": "RANDOM"})
+
+    with pytest.raises(Exception):
+        stim.set_stimulus_name(stim_names={"RANDOM": "RANDOM"})
 
 
 def test_set_stimulus_name(stim):

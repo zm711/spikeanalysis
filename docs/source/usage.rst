@@ -15,7 +15,7 @@ from :code:`pypi` or :code:`conda-forge`. Instead it is built with the included
     (base) $ conda create env -f environment.yml
 
 Alternatively if working in a non-conda system. Pip installation works as well. In 
-this case you can creatae whatever desired virtual environment followed by installing
+this case you can create whatever desired virtual environment followed by installing
 the requirements file :code:`requirements.txt`. Note this requires having :code:`git` 
 installed. To do this installation (note it is recommended to create some kind of 
 virtual environment choose whatever you want):
@@ -53,14 +53,20 @@ There are only five required packages:
 * neo
 * tqdm
 
+**plotting functions require matplotlib to function**
+
 I prefer to build :code:`Neo` from source since it is still actively being developed and I'm 
-working to update the :code:`IntanRawIO`
+working to update the :code:`IntanRawIO`.
+
+Optional Dependency Explanations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 matplotlib is import for the two plotting classes
 pandas is currently only used for one correlation function, but I plan to add a class that uses
 pandas or polar extensively. 
 seaborn is mostly unused, but I may make more use of it in the future
 sklearn is completely unused, but I have plans for it.
+
 
 Development
 -----------
@@ -79,8 +85,10 @@ do the following
 .. code-block:: bash
 
     (base) $ conda create env -f environment_dev.yml
+    (base) $ git clone https://github.com/zm711/spikeanalysis
+    (base) $ cd spikeanalysis
     (base) $ conda activate spikeanalysis_dev
-    (spikeanalysis_dev) $ pip install -e git+https://github.com/zm711/spikeanalysis.git
+    (spikeanalysis_dev) $ pip install -e .
 
 Commits and Testing
 -------------------
@@ -95,7 +103,7 @@ switch them to :code:`" "`. the :code:`params.py` is part of the stimulated data
 
 
 Testing should be done with :code:`pytest` and :code:`pytest-cov`. Optionally the flag for missing lines
-can be included for coverage with :code:`--cov-report missing-terms`.
+can be included for coverage with :code:`--cov-report term-missing`.
 
 .. code-block:: bash
 
