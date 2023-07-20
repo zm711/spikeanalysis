@@ -40,13 +40,14 @@ a value given.
 
 .. code-block:: python
 
-    spiketrain.get_raw_psths(time_bin_ms=0.01, window=[-10,20])
+    spiketrain.get_raw_psth(time_bin_ms=0.01, window=[-10,20]) # same values used
 
 or
 
 .. code-block:: python
 
-    spiketrain.get_raw_psths(time_bin_ms=[0.01, 1], window=[[-10,20], [-1, 2]])
+    # give one time bin and one window per stimulus
+    spiketrain.get_raw_psth(time_bin_ms=[0.01, 1], window=[[-10,20], [-1, 2]])
 
 
 Z-scoring Data
@@ -57,8 +58,16 @@ It is often beneficial to change the :code:`time_bin` for Z scoring to smoothing
 Increasing bin size will allow the large time bins to have a more continuous distribution of spike counts. In order to use this 
 function a :code:`bsl_window` should be given. This should be the pre-stimulus baseline of the neuron/unit. The window is then the window
 over which to Z score. It is beneficial to still include the before and after stimulus windows to better see how the z score has
-changed. Simimlarly each stimulus can have its own window by doing nested lists.
+changed. Simimlarly each stimulus can have its own window by doing nested lists. The math is relatively standard:
 
+.. math::
+
+    Z = \frac{x - \mu}{\sigma}
+
+    z_avg = \frac{1}{n_trials} \Sigma^{n_trials} Z
+
+In our example below we determine both our :math:`\mu` and our :math:`\sigma` with the :code:`bsl_window` and 
+then z score each time bin given by :code:`time_bin_ms` over the :code:`window`
 
 .. code-block:: python
     
