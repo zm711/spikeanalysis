@@ -198,7 +198,7 @@ class StimulusData:
             stim_length_seconds = 8 * self.sample_frequency
         else:
             stim_length_seconds *= self.sample_frequency
-        if analog_index and len(np.shape(self.analog_data))!=1:
+        if analog_index and len(np.shape(self.analog_data)) != 1:
             current_analog_data = self.analog_data[:, analog_index]
         else:
             current_analog_data = self.analog_data
