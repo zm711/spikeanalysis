@@ -64,7 +64,7 @@ changed. Simimlarly each stimulus can have its own window by doing nested lists.
 
     Z = \frac{x - \mu}{\sigma}
 
-    z_avg = \frac{1}{n_trials} \Sigma^{n_trials} Z
+    Z_{avg} = \frac{1}{N_{trials}} \Sigma^{N_{trials}} Z
 
 In our example below we determine both our :math:`\mu` and our :math:`\sigma` with the :code:`bsl_window` and 
 then z score each time bin given by :code:`time_bin_ms` over the :code:`window`
