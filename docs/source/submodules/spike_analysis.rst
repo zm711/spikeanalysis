@@ -44,10 +44,7 @@ a value given.
 
 or
 
-.. code-block:: python
 
-    # give one time bin and one window per stimulus
-    spiketrain.get_raw_psth(time_bin_ms=[0.01, 1], window=[[-10,20], [-1, 2]])
 
 
 Z-scoring Data
@@ -64,14 +61,14 @@ changed. Simimlarly each stimulus can have its own window by doing nested lists.
 
     Z = \frac{x - \mu}{\sigma}
 
-    z_avg = \frac{1}{n_trials} \Sigma^{n_trials} Z
+    Z_{avg} = \frac{1}{N_{trials}} \Sigma^{N_{trials}} Z
 
 In our example below we determine both our :math:`\mu` and our :math:`\sigma` with the :code:`bsl_window` and 
 then z score each time bin given by :code:`time_bin_ms` over the :code:`window`
 
 .. code-block:: python
     
-    spiketrain.z_score_data(time_bin_ms = 50, bsl_window=[-10,0], window=[-10,20])
+    spiketrain.z_score_data(time_bin_ms = 50, bsl_window=[-10,0], z_window=[-10,20])
 
 
 Latency to first spike

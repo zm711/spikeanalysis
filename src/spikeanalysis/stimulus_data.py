@@ -22,7 +22,7 @@ class StimulusData:
         file_path = Path(file_path)
         assert Path.is_dir(
             file_path
-        ), "Enter root directory with *rhd file. If having problems for \
+        ), "Enter root directory with *rhd/ephys file. If having problems for \
         windows append r in front of the str."
         self._file_path = file_path
         os.chdir(file_path)
@@ -63,6 +63,7 @@ class StimulusData:
         if "dig_analog" in files:
             with open("dig_analog_events.json") as read_file:
                 self.dig_analog_events = json.load(read_file)
+                print(self.dig_analog_events)
             raw_analog = glob.glob("raw_analog*")[0]
             self.analog_data = np.load(raw_analog)
 
@@ -127,11 +128,14 @@ class StimulusData:
 
         del self.reader  # reader and memmap heavy. Delete after this since not needed
 
-    def create_neo_reader(self):
+    def create_neo_reader(
+        self,
+    ):
         """
         Function that creates a Neo IntanRawIO reader and then parses the header
 
         """
+
         reader = neo.rawio.IntanRawIO(filename=self._filename)
         reader.parse_header()
 
@@ -229,6 +233,9 @@ class StimulusData:
             else:
                 self.dig_analog_events[str(row)]["stim"] = str(row)
 
+            if len(events) == 0:
+                del self.dig_analog_events[str(row)]
+
     def _valueround(self, x: float, precision: int = 2, base: float = 0.25) -> float:
         """
         Utility function to round values for generating distinct trial grouping for events
@@ -314,8 +321,10 @@ class StimulusData:
             self.digital_events[self.dig_in_channels[idx]["native_channel_name"]]["trial_groups"] = np.ones(
                 (len(events))
             )
-
-            self.digital_channels.append(self.dig_in_channels[idx]["native_channel_name"])
+            if len(events) == 0:
+                del self.digital_events[self.dig_in_channels[idx]["native_channel_name"]]
+            else:
+                self.digital_channels.append(self.dig_in_channels[idx]["native_channel_name"])
 
     def get_stimulus_channels(self) -> dict:
         """

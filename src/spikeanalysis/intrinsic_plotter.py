@@ -39,7 +39,14 @@ class IntrinsicPlotter(PlotterBase):
             self._set_kwargs(**kwargs)
 
     def plot_acs(self, sp: Union[SpikeData, SpikeAnalysis], ref_dur_ms: float = 2.0):
-        from .analysis_utils import histogram_functions as hf
+        """
+        Function for plotting autocorrelograms.
+
+        Parameters
+        ----------
+        ref_dur_ms: float
+            refractory period to mark with a red line in the acg. Just
+            for visualization. Does not change the calculations."""
 
         try:
             spike_times = sp.spike_times
@@ -48,7 +55,7 @@ class IntrinsicPlotter(PlotterBase):
 
         spike_clusters = sp.spike_clusters
         try:
-            if isinstance(sp, spikeanalysis.SpikeAnalysis):
+            if isinstance(sp, SpikeAnalysis):
                 cluster_ids = sp.cluster_ids
             else:
                 cluster_ids = sp._cids[sp._qc_threshold]

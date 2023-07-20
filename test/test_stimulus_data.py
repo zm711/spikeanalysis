@@ -15,6 +15,22 @@ def stim(scope="module"):
     return stimulus
 
 
+@pytest.fixture
+def ana_stim(
+    stim,
+    scope="module",
+):
+    import copy
+
+    stim1 = copy.deepcopy(stim)
+    stim1.get_analog_data()
+    stim1.analog_data[10000:16000] = 9.50
+    stim1.analog_data[9000:10000] = 0
+    stim1.analog_data[16000:17000] = 0
+
+    return stim1
+
+
 def test_dir_assertion(tmp_path):
     # this tests for checking for the raw file
     # currently this is just *.rhd
@@ -51,68 +67,67 @@ def test_get_analog_data_slice_none(stim):
     assert len(stim.analog_data) == 56080
 
 
-def test_digitize_analog_data(stim):
-    stim.get_analog_data()
-    stim.digitize_analog_data()
-
-    print(stim.dig_analog_events)
-    assert isinstance(stim.dig_analog_events, dict)
-    print(stim.dig_analog_events.keys())
-    assert "events" in stim.dig_analog_events["0"].keys()
-    assert "lengths" in stim.dig_analog_events["0"].keys()
-    assert "trial_groups" in stim.dig_analog_events["0"].keys()
-    assert stim.dig_analog_events["0"]["stim"] == "0"
-
+def test_digitize_analog_data(ana_stim):
     # test by creating actual analog events
-    stim.analog_data[10000:16000] = 9.50
-    stim.analog_data[9000:10000] = 0
-    stim.analog_data[16000:17000] = 0
-    stim.digitize_analog_data(stim_length_seconds=0.1, analog_index=0, stim_name=["test"])
-    print(stim.dig_analog_events)
+    ana_stim.digitize_analog_data(stim_length_seconds=0.1, analog_index=0, stim_name=["test"])
+    print(ana_stim.dig_analog_events)
 
-    assert stim.dig_analog_events["0"]["stim"] == "test"
-    assert stim.dig_analog_events["0"]["events"][1] == 9999
-    assert stim.dig_analog_events["0"]["lengths"][1] == 6000
-    assert stim.dig_analog_events["0"]["trial_groups"][1] == 38
+    assert ana_stim.dig_analog_events["0"]["stim"] == "test"
+    assert ana_stim.dig_analog_events["0"]["events"][1] == 9999
+    assert ana_stim.dig_analog_events["0"]["lengths"][1] == 6000
+    assert ana_stim.dig_analog_events["0"]["trial_groups"][1] == 38
 
-    stim.analog_data = np.expand_dims(stim.analog_data, axis=1)
-    stim.digitize_analog_data(stim_length_seconds=0.1, analog_index=0, stim_name=["test"])
+    ana_stim.analog_data = np.expand_dims(ana_stim.analog_data, axis=1)
+    ana_stim.digitize_analog_data(stim_length_seconds=0.1, analog_index=0, stim_name=["test"])
 
     # test stim_index with multiple columns (just test it doesn't error)
-    assert stim.dig_analog_events
+    assert ana_stim.dig_analog_events
 
 
-def test_json_writer(stim, tmp_path):
+def test_analog_event_deleted(stim):
     stim.get_analog_data()
     stim.digitize_analog_data()
-    print(stim._file_path)
-    stim._file_path = stim._file_path / tmp_path
-    print(stim._file_path)
-    stim.save_events()
+    assert isinstance(stim.dig_analog_events, dict)
+    print(stim.dig_analog_events)
+    try:
+        stim.dig_analog_events["0"]
+        assert False, "should have deleted the event"
+    except KeyError:
+        pass
+
+
+def test_json_writer(ana_stim, tmp_path):
+    stim1 = ana_stim
+    stim1.digitize_analog_data(stim_length_seconds=0.1)
+    print(stim1.dig_analog_events)
+    print(stim1._file_path)
+    stim1._file_path = stim1._file_path / tmp_path
+    print(stim1._file_path)
+    stim1.save_events()
     have_json = False
-    print(stim._file_path)
-    for file in os.listdir(stim._file_path):
+    print(stim1._file_path)
+    for file in os.listdir(stim1._file_path):
         print(file)
         if "json" in file:
             have_json = True
 
     assert have_json, "file not written"
 
-    del stim.dig_analog_events
+    del stim1.dig_analog_events
 
     try:
-        _ = stim.dig_analog_events
+        _ = stim1.dig_analog_events
         assert False, "test setup failure"
     except AttributeError:
         # need to create dummy params.py for this function call
         with open("params.py", "w") as p:
             p.writelines(["Test 0\n", "Test 1\n", "Test 2\n", "Test 3\n", "Test 4\n"])
-
-        stim.get_all_files()  # read json and params.py
-        assert stim.dig_analog_events, "json not read"
-        assert isinstance(stim.dig_analog_events, dict)
-        assert "events" in stim.dig_analog_events["0"].keys()
-        assert stim.sample_frequency
+        print(os.listdir(stim1._file_path))
+        stim1.get_all_files()  # read json and params.py
+        assert stim1.dig_analog_events, "json not read"
+        assert isinstance(stim1.dig_analog_events, dict)
+        assert "events" in stim1.dig_analog_events["0"].keys()
+        assert stim1.sample_frequency
 
 
 def test_value_round(stim):
