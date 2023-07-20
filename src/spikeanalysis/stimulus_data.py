@@ -63,6 +63,7 @@ class StimulusData:
         if "dig_analog" in files:
             with open("dig_analog_events.json") as read_file:
                 self.dig_analog_events = json.load(read_file)
+                print(self.dig_analog_events)
             raw_analog = glob.glob("raw_analog*")[0]
             self.analog_data = np.load(raw_analog)
 
@@ -228,6 +229,9 @@ class StimulusData:
                 self.dig_analog_events[str(row)]["stim"] = stim_name[row]
             else:
                 self.dig_analog_events[str(row)]["stim"] = str(row)
+            
+            if len(events)==0:
+                del self.dig_analog_events[str(row)]
 
     def _valueround(self, x: float, precision: int = 2, base: float = 0.25) -> float:
         """
@@ -314,8 +318,10 @@ class StimulusData:
             self.digital_events[self.dig_in_channels[idx]["native_channel_name"]]["trial_groups"] = np.ones(
                 (len(events))
             )
-
-            self.digital_channels.append(self.dig_in_channels[idx]["native_channel_name"])
+            if len(events)==0:
+                del self.digital_events[self.dig_in_channels[idx]["native_channel_name"]]
+            else:
+                self.digital_channels.append(self.dig_in_channels[idx]["native_channel_name"])
 
     def get_stimulus_channels(self) -> dict:
         """

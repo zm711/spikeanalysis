@@ -41,7 +41,7 @@ class IntrinsicPlotter(PlotterBase):
     def plot_acs(self, sp: Union[SpikeData, SpikeAnalysis], ref_dur_ms: float = 2.0):
         """
         Function for plotting autocorrelograms.
-        
+
         Parameters
         ----------
         ref_dur_ms: float

@@ -44,10 +44,7 @@ a value given.
 
 or
 
-.. code-block:: python
 
-    # give one time bin and one window per stimulus
-    spiketrain.get_raw_psth(time_bin_ms=[0.01, 1], window=[[-10,20], [-1, 2]])
 
 
 Z-scoring Data
@@ -71,7 +68,7 @@ then z score each time bin given by :code:`time_bin_ms` over the :code:`window`
 
 .. code-block:: python
     
-    spiketrain.z_score_data(time_bin_ms = 50, bsl_window=[-10,0], window=[-10,20])
+    spiketrain.z_score_data(time_bin_ms = 50, bsl_window=[-10,0], z_window=[-10,20])
 
 
 Latency to first spike
