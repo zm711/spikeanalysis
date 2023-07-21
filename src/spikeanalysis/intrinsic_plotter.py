@@ -327,7 +327,7 @@ class IntrinsicPlotter(PlotterBase):
         depth_bins = np.linspace(0, probe_len, num=int(probe_len / pitch))
 
         try:
-            depth = sp.depth
+            depth = sp._depth
         except AttributeError:
             depth = 0
 
