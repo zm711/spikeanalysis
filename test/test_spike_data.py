@@ -230,6 +230,44 @@ def test_simplified_silhouette_score(spikes):
     assert id_1 > id_0
 
 
+def test_qc_metrics(spikes, tmp_path):
+    file_path = spikes._file_path
+    spikes._file_path = spikes._file_path / tmp_path
+    os.chdir(spikes._file_path)
+    np.save("spike_clusters.npy", np.array([0, 1, 0, 1]))
+    np.save("spike_templates.npy", np.array([0, 1, 1, 1]))
+    # pc_feat = np.round(np.random.normal(loc = 5, size=(10, 4, 10))) 4, 1,
+    # pc_feat_ind = np.round(np.random.normal(loc = 5, size = (2, 10)))
+    pc_feat = np.array(
+        [
+            [[1, 2, 3], [1, 2, 3], [1, 2, 3]],
+            [[4, 5, 6], [4, 5, 6], [4, 5, 6]],
+            [[1, 4, 6], [1, 4, 6], [1, 4, 6]],
+            [[2, 5, 6], [2, 5, 6], [2, 5, 6]],
+        ]
+    )
+    pc_feat_ind = np.array([[1, 2, 3], [4, 5, 6]])
+    np.save("pc_features.npy", pc_feat)
+    np.save("pc_feature_ind.npy", pc_feat_ind)
+
+    spikes.generate_pcs()
+    assert isinstance(spikes.pc_feat, np.ndarray)
+    assert isinstance(spikes.pc_feat_ind, np.ndarray)
+    print(spikes.pc_feat)
+    assert np.shape(spikes.pc_feat) == (4, 3, 3)
+    assert np.shape(spikes.pc_feat_ind) == (2, 3)
+
+    nptest.assert_array_equal(spikes.pc_feat[2], np.zeros((3, 3)))  # should remove one spikes values
+
+    pc_feat = np.array([[[1, 2, 3], [1, 2, 3]], [[4, 5, 6], [4, 5, 6]], [[1, 4, 6], [1, 4, 6]], [[2, 5, 6], [2, 5, 6]]])
+    np.save("pc_features.npy", pc_feat)
+    with pytest.raises(Exception):
+        spikes.generate_pcs()
+
+    spikes._file_path = file_path
+    os.chdir(file_path)
+
+
 def test_qc_preprocessing_exceptions(spikes):
     with pytest.raises(Exception):
         spikes.qc_preprocessing(10, 0.02, 0.5)

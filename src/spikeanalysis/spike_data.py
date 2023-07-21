@@ -270,7 +270,7 @@ class SpikeData:
         cluster_ids = list(set(spike_clusters))
         n_clusters = len(cluster_ids)
         n_spikes = len(spike_clusters)
-        n_feat = 8
+        n_feat = np.min(np.array([8, np.shape(pc_features)[2]]))
         n_feat_per_chan = np.shape(pc_features)[1]
 
         new_feat = np.zeros((n_spikes, n_feat_per_chan, n_feat))
