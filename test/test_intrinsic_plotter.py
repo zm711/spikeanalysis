@@ -1,6 +1,7 @@
 from spikeanalysis.intrinsic_plotter import IntrinsicPlotter
 import pytest
 import numpy as np
+import numpy.testing as nptest
 
 
 def test_IntrinsicPlotter_attributes():
@@ -33,3 +34,63 @@ def test_sparse_pcs():
     assert (
         np.shape(sparse_pc_feat)[0] == 10
     ), "should still have 10 spikes"  # 1 index varies since gaussian is not deterministic
+
+
+def test_generate_amp_bins():
+    plotter = IntrinsicPlotter()
+
+    spike_amps = np.array([5.0, 15.0, 19.4, 25.0, 27.0, 30.0])
+    probe_len = 100
+    pitch = 10
+    spike_times = np.array(
+        [
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+        ]
+    )
+    sp = 1
+
+    depth, amps, dur = plotter._generate_amp_depth_bins(sp, spike_amps, probe_len, pitch, spike_times)
+
+    assert dur == 8
+    nptest.assert_array_equal(depth, np.linspace(0, probe_len, num=int(probe_len / pitch)))
+    nptest.assert_array_equal(amps, np.linspace(0, 30.0, num=int(30.0 / 30)))
+
+
+@pytest.fixture
+def gab(scope="module"):
+    plotter = IntrinsicPlotter()
+    spike_amps = np.array([5.0, 15.0, 19.4, 25.0, 27.0, 60.0])
+    probe_len = 100
+    pitch = 10
+    spike_times = np.array(
+        [
+            3,
+            4,
+            5,
+            6,
+            7.0,
+            8.0,
+        ]
+    )
+    sp = 1
+
+    depth, amps, dur = plotter._generate_amp_depth_bins(sp, spike_amps, probe_len, pitch, spike_times)
+
+    return depth, amps, dur, spike_amps
+
+
+def test_compute_cdf_pdf(gab):
+    plotter = IntrinsicPlotter()
+
+    depth, amps, dur, spike_amps = gab
+    spike_depths = np.array([15, 20, 35, 40, 50.0, 70])
+    pdfs, cdfs = plotter._compute_cdf_pdf(spike_amps, spike_depths, amps, depth, dur)
+
+    print("pdf: ", pdfs, "\n")
+    print("cdf: ", cdfs)
+    nptest.assert_array_equal(pdfs, cdfs)

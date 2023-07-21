@@ -10,6 +10,12 @@ try:
 except ImportError:
     print("Please install seaborn for full functionality")
     HAVE_SNS = False
+try:
+    import pandas as pd
+
+    HAVE_PD = True
+except ImportError:
+    HAVE_PD = False
 
 from .plotbase import PlotterBase
 from .spike_data import SpikeData
@@ -236,6 +242,125 @@ class IntrinsicPlotter(PlotterBase):
         plt.figure(dpi=self.dpi)
         ax.title("depth by firing rate")
         plt.show()
+
+    def plot_cdf(self, sp: SpikeData):
+        assert HAVE_SNS, "sns is necessary for plotting cdfs and pdfs"
+        assert HAVE_PD, "pandas is necessary for plotting cdfs and pdfs"
+
+        try:
+            spike_times = sp.spike_times
+        except AttributeError:
+            sp.samples_to_seconds()
+            spike_times = sp.spike_times
+
+        y_coords = sp.y_coords
+        probe_len = max(y_coords)
+        y_set = sorted(list(set(y_coords)))
+        pitch_end = y_set[-1] - y_set[-2]
+        pitch_start = y_set[1] - y_set[0]
+        pitch = min(pitch_start, pitch_end)
+
+        try:
+            spike_depths = sp.raw_spike_depths
+            spike_amplitudes = sp.raw_spike_amplitudes
+        except AttributeError:
+            sp.get_template_positions()
+            spike_depths = sp.raw_spike_depths
+            spike_amplitudes = sp.raw_spike_amplitudes
+
+        depth_bins, amp_bins, recording_duration = self._generate_amp_depth_bins(
+            sp, spike_amplitudes, probe_len, pitch, spike_times
+        )
+
+        pdfs, cdfs = self._compute_cdf_pdf(spike_amplitudes, spike_depths, amp_bins, depth_bins, recording_duration)
+
+        final_depths = ["%.1f" % float(x) for x in depth_bins[1:]]
+        final_amps = ["%.2f" % float(x for x in amp_bins[1:])]
+
+        pdf_df = pd.DataFrame(pdfs, columns=final_amps, index=final_depths)
+        self._plot_cdf_pdf(pdf_df)
+
+        cdf_df = pd.DataFrame(cdfs, columns=final_amps, index=final_depths)
+        self._plot_cdf_pdf(cdf_df)
+
+    def _plot_cdf_pdf(self, df: pd.DataFrame):
+        fig, ax = plt.subplots(figsize=self.figsize)
+        ax = sns.heatmap(data=df, vmin=0, cbar_kws={"label": "Firing Rate (Hz)", "format": "%.2e"})
+
+        ax.xaxis.label.set_size(14)
+        ax.yaxis.label.set_size(14)
+
+        for ind, label in enumerate(ax.get_xticklabels()):
+            if ind % 2 == 0:  # every other label is kept
+                label.set_visible(True)
+            else:
+                label.set_visible(False)
+        for ind, label in enumerate(ax.get_yticklabels()):
+            if ind % 2 == 0:  # every other label is kept
+                label.set_visible(True)
+            else:
+                label.set_visible(False)
+
+        if self.title:
+            plt.title(self.title)
+
+        plt.tight_layout()
+
+        if self.y_axis:
+            plt.ylabel(self.y_axis)
+        else:
+            plt.ylabel("Depth (µm)")
+
+        plt.xlabel("Amplitude (µV)")
+
+        plt.figure(dpi=self.dpi)
+        plt.show()
+
+    def _generate_amp_depth_bins(
+        self,
+        sp,
+        spike_amps: np.ndarray,
+        probe_len: float,
+        pitch: float,
+        spike_times: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        depth_bins = np.linspace(0, probe_len, num=int(probe_len / pitch))
+
+        try:
+            depth = sp._depth
+        except AttributeError:
+            depth = 0
+
+        if depth:
+            depth_corrected = depth - np.max(depth_bins)
+            depth_bins = depth_bins + depth_corrected
+
+        amp_bins_max = np.min([np.max(spike_amps), 800])
+        amp_bins = np.linspace(0, amp_bins_max, num=int(amp_bins_max / 30))
+
+        recording_duration = spike_times[-1]
+
+        return depth_bins, amp_bins, recording_duration
+
+    def _compute_cdf_pdf(
+        self, spike_amps, spike_depths, amp_bins, depth_bins, recording_dur
+    ) -> tuple[np.ndarray, np.ndarray]:
+        n_depth_bins = len(depth_bins) - 1
+        n_amp_bins = len(amp_bins) - 1
+
+        pdfs = np.zeros((n_depth_bins, n_amp_bins))
+        cdfs = np.zeros((n_depth_bins, n_amp_bins))
+
+        for sub_bin in range(n_depth_bins):
+            depth_bins_ind = np.logical_and(spike_depths > depth_bins[sub_bin], spike_depths < depth_bins[sub_bin + 1])
+            counts = np.histogram(spike_amps[depth_bins_ind], amp_bins)[0]
+            counts = counts / recording_dur
+            pdfs[sub_bin] = counts
+            rev_counts = counts[::-1].copy()
+            sub_cdf = np.cumsum(rev_counts)
+            cdfs[sub_bin] = sub_cdf[::-1]
+
+        return pdfs, cdfs
 
     def _sparse_pcs(
         self, pc_feat: np.array, pc_feat_ind: np.array, templates: np.array, n_per_chan: int, n_pc_chans: int

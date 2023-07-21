@@ -55,8 +55,6 @@ class SpikeAnalysis:
         except AttributeError:
             self.spike_times = sp.raw_spike_times / sp._sampling_rate
 
-        self.raw_spike_times = sp.raw_spike_times
-
         self._cids = sp._cids
         try:
             self.qc_threshold = sp._qc_threshold
@@ -80,6 +78,7 @@ class SpikeAnalysis:
             except TypeError:
                 print("no qc run")
 
+        self.raw_spike_times = sp.raw_spike_times
         self.cluster_ids = sp._cids
         self.spike_clusters = sp.spike_clusters
         self._sampling_rate = sp._sampling_rate
