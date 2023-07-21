@@ -599,6 +599,14 @@ class SpikeData:
 
     def get_template_positions(self, depth: float=0):
 
+        """Function for determining template depths. Good for assessing drift
+        
+        Parameters
+        ----------
+        depth: float
+            The depth within the tissue if true depth desired.
+            """
+
         try:
             new_depth = self._depth
         except AttributeError:
