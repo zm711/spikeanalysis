@@ -130,13 +130,18 @@ class StimulusData:
 
     def create_neo_reader(
         self,
+        file_name: Optional[str] =None
     ):
         """
         Function that creates a Neo IntanRawIO reader and then parses the header
 
         """
-
-        reader = neo.rawio.IntanRawIO(filename=self._filename)
+        if file_name is None:
+            reader = neo.rawio.IntanRawIO(filename=self._filename)
+        else:
+            neo_class = neo.rawio.get_rawio_class(file_name)
+            return neo_class
+        
         reader.parse_header()
 
         for value in reader.header["signal_channels"]:

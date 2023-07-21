@@ -556,6 +556,7 @@ class SpikeData:
         else:
             final_depth = depth_raw
 
+        self._depth = depth
         max_site = np.argmax(mean_waveforms.max(axis=2), axis=1)
         waveforms_max = np.zeros((np.shape(mean_waveforms)[0], np.shape(mean_waveforms)[2]))
         for current_wf in range(np.shape(mean_waveforms)[0]):
@@ -595,6 +596,45 @@ class SpikeData:
             "silhouette score": sil,
         }
         jsonify_parameters(qc_params)
+
+    def get_template_positions(self, depth: float=0):
+
+        try:
+            new_depth = self._depth
+        except AttributeError:
+            new_depth = depth
+
+        templates = self._templates
+        template_scaling_amplitudes = np.squeeze(self.template_scaling_amplitudes)
+        inverse_whitening = self.whitening_matrix_inverse
+        y_coords = self.y_coords
+        spike_templates = self._spike_templates
+
+        templates_unwhitened = np.zeros(np.shape(templates))
+
+        for temp in range(np.shape(templates)[0]):
+            templates_unwhitened[temp, :, :] = np.squeeze(templates[temp, :, :]) @ inverse_whitening
+
+        template_channel_amplitudes = templates_unwhitened.max(axis=1) - templates_unwhitened.min(axis=1)
+        templates_amplitudes_unscaled = np.squeeze(template_channel_amplitudes.max(axis=1))
+
+        threshold_values = templates_amplitudes_unscaled * 0.3
+        threshold_values = np.expand_dims(threshold_values, axis=1)
+
+        threshold_idx = template_channel_amplitudes < threshold_values
+        template_channel_amplitudes[threshold_idx]=0
+
+        template_depths = np.sum((template_channel_amplitudes * y_coords), axis=1)/ np.sum(template_channel_amplitudes, axis=1)
+
+        if new_depth:
+            template_depths = new_depth - template_depths
+
+        raw_spike_depths = template_depths[spike_templates]
+
+        raw_spike_amplitudes = templates_amplitudes_unscaled[spike_templates] * template_scaling_amplitudes
+
+        self.raw_spike_depths = raw_spike_depths
+        self.raw_spike_amplitudes = raw_spike_amplitudes
 
     def _get_file_size(self) -> int:
         """
