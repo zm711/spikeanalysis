@@ -149,14 +149,15 @@ def test_save_qc_parameters_error(spikes):
     with pytest.raises(Exception):
         spikes.save_qc_parameters()
 
-def test_save_qc_parameters(spikes,tmp_path):
+
+def test_save_qc_parameters(spikes, tmp_path):
     os.chdir(tmp_path)
-    spikes._isolation_threshold=10
+    spikes._isolation_threshold = 10
     spikes._rpv = 0.02
-    spikes._sil_threshold=0.4
+    spikes._sil_threshold = 0.4
     spikes.save_qc_parameters()
     have_json = False
-    
+
     for file in os.listdir(os.getcwd()):
         print(file)
         if "json" in file:
@@ -166,11 +167,11 @@ def test_save_qc_parameters(spikes,tmp_path):
 
     os.chdir(spikes._file_path)
 
+
 def test_get_template_positions(spikes):
-    
     spikes.template_scaling_amplitudes = np.expand_dims(spikes.template_scaling_amplitudes, axis=1)
-    spikes._templates = np.random.normal(size=(2,82,4))
-    spikes.whitening_matrix_inverse = np.ones((4,4))
+    spikes._templates = np.random.normal(size=(2, 82, 4))
+    spikes.whitening_matrix_inverse = np.ones((4, 4))
     spikes.get_template_positions()
 
     assert isinstance(spikes.raw_spike_depths, np.ndarray)
@@ -179,13 +180,14 @@ def test_get_template_positions(spikes):
     print(spikes.raw_spike_depths)
     print("amps: ", spikes.raw_spike_amplitudes)
     print(np.shape(spikes.raw_spike_amplitudes))
-    assert np.sum(spikes.raw_spike_depths)==10
-    assert spikes.raw_spike_amplitudes[0]==spikes.raw_spike_amplitudes[1]
-    assert spikes.raw_spike_amplitudes[0]!=spikes.raw_spike_amplitudes[2]
+    assert np.sum(spikes.raw_spike_depths) == 10
+    assert spikes.raw_spike_amplitudes[0] == spikes.raw_spike_amplitudes[1]
+    assert spikes.raw_spike_amplitudes[0] != spikes.raw_spike_amplitudes[2]
 
     spikes.get_template_positions(depth=5)
 
-    assert np.sum(spikes.raw_spike_depths)==40
+    assert np.sum(spikes.raw_spike_depths) == 40
+
 
 def gaussian_pcs(distance=10):
     cluster_1 = np.random.normal(size=(50, 12))
@@ -289,15 +291,16 @@ def test_get_waveform_values_data_organization(spikes):
 
 def test_load_waveforms(spikes, tmp_path):
     import json
+
     file_path = spikes._file_path
     spikes._file_path = spikes._file_path / tmp_path
     os.chdir(spikes._file_path)
-    test_file = [1,2,3,4]
-    with open('waveforms.json', "w") as write_file:
+    test_file = [1, 2, 3, 4]
+    with open("waveforms.json", "w") as write_file:
         json.dump(test_file, write_file)
-    
+
     spikes.get_waveforms()
-    nptest.assert_array_equal(spikes.waveforms, np.array([1,2,3,4]))
+    nptest.assert_array_equal(spikes.waveforms, np.array([1, 2, 3, 4]))
 
     spikes._file_path = file_path
     os.chdir(spikes._file_path)

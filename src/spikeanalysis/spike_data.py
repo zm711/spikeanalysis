@@ -597,15 +597,14 @@ class SpikeData:
         }
         jsonify_parameters(qc_params)
 
-    def get_template_positions(self, depth: float=0):
-
+    def get_template_positions(self, depth: float = 0):
         """Function for determining template depths. Good for assessing drift
-        
+
         Parameters
         ----------
         depth: float
             The depth within the tissue if true depth desired.
-            """
+        """
 
         try:
             new_depth = self._depth
@@ -630,9 +629,11 @@ class SpikeData:
         threshold_values = np.expand_dims(threshold_values, axis=1)
 
         threshold_idx = template_channel_amplitudes < threshold_values
-        template_channel_amplitudes[threshold_idx]=0
+        template_channel_amplitudes[threshold_idx] = 0
 
-        template_depths = np.sum((template_channel_amplitudes * y_coords), axis=1)/ np.sum(template_channel_amplitudes, axis=1)
+        template_depths = np.sum((template_channel_amplitudes * y_coords), axis=1) / np.sum(
+            template_channel_amplitudes, axis=1
+        )
 
         if new_depth:
             template_depths = new_depth - template_depths

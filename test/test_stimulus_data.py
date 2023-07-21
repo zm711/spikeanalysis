@@ -38,18 +38,21 @@ def test_dir_assertion(tmp_path):
     with pytest.raises(Exception):
         _ = StimulusData(file_path="")
 
-def test_neo_getrawio(stim):
 
-    test_file = Path('test.plx')
+def test_neo_getrawio(stim):
+    test_file = Path("test.plx")
     test_file.unlink(missing_ok=True)
-    plx_reader = stim.create_neo_reader(file_name = test_file)
+    plx_reader = stim.create_neo_reader(file_name=test_file)
     print(plx_reader)
     assert plx_reader
     test_file.unlink(missing_ok=True)
 
+
 def test_intanrawio(stim):
     from neo.rawio import IntanRawIO
+
     assert isinstance(stim.reader, IntanRawIO)
+
 
 def test_get_analog_data(stim):
     stim.get_analog_data()

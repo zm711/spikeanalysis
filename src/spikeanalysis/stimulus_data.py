@@ -128,10 +128,7 @@ class StimulusData:
 
         del self.reader  # reader and memmap heavy. Delete after this since not needed
 
-    def create_neo_reader(
-        self,
-        file_name: Optional[str] =None
-    ):
+    def create_neo_reader(self, file_name: Optional[str] = None):
         """
         Function that creates a Neo IntanRawIO reader and then parses the header
 
@@ -141,7 +138,7 @@ class StimulusData:
         else:
             neo_class = neo.rawio.get_rawio_class(file_name)
             return neo_class
-        
+
         reader.parse_header()
 
         for value in reader.header["signal_channels"]:
