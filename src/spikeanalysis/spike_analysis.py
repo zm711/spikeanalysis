@@ -569,9 +569,9 @@ class SpikeAnalysis:
                         bsl_counts, bsl_bins = np.histogram(baseline_isi_raw / self._sampling_rate, bins=bins)
                         final_counts[idy, idx, :] = isi_counts
                         final_counts_bsl[idy, idx, :] = bsl_counts
-                    final_isi[stim_name]["isi"] = isi_counts
-                    final_isi[stim_name]["bsl_isi"] = final_counts_bsl
-                    final_isi[stim_name]["bins"] = isi_bins
+                final_isi[stim_name]["isi"] = final_counts
+                final_isi[stim_name]["bsl_isi"] = final_counts_bsl
+                final_isi[stim_name]["bins"] = isi_bins
 
         self.isi = final_isi
 
