@@ -399,7 +399,7 @@ class SpikeAnalysis:
 
         bsl_windows = verify_window_format(window=bsl_window, num_stim=NUM_STIM)
         if NUM_DIG:
-            stim_dict = self._get_keys_for_stim()
+            stim_dict = self._get_key_for_stim()
         psths = self.psths
         self.latency = {}
         for idx, stim in enumerate(self.psths.keys()):
@@ -569,9 +569,9 @@ class SpikeAnalysis:
                         bsl_counts, bsl_bins = np.histogram(baseline_isi_raw / self._sampling_rate, bins=bins)
                         final_counts[idy, idx, :] = isi_counts
                         final_counts_bsl[idy, idx, :] = bsl_counts
-                    final_isi[stim_name]["isi"] = isi_counts
-                    final_isi[stim_name]["bsl_isi"] = final_counts_bsl
-                    final_isi[stim_name]["bins"] = isi_bins
+                final_isi[stim_name]["isi"] = final_counts
+                final_isi[stim_name]["bsl_isi"] = final_counts_bsl
+                final_isi[stim_name]["bins"] = isi_bins
 
         self.isi = final_isi
 
@@ -687,7 +687,7 @@ class SpikeAnalysis:
 
                 for cluster_number in range(np.shape(current_data_windowed_by_trial)[0]):
                     final_sub_data = np.squeeze(current_data_windowed_by_trial[cluster_number])
-                    data_dataframe = pd.DataFrame(final_sub_data.T)
+                    data_dataframe = pd.DataFrame(np.squeeze(final_sub_data.T))
 
                     sub_correlations = data_dataframe.corr()
                     masked_correlations = sub_correlations[sub_correlations != 1]

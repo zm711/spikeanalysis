@@ -230,3 +230,23 @@ def test_responsive_neurons(sa):
 
     assert np.sum(inhib_neurons["test"]["onset"]) == 0
     assert np.sum(inhib_neurons["test"]["inhibitory"]) != 0
+
+
+def test_latencies(sa):
+    sa.dig_analog_events = {
+        "0": {
+            "events": np.array([100, 200]),
+            "lengths": np.array([100, 100]),
+            "trial_groups": np.array([1, 1]),
+            "stim": "test",
+        }
+    }
+    sa.latencies(bsl_window=[-1, 0])
+    print(sa.latency)
+    assert isinstance(sa.latency, dict)
+
+    for key in ["latency", "latency_shuffled"]:
+        assert key in sa.latency["test"]
+
+    assert np.shape(sa.latency["test"]["latency"]) == (2, 2)
+    assert np.shape(sa.latency["test"]["latency_shuffled"]) == (2, 2, 300)
