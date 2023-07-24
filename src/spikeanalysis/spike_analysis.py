@@ -488,10 +488,11 @@ class SpikeAnalysis:
         """
         spike_times = self.raw_spike_times
         spike_clusters = self.spike_clusters
+        cluster_ids = self.cluster_ids
 
         isi_raw = {}
 
-        for cluster in tqdm(set(spike_clusters)):
+        for cluster in tqdm(cluster_ids):
             isi_raw[cluster] = {}
             these_spikes = spike_times[spike_clusters == cluster]
             isi = np.diff(these_spikes)
