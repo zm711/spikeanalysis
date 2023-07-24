@@ -120,9 +120,31 @@ def test_compute_event_interspike_intervals(sa_mocked):
     assert isinstance(sa_mocked.isi, dict), "check function exists and returns the dict"
 
     print(sa_mocked.isi)
-    # todo
-    # add mocked up test
 
+
+def test_compute_event_interspike_intervals_digital(sa_mocked):
+    sa_mocked.digital_events = {
+        "DIGITAL-IN-01": {
+            "events": np.array([100, 200]),
+            "lengths": np.array([100, 100]),
+            "trial_groups": np.array([1, 1]),
+            "stim": "DIG",
+        }
+    }
+    sa_mocked.HAVE_DIGITAL=True
+    sa_mocked.get_raw_psth(window=[0, 300],
+        time_bin_ms=50,
+    )
+    sa_mocked.get_interspike_intervals()
+    sa_mocked.compute_event_interspike_intervals(200)
+
+    print(sa_mocked.isi)
+    sa_mocked.HAVE_DIGITAL=False
+    
+    assert len(sa_mocked.isi.keys())==2
+
+    nptest.assert_array_equal(sa_mocked.isi['DIG']['bins'], sa_mocked.isi['test']['bins'])
+    
 
 def test_trial_correlation_exception(sa):
     with pytest.raises(Exception):
@@ -250,3 +272,15 @@ def test_latencies(sa):
 
     assert np.shape(sa.latency["test"]["latency"]) == (2, 2)
     assert np.shape(sa.latency["test"]["latency_shuffled"]) == (2, 2, 300)
+
+
+def test_autocorrelogram(sa):
+    print(sa.raw_spike_times)
+    print(sa._sampling_rate)
+
+    sa.autocorrelogram()
+
+    assert isinstance(sa.acg, np.ndarray)
+    assert np.shape(sa.acg) == (2, 24)
+
+    nptest.assert_array_equal(sa.acg[0], np.zeros((24,)))

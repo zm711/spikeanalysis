@@ -54,17 +54,17 @@ class IntrinsicPlotter(PlotterBase):
             refractory period to mark with a red line in the acg. Just
             for visualization. Does not change the calculations."""
 
-        try:
-            spike_times = sp.spike_times
-        except AttributeError:
-            spike_times = sp.raw_spike_times / sp._sampling_rate
+        spike_times = sp.raw_spike_times / sp._sampling_rate
 
         spike_clusters = sp.spike_clusters
+
         try:
-            if isinstance(sp, SpikeAnalysis):
+            if isinstance(sp, SpikeAnalysis) or sp.QC_RUN:
                 cluster_ids = sp.cluster_ids
             else:
-                cluster_ids = sp._cids[sp._qc_threshold]
+                sp.set_qc()
+                sp.denoise_data()
+                cluster_ids = sp.cluster_ids
         except AttributeError:
             print("No qc provided. Running all clusters")
             cluster_ids = sp._cids

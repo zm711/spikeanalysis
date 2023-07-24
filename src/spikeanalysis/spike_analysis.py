@@ -697,6 +697,24 @@ class SpikeAnalysis:
 
         self.correlations = correlations
 
+    def autocorrelogram(self):
+        """function for calculating the autocorrelogram of the spikes"""
+        cluster_ids = self.cluster_ids
+        spike_times = self.raw_spike_times
+        spike_clusters = self.spike_clusters
+        sample_rate = self._sampling_rate
+        bin_end = 0.5 * sample_rate  # 500 ms around spike
+        acg_bins = np.linspace(1, bin_end, num=int(bin_end / 2), dtype=np.int32)
+
+        acg = np.zeros((len(cluster_ids), len(acg_bins)-1))
+
+        for idx, cluster in enumerate(tqdm(cluster_ids)):
+            these_spikes = spike_times[spike_clusters == cluster]
+            spike_counts, bin_centers = hf.histdiff(these_spikes, these_spikes, acg_bins)
+            acg[idx] = spike_counts
+
+        self.acg = acg
+
     def _generate_sample_z_parameter(self) -> dict:
         """
         Function for providing example z score parameters. Then saves as json
@@ -806,9 +824,6 @@ class SpikeAnalysis:
                 responsive_neurons = np.where(z_above_threshold > current_n_bins, True, False)
 
                 self.responsive_neurons[stim][key] = responsive_neurons
-
-    def save_parameters(self):
-        raise Exception("not implemented")
 
     def _get_key_for_stim(self) -> dict:
         """
