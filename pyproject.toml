@@ -1,6 +1,6 @@
 [project]
 name = "spikeanalysis"
-version = '0.0.3'
+version = '0.0.4'
 authors = [{name="Zach McKenzie", email="mineurs-torrent0x@icloud.com"}]
 description = "Analysis of Spike Trains"
 requires-python = ">=3.9"
@@ -13,7 +13,7 @@ classifiers = [
 
 dependencies = [
   "numpy",
-  "neo>=0.11.1",
+  "neo>=0.12.0",
   "tqdm",
   "scipy",
   "matplotlib",
