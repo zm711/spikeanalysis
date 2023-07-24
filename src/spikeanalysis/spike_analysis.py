@@ -529,7 +529,7 @@ class SpikeAnalysis:
                     current_times = self.isi_raw[cluster]["times"]
                     cluster_isi_raw = self.isi_raw[cluster]["isi"]
 
-                    for idx, event in enumerate(events):
+                    for idz, event in enumerate(events):
                         current_isi_raw = cluster_isi_raw[
                             np.logical_and(current_times > event, current_times < event + lengths[idx])
                         ]
@@ -539,8 +539,8 @@ class SpikeAnalysis:
 
                         isi_counts, isi_bins = np.histogram(current_isi_raw / self._sampling_rate, bins=bins)
                         bsl_counts, bsl_bins = np.histogram(baseline_isi_raw / self._sampling_rate, bins=bins)
-                        final_counts[idy, idx, :] = isi_counts
-                        final_counts_bsl[idy, idx, :] = bsl_counts
+                        final_counts[idy, idz, :] = isi_counts
+                        final_counts_bsl[idy, idz, :] = bsl_counts
                     final_isi[stim_name]["isi"] = isi_counts
                     final_isi[stim_name]["bsl_isi"] = final_counts_bsl
                     final_isi[stim_name]["bins"] = isi_bins
@@ -557,7 +557,7 @@ class SpikeAnalysis:
                     current_times = self.isi_raw[cluster]["times"]
                     cluster_isi_raw = self.isi_raw[cluster]["isi"]
 
-                    for idx, event in enumerate(events):
+                    for idz, event in enumerate(events):
                         current_isi_raw = cluster_isi_raw[
                             np.logical_and(current_times > event, current_times < event + lengths[idx])
                         ]
@@ -567,8 +567,8 @@ class SpikeAnalysis:
 
                         isi_counts, isi_bins = np.histogram(current_isi_raw / self._sampling_rate, bins=bins)
                         bsl_counts, bsl_bins = np.histogram(baseline_isi_raw / self._sampling_rate, bins=bins)
-                        final_counts[idy, idx, :] = isi_counts
-                        final_counts_bsl[idy, idx, :] = bsl_counts
+                        final_counts[idy, idz, :] = isi_counts
+                        final_counts_bsl[idy, idz, :] = bsl_counts
                 final_isi[stim_name]["isi"] = final_counts
                 final_isi[stim_name]["bsl_isi"] = final_counts_bsl
                 final_isi[stim_name]["bins"] = isi_bins
