@@ -145,8 +145,8 @@ class SpikePlotter(PlotterBase):
             )
 
             sorted_z_scores = sorted_z_scores[~nan_mask]
-            
-            if len(np.shape(sorted_z_scores))==2:
+
+            if len(np.shape(sorted_z_scores)) == 2:
                 sorted_z_scores = np.expand_dims(sorted_z_scores, axis=1)
 
             if z_bar is not None:
@@ -466,7 +466,7 @@ class SpikePlotter(PlotterBase):
                 )
                 sorted_z_scores = sorted_z_scores[~nan_mask]
 
-                if len(np.shape(sorted_z_scores))==2:
+                if len(np.shape(sorted_z_scores)) == 2:
                     sorted_z_scores = np.expand_dims(sorted_z_scores, axis=1)
 
                 if z_bar is not None:

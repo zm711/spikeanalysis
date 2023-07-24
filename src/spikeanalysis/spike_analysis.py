@@ -399,7 +399,7 @@ class SpikeAnalysis:
 
         bsl_windows = verify_window_format(window=bsl_window, num_stim=NUM_STIM)
         if NUM_DIG:
-            stim_dict = self._get_keys_for_stim()
+            stim_dict = self._get_key_for_stim()
         psths = self.psths
         self.latency = {}
         for idx, stim in enumerate(self.psths.keys()):
