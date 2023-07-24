@@ -687,7 +687,7 @@ class SpikeAnalysis:
 
                 for cluster_number in range(np.shape(current_data_windowed_by_trial)[0]):
                     final_sub_data = np.squeeze(current_data_windowed_by_trial[cluster_number])
-                    data_dataframe = pd.DataFrame(final_sub_data.T)
+                    data_dataframe = pd.DataFrame(np.squeeze(final_sub_data.T))
 
                     sub_correlations = data_dataframe.corr()
                     masked_correlations = sub_correlations[sub_correlations != 1]
