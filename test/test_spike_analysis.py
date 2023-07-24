@@ -248,5 +248,5 @@ def test_latencies(sa):
     for key in ["latency", "latency_shuffled"]:
         assert key in sa.latency["test"]
 
-    assert np.shape(sa.latency["test"]["latency"]) == (2,2)
-    assert np.shape(sa.latency["test"]["latency_shuffled"])==(2,2,300)
+    assert np.shape(sa.latency["test"]["latency"]) == (2, 2)
+    assert np.shape(sa.latency["test"]["latency_shuffled"]) == (2, 2, 300)
