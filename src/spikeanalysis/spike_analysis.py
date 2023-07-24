@@ -706,7 +706,7 @@ class SpikeAnalysis:
         bin_end = 0.5 * sample_rate  # 500 ms around spike
         acg_bins = np.linspace(1, bin_end, num=int(bin_end / 2), dtype=np.int32)
 
-        acg = np.zeros((len(cluster_ids), len(acg_bins)-1))
+        acg = np.zeros((len(cluster_ids), len(acg_bins) - 1))
 
         for idx, cluster in enumerate(tqdm(cluster_ids)):
             these_spikes = spike_times[spike_clusters == cluster]

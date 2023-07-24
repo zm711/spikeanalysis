@@ -131,20 +131,21 @@ def test_compute_event_interspike_intervals_digital(sa_mocked):
             "stim": "DIG",
         }
     }
-    sa_mocked.HAVE_DIGITAL=True
-    sa_mocked.get_raw_psth(window=[0, 300],
+    sa_mocked.HAVE_DIGITAL = True
+    sa_mocked.get_raw_psth(
+        window=[0, 300],
         time_bin_ms=50,
     )
     sa_mocked.get_interspike_intervals()
     sa_mocked.compute_event_interspike_intervals(200)
 
     print(sa_mocked.isi)
-    sa_mocked.HAVE_DIGITAL=False
-    
-    assert len(sa_mocked.isi.keys())==2
+    sa_mocked.HAVE_DIGITAL = False
 
-    nptest.assert_array_equal(sa_mocked.isi['DIG']['bins'], sa_mocked.isi['test']['bins'])
-    
+    assert len(sa_mocked.isi.keys()) == 2
+
+    nptest.assert_array_equal(sa_mocked.isi["DIG"]["bins"], sa_mocked.isi["test"]["bins"])
+
 
 def test_trial_correlation_exception(sa):
     with pytest.raises(Exception):
