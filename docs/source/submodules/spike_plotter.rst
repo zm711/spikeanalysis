@@ -55,25 +55,27 @@ has an optional :code:`sorting_index`, which allows for the choosing which trial
 represented on the same row of the heatmap for each trial group to compare the same unit across trials. Trial groups are sorted by size so to sort
 by the smallest trial group one would use :code:`sorting_index = 0`, etc. Since it is sometimes nice to plot trial groups individually rather
 than all on the same figures this can be accomplished with :code:`plot_z_scores_ind`. The one issue with :code:`plot_z_scores_ind` is that it sorts
-each trial group individually, so that units are not on the same rows and cannot be directly compared by just aligning the figures.
+each trial group individually, so that units are not on the same rows and cannot be directly compared by just aligning the figures. Additionally, 
+in the case of needing fine control over the color bar the optional argument :code:`z_bar` can be given such that :code:`z_bar=(min, max)`. This
+will set that range for all values.
 
 .. code-block:: python
 
     plotter.plot_zscores(sorting_index = 1) # sort by 2nd trial group
     plotter.plot_zscores(sorting_index = None) # auto sorts by largest trial group
 
-or to see individually
+or to see individually (with z bar example)
 
 .. code-block:: python
 
-    plotter.plot_z_scores_ind()
+    plotter.plot_zscores_ind(z_bar = [-15,15])
 
 Plotting Raster plots
 ---------------------
 
 Raster plots are plots, which represent each action potential of a neuron as a bar with time on the X access and events on the y axis. The function
 :code:`plot_raster` aligns a raster plot based on the :code:`window` as well as highlighting the start and end of each stimulus bout (with red lines)
-:code:`window` can either be one global window for all stimulus or a list of lists with each nested list given the window for a substimulus
+:code:`window` can either be one global window for all stimulus or a list of lists with each nested list given the window for a substimulus.
 
 .. code-block:: python
     

@@ -101,7 +101,8 @@ Shuffled baseline
 ^^^^^^^^^^^^^^^^^
 
 To allow for statistical tests to assess changes in latency to fire for a unit, a shuffled baseline is created at the same time. This is just
-based on a normal distribution of points before the onset of the stimulus.
+based on a normal distribution of points before the onset of the stimulus. Eventually something like a divergence metric will likely be 
+incorporated to test for differences.
 
 
 Interspike Interval
@@ -110,6 +111,18 @@ Interspike Interval
 Interspike intervals are the times between a neuron firing. The limit of this is the refractory period, ie, the time at which a neuron can not
 fire even if maximally stimulated. The distribution of these intervals can provide information about the neurons firing rate distribution
 as well Gaussian vs Poisson ISI distributions have distinct PSTHs.
+
+
+Autocorrelogram
+---------------
+
+Calculating an Autocorrelogram for each unit based on its spike times. The 0 lag sample is removed. This is returned as a :code:`np.ndarray` for ease of use.
+Currently it is based on bins with size :math:`\frac{1}{2} SampleSize`, but this may evenutually become an argument in the function.
+
+.. code-block:: python
+
+    spiketrain.autocorrelogram()
+
 
 
 References

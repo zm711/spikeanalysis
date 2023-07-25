@@ -44,69 +44,75 @@ class IntrinsicPlotter(PlotterBase):
             self._check_kwargs(**kwargs)
             self._set_kwargs(**kwargs)
 
-    def plot_acs(self, sp: Union[SpikeData, SpikeAnalysis], ref_dur_ms: float = 2.0):
+    def plot_acgs(
+        self, sp: Union[SpikeData, SpikeAnalysis], window_ms: Optional[float] = None, ref_dur_ms: Optional[float] = None
+    ):
         """
         Function for plotting autocorrelograms.
 
         Parameters
         ----------
-        ref_dur_ms: float
+        sp: SpikeData, SpikeAnalysis
+            the data to use to calculate autocorrelograms
+        window_ms: Optional[float]:
+            The window to use to generate autocorrelogram given in milliseconds.
+            If None given it will use a default of 300 ms, default None.
+        ref_dur_ms: Optional[float]
             refractory period to mark with a red line in the acg. Just
-            for visualization. Does not change the calculations."""
+            for visualization. Does not change the calculations., default
+            is None, meaning no marking"""
 
         try:
-            spike_times = sp.spike_times
-        except AttributeError:
-            spike_times = sp.raw_spike_times / sp._sampling_rate
-
-        spike_clusters = sp.spike_clusters
-        try:
-            if isinstance(sp, SpikeAnalysis):
+            if isinstance(sp, SpikeAnalysis) or sp.QC_RUN:
                 cluster_ids = sp.cluster_ids
             else:
-                cluster_ids = sp._cids[sp._qc_threshold]
+                sp.set_qc()
+                sp.denoise_data()
+                cluster_ids = sp.cluster_ids
         except AttributeError:
             print("No qc provided. Running all clusters")
             cluster_ids = sp._cids
-
+        spike_times = sp.raw_spike_times
+        spike_clusters = sp.spike_clusters
         sample_rate = sp._sampling_rate
-        ref_dur = ref_dur_ms / 1000
-        BIN_SIZE = 0.00025
-        acg_bins = np.arange(1 / (sample_rate * 2), 0.2, BIN_SIZE)
+        if ref_dur_ms is not None:
+            ref_dur = ref_dur_ms / 1000
+        else:
+            ref_dur = None
+
+        if window_ms is not None:
+            bin_end = window_ms / 1000 * sample_rate
+        else:
+            bin_end = 0.3 * sample_rate  # 300 ms around spike
+
+        acg_bins = np.linspace(1, bin_end, num=int((bin_end / 10) + 1), dtype=np.int32)
+
         for cluster in cluster_ids:
             these_spikes = spike_times[spike_clusters == cluster]
 
+            if len(these_spikes) == 0:
+                continue
+
             spike_counts, bin_centers = hf.histdiff(these_spikes, these_spikes, acg_bins)
-            if np.sum(spike_counts) < 20:
-                bin_centers_vals = np.concatenate((-np.flip(bin_centers), bin_centers))
-                stairs_val = np.concatenate((np.flip(spike_counts), spike_counts))
-            else:
-                bin_centers_vals = np.concatenate((-np.flip(bin_centers[:81]), bin_centers[:81]))
-                stairs_val = np.concatenate((np.flip(spike_counts[:81]), spike_counts[:81]))
 
-            decimal_points = len(
-                str(ref_dur).split(".")[1]
-            )  # how many decimal places needed to compare to refractory period
-            bin_centers_vals = np.array(
-                [float(f"%.{decimal_points}f" % x) for x in bin_centers_vals]
-            )  # convert x values to appropriate decimal places
+            if np.sum(spike_counts) == 0:
+                continue
 
-            bin_centers_val_len = int(len(bin_centers_vals) / 8)  # divide to a small number of values for tick labels
-            line2 = np.argwhere(abs(bin_centers_vals) == ref_dur)  # put our lines at refractory period line
-
+            spike_counts = spike_counts / np.sum(spike_counts)  # normalize
+            bin_centers_vals = np.concatenate((-np.flip(acg_bins / (sample_rate))[:-1], acg_bins / (sample_rate)))
+            stairs_val = np.concatenate((np.flip(spike_counts), spike_counts))
             bin_centers_vals = np.array(
                 [float("%.3f" % x) for x in bin_centers_vals]
             )  # convert x-values to 3 decimal points for viusalization
 
             fig, ax = plt.subplots(figsize=self.figsize)
-            ax.stairs(stairs_val, color="black")
-            ax.plot([line2[0], line2[0]], [0, np.max(stairs_val) + 6], color="red", linestyle=":")
-            ax.plot([line2[-1], line2[-1]], [0, np.max(stairs_val) + 5], color="red", linestyle=":")
+            ax.stairs(stairs_val, bin_centers_vals, color="black")
 
-            ax.set(
-                xlim=(np.min(bin_centers_vals), np.max(bin_centers_vals)), xlabel=self.x_axis, ylabel="Spike Counts"
-            )  # refract lines
-            ax.set_xticklabels(bin_centers_vals[0:-1:bin_centers_val_len])
+            if ref_dur is not None:
+                ax.plot([-ref_dur, -ref_dur], [0, np.max(stairs_val)], color="red", linestyle=":")
+                ax.plot([ref_dur, ref_dur], [0, np.max(stairs_val)], color="red", linestyle=":")
+
+            ax.set(xlabel=self.x_axis, ylabel="Spike Counts")  # refract lines
             plt.tight_layout()
             if HAVE_SNS:
                 sns.despine()

@@ -140,11 +140,11 @@ class SpikePlotter(PlotterBase):
             z_score_sorting_index = np.argsort(-np.sum(sub_zscores[:, sorting_index, event_window], axis=1))
 
             sorted_z_scores = sub_zscores[z_score_sorting_index, :, :]
-            nan_mask = np.all(
-                np.isnan(sorted_z_scores) | np.equal(sorted_z_scores, 0) | np.isinf(sorted_z_scores), axis=2
-            )
+            # nan_mask = np.all(
+            #    np.isnan(sorted_z_scores) | np.equal(sorted_z_scores, 0) | np.isinf(sorted_z_scores), axis=2
+            # )
 
-            sorted_z_scores = sorted_z_scores[~nan_mask]
+            # sorted_z_scores = sorted_z_scores[~nan_mask]
 
             if len(np.shape(sorted_z_scores)) == 2:
                 sorted_z_scores = np.expand_dims(sorted_z_scores, axis=1)
@@ -406,7 +406,7 @@ class SpikePlotter(PlotterBase):
                 plt.figure(dpi=self.dpi)
                 plt.show()
 
-    def plot_z_scores_ind(self, z_bar: Optional[list[int]] = None):
+    def plot_zscores_ind(self, z_bar: Optional[list[int]] = None):
         """
         Function for plotting z scored heatmaps by trial group rather than all trial groups on the same set of axes. In
         This function all data is ordered based on the most responsive unit/trial group. Rows can be different units
@@ -462,12 +462,9 @@ class SpikePlotter(PlotterBase):
 
                 sorted_z_scores = sub_zscores[z_score_sorting_index, trial_idx, :]
                 nan_mask = np.all(
-                    np.isnan(sorted_z_scores) | np.equal(sorted_z_scores, 0) | np.isinf(sorted_z_scores), axis=2
+                    np.isnan(sorted_z_scores) | np.equal(sorted_z_scores, 0) | np.isinf(sorted_z_scores), axis=1
                 )
                 sorted_z_scores = sorted_z_scores[~nan_mask]
-
-                if len(np.shape(sorted_z_scores)) == 2:
-                    sorted_z_scores = np.expand_dims(sorted_z_scores, axis=1)
 
                 if z_bar is not None:
                     vmax = z_bar[1]
