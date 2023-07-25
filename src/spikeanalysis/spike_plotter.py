@@ -462,12 +462,9 @@ class SpikePlotter(PlotterBase):
 
                 sorted_z_scores = sub_zscores[z_score_sorting_index, trial_idx, :]
                 nan_mask = np.all(
-                    np.isnan(sorted_z_scores) | np.equal(sorted_z_scores, 0) | np.isinf(sorted_z_scores), axis=2
+                    np.isnan(sorted_z_scores) | np.equal(sorted_z_scores, 0) | np.isinf(sorted_z_scores), axis=1
                 )
                 sorted_z_scores = sorted_z_scores[~nan_mask]
-
-                if len(np.shape(sorted_z_scores)) == 2:
-                    sorted_z_scores = np.expand_dims(sorted_z_scores, axis=1)
 
                 if z_bar is not None:
                     vmax = z_bar[1]
