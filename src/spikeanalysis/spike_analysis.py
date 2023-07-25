@@ -354,7 +354,6 @@ class SpikeAnalysis:
             if new_bin_number != n_bins:
                 psth = hf.convert_to_new_bins(psth, new_bin_number)
                 bins = hf.convert_bins(bins, new_bin_number)
-
             bsl_values = np.logical_and(bins >= bsl_current[0], bins <= bsl_current[1])
             z_window_values = np.logical_and(bins >= z_window_current[0], bins <= z_window_current[1])
             bsl_psth = psth[:, :, bsl_values]
