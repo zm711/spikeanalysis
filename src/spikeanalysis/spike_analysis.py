@@ -650,9 +650,9 @@ class SpikeAnalysis:
         correlations = {}
         for idx, stimulus in enumerate(data.keys()):
             if idx < self.NUM_DIG:
-                trial_groups = self.digital_events[stim_dict[stimulus]]["trial_groups"]
+                trial_groups = np.array(self.digital_events[stim_dict[stimulus]]["trial_groups"])
             else:
-                trial_groups = self.dig_analog_events[str(idx - self.NUM_DIG)]["trial_groups"]
+                trial_groups = np.array(self.dig_analog_events[str(idx - self.NUM_DIG)]["trial_groups"])
             current_window = windows[idx]
             current_data = data[stimulus]
 
@@ -691,7 +691,10 @@ class SpikeAnalysis:
 
                     sub_correlations = data_dataframe.corr()
                     masked_correlations = sub_correlations[sub_correlations != 1]
-                    final_correlations = np.nanmean(masked_correlations.iloc[0, :])
+                    for row in range(np.shape(masked_correlations)[0]):
+                        final_correlations = np.nanmean(masked_correlations.iloc[row, :])
+                        if np.isfinite(final_correlations):
+                            break
                     correlations[stimulus][cluster_number, trial_number] = final_correlations
 
         self.correlations = correlations
