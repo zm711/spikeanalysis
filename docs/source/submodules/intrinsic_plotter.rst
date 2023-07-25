@@ -13,16 +13,31 @@ Plot Autocorrelograms
 ---------------------
 
 Autocorrelograms are a way of displaying whether a unit is respecting the neuronal refractory period. An autocorrelogram is just a histogram mirrored
-over 0 that should have no counts within the refractory period and various counts within bins outside of the refractory period. This function requires
-:code:`SpikeData`, as well as the :code:`ref_dur_ms` (refractory period in milliseconds) to run. 
+over 0 that should have no counts within the refractory period and various counts within bins outside of the refractory period. This demonstrates potential
+autocorrelations for a neuron with itself. This function requires :code:`SpikeData` or :code:`SpikeAnalysis`, as well as the :code:`ref_dur_ms` 
+(refractory period in milliseconds) to run. Since this can be a time-consuming function to run an optional :code:`window_ms` can be given in order to
+limit the window of analysis (default is 300 ms.)
 
 **Of note Different neurons have different refractory periods. 2 ms is relatively common, but this should be based on the system the user is studying.**
 
 
 .. code-block:: python
 
-    iplotter.plot_acs(sp=spikes, ref_dur_ms = 2) # spikes is SpikeData, 2 would be 2 ms
+    iplotter.plot_acgs(sp=spikes) # spikes is SpikeData, no refractory period lines displayed
 
+Or we can change some default settings to zoom in looking for refractory period violations. For example,
+
+.. code-block:: python
+
+    # spiketrain is a SpikeTrain object
+    # window_ms indicates only calculate 10 ms around each spike
+    # ref_dur_ms indicates that a line should be drawn at 2 ms to help
+    # visualization potential violations.
+    iplotter.plot_acgs(sp=spiketrain, window = 10, ref_dur_ms = 2) 
+
+
+Note, to use the :code:`autocorrelograms` for further analyis the code for :code:`SpikeAnalysis` has its own :code:`autocorrelogram()` These values 
+can then be used for other analyses. This function is just for display.
 
 Plot waveforms
 --------------
@@ -61,5 +76,10 @@ lamina of the cord has most of the units found during sorting.
 CDF
 ---
 
-WIP
+A cumulative distribution function helps indicate the distribition of spike rates, depths, and amplitudes of a dataset based on the templates
+analyzed.
+
+.. code-block:: python
+
+    iplotter.plot_cdf(sp=spikes) # spikes is SpikeData
 
