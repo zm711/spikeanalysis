@@ -44,7 +44,7 @@ class IntrinsicPlotter(PlotterBase):
             self._check_kwargs(**kwargs)
             self._set_kwargs(**kwargs)
 
-    def plot_acs(self, sp: Union[SpikeData, SpikeAnalysis], ref_dur_ms: float = 2.0):
+    def plot_acgs(self, sp: Union[SpikeData, SpikeAnalysis], ref_dur_ms: float = 2.0):
         """
         Function for plotting autocorrelograms.
 
@@ -53,10 +53,6 @@ class IntrinsicPlotter(PlotterBase):
         ref_dur_ms: float
             refractory period to mark with a red line in the acg. Just
             for visualization. Does not change the calculations."""
-
-        spike_times = sp.raw_spike_times / sp._sampling_rate
-
-        spike_clusters = sp.spike_clusters
 
         try:
             if isinstance(sp, SpikeAnalysis) or sp.QC_RUN:
@@ -68,11 +64,13 @@ class IntrinsicPlotter(PlotterBase):
         except AttributeError:
             print("No qc provided. Running all clusters")
             cluster_ids = sp._cids
-
+        spike_times = sp.raw_spike_times
+        spike_clusters = sp.spike_clusters
         sample_rate = sp._sampling_rate
         ref_dur = ref_dur_ms / 1000
-        BIN_SIZE = 0.00025
-        acg_bins = np.arange(1 / (sample_rate * 2), 0.2, BIN_SIZE)
+        bin_end = 0.2 * sample_rate  # 500 ms around spike
+        acg_bins = np.linspace(1, bin_end, num=int(bin_end / 2), dtype=np.int32)
+
         for cluster in cluster_ids:
             these_spikes = spike_times[spike_clusters == cluster]
 
@@ -88,7 +86,7 @@ class IntrinsicPlotter(PlotterBase):
                 str(ref_dur).split(".")[1]
             )  # how many decimal places needed to compare to refractory period
             bin_centers_vals = np.array(
-                [float(f"%.{decimal_points}f" % x) for x in bin_centers_vals]
+                [x / sample_rate for x in bin_centers_vals]
             )  # convert x values to appropriate decimal places
 
             bin_centers_val_len = int(len(bin_centers_vals) / 8)  # divide to a small number of values for tick labels
