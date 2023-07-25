@@ -24,7 +24,7 @@ copyright = "2023, Zach McKenzie"
 author = "Zach McKenzie"
 
 # The full version, including alpha/beta/rc tags
-release = "0.0.0"
+release = "0.0.5"
 
 
 # -- General configuration ---------------------------------------------------

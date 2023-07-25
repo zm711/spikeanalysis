@@ -1,6 +1,6 @@
 [project]
 name = "spikeanalysis"
-version = '0.0.4'
+version = '0.0.5'
 authors = [{name="Zach McKenzie", email="mineurs-torrent0x@icloud.com"}]
 description = "Analysis of Spike Trains"
 requires-python = ">=3.9"
