@@ -33,7 +33,15 @@ def test_convert_bins():
     new_bins = hf.convert_bins(bins, 4)
     print("converted bins: ", new_bins)
     assert np.shape(new_bins) == (4,), "incorrect number of new bins"
-    assert np.isclose(new_bins[0], 2.0, rtol=1e-05), "new bin number is wrong"
+    nptest.assert_array_equal(new_bins, np.array([0.0, 3.0, 6.0, 9.0]))
+
+
+def test_convert_bins_final():
+    bins = np.linspace(0, 9, 10)
+    for value in range(2, 9):
+        print(value)
+        new_bins = hf.convert_bins(bins, value)
+        assert new_bins[-1] != 0
 
 
 def test_convert_bins_complex():
@@ -41,7 +49,13 @@ def test_convert_bins_complex():
 
     new_bins = hf.convert_bins(bins, 10)
     assert np.shape(new_bins) == (10,), "incorrect number of new bins"
-    assert np.isclose(new_bins[0], -8.0, rtol=1e-05)
+    nptest.assert_allclose(
+        new_bins,
+        np.array(
+            [-10.0, -7.777778, -5.555556, -3.333333, -1.111111, 1.111111, 3.333333, 5.555556, 7.777778, 10.0],
+        ),
+        rtol=1e-5,
+    )
 
 
 def test_convert_bins_failure():

@@ -177,17 +177,10 @@ def convert_to_new_bins(
 
 @jit(nopython=True)
 def convert_bins(bins: np.array, bin_number: np.int32) -> np.array:
-    new_bins = np.zeros((bin_number,))
-
-    old_length = np.shape(bins)[0]
-    bin_keeps = np.int32(old_length / bin_number)
-    if bin_keeps <= 1:
+    start, end = bins[0], bins[-1]
+    new_bins = np.linspace(start, end, num=bin_number)
+    if bin_number > len(bins) or bin_number == 1:
         raise Exception("fail")
-    idy = 0
-    for idx in range(len(bins)):
-        if idx % bin_keeps == 0 and idx != 0:
-            new_bins[idy] = round(bins[idx], 5)
-            idy += 1
 
     return new_bins
 
