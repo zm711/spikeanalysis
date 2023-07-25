@@ -406,7 +406,7 @@ class SpikePlotter(PlotterBase):
                 plt.figure(dpi=self.dpi)
                 plt.show()
 
-    def plot_z_scores_ind(self, z_bar: Optional[list[int]] = None):
+    def plot_zscores_ind(self, z_bar: Optional[list[int]] = None):
         """
         Function for plotting z scored heatmaps by trial group rather than all trial groups on the same set of axes. In
         This function all data is ordered based on the most responsive unit/trial group. Rows can be different units

@@ -68,7 +68,7 @@ or to see individually (with z bar example)
 
 .. code-block:: python
 
-    plotter.plot_z_scores_ind(z_bar = [-15,15])
+    plotter.plot_zscores_ind(z_bar = [-15,15])
 
 Plotting Raster plots
 ---------------------
