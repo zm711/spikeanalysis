@@ -517,18 +517,20 @@ class SpikeAnalysis:
         """
         bins = np.linspace(0, time_ms / 1000, num=int(time_ms + 1))
         final_isi = {}
+        raw_data = {}
         if self.HAVE_DIGITAL:
             for idx, stimulus in enumerate(self.digital_events.keys()):
                 events = np.array(self.digital_events[stimulus]["events"])
                 lengths = np.array(self.digital_events[stimulus]["lengths"])
                 stim_name = self.digital_events[stimulus]["stim"]
+                raw_data[stim_name] = {}
                 final_isi[stim_name] = {}
                 final_counts = np.zeros((len(self.isi_raw.keys()), len(events), len(bins) - 1))
                 final_counts_bsl = np.zeros((len(self.isi_raw.keys()), len(events), len(bins) - 1))
                 for idy, cluster in enumerate(self.isi_raw.keys()):
                     current_times = self.isi_raw[cluster]["times"]
                     cluster_isi_raw = self.isi_raw[cluster]["isi"]
-
+                    raw_data[stim_name][cluster] = {"isi_values": [], "bsl_isi_values": []}
                     for idz, event in enumerate(events):
                         current_isi_raw = cluster_isi_raw[
                             np.logical_and(current_times > event, current_times < event + lengths[idx])
@@ -541,6 +543,16 @@ class SpikeAnalysis:
                         bsl_counts, bsl_bins = np.histogram(baseline_isi_raw / self._sampling_rate, bins=bins)
                         final_counts[idy, idz, :] = isi_counts
                         final_counts_bsl[idy, idz, :] = bsl_counts
+                        raw_data[stim_name][cluster]["isi_values"].append(list(current_isi_raw / self._sampling_rate))
+                        raw_data[stim_name][cluster]["bsl_isi_values"].append(
+                            list(baseline_isi_raw / self._sampling_rate)
+                        )
+                    raw_data[stim_name][cluster]["isi_values"] = np.array(
+                        [value for sub_list in raw_data[stim_name][cluster]["isi_values"] for value in sub_list]
+                    )
+                    raw_data[stim_name][cluster]["bsl_isi_values"] = np.array(
+                        [value for sub_list in raw_data[stim_name][cluster]["bsl_isi_values"] for value in sub_list]
+                    )
                 final_isi[stim_name]["isi"] = final_counts
                 final_isi[stim_name]["bsl_isi"] = final_counts_bsl
                 final_isi[stim_name]["bins"] = isi_bins
@@ -551,12 +563,13 @@ class SpikeAnalysis:
                 lengths = np.array(self.dig_analog_events[stimulus]["lengths"])
                 stim_name = self.dig_analog_events[stimulus]["stim"]
                 final_isi[stim_name] = {}
+                raw_data[stim_name] = {}
                 final_counts = np.zeros((len(self.isi_raw.keys()), len(events), len(bins) - 1))
                 final_counts_bsl = np.zeros((len(self.isi_raw.keys()), len(events), len(bins) - 1))
                 for idy, cluster in enumerate(self.isi_raw.keys()):
                     current_times = self.isi_raw[cluster]["times"]
                     cluster_isi_raw = self.isi_raw[cluster]["isi"]
-
+                    raw_data[stim_name][cluster] = {"isi_values": [], "bsl_isi_values": []}
                     for idz, event in enumerate(events):
                         current_isi_raw = cluster_isi_raw[
                             np.logical_and(current_times > event, current_times < event + lengths[idx])
@@ -569,11 +582,22 @@ class SpikeAnalysis:
                         bsl_counts, bsl_bins = np.histogram(baseline_isi_raw / self._sampling_rate, bins=bins)
                         final_counts[idy, idz, :] = isi_counts
                         final_counts_bsl[idy, idz, :] = bsl_counts
+                        raw_data[stim_name][cluster]["isi_values"].append(list(current_isi_raw / self._sampling_rate))
+                        raw_data[stim_name][cluster]["bsl_isi_values"].append(
+                            list(baseline_isi_raw / self._sampling_rate)
+                        )
+                    raw_data[stim_name][cluster]["isi_values"] = np.array(
+                        [value for sub_list in raw_data[stim_name][cluster]["isi_values"] for value in sub_list]
+                    )
+                    raw_data[stim_name][cluster]["bsl_isi_values"] = np.array(
+                        [value for sub_list in raw_data[stim_name][cluster]["bsl_isi_values"] for value in sub_list]
+                    )
                 final_isi[stim_name]["isi"] = final_counts
                 final_isi[stim_name]["bsl_isi"] = final_counts_bsl
                 final_isi[stim_name]["bins"] = isi_bins
 
         self.isi = final_isi
+        self.isi_values = raw_data
 
     def trial_correlation(
         self, window: Union[list, list[list]], time_bin_ms: Optional[float] = None, dataset: str = "psth"
