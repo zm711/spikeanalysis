@@ -21,8 +21,8 @@ def test_importIntrinsicPlotter():
 def test_import_all():
     import spikeanalysis
 
-def test_import_total_package():
 
+def test_import_total_package():
     import spikeanalysis as sa
 
     new_plotter = sa.SpikePlotter()
