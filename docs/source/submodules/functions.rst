@@ -14,7 +14,7 @@ can choose their pvalue cutoff to reject the null.
 
 .. code-block:: python
 
-    ks_values = sa.kolmo_smir_stats([dataset1, dataset2], type = None)
+    ks_values = sa.kolmo_smir_stats([dataset1, dataset2], datatype = None)
 
 Or with a spike analysis object (for example with :code:`isi` values between baseline and stimulus)
 
@@ -25,4 +25,4 @@ Or with a spike analysis object (for example with :code:`isi` values between bas
     spiketrain.compute_event_interspike_intervals()
     isi_values = spiketrain.isi_values
 
-    ks_values = sa.kolmo_smir_stats(isi_values, type = "isi")
+    ks_values = sa.kolmo_smir_stats(isi_values, datatype = "isi")
