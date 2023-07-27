@@ -184,7 +184,7 @@ class SpikeData:
         self._goto_file_path()
         self.raw_spike_times = np.squeeze(np.load("spike_times.npy"))
         self._spike_templates = np.squeeze(np.load("spike_templates.npy"))
-
+        self.template_scaling_amplitudes = np.squeeze(np.load("amplitudes.npy"))
         if os.path.isfile("spike_clusters.npy"):
             self.spike_clusters = np.squeeze(np.load("spike_clusters.npy"))
         else:
