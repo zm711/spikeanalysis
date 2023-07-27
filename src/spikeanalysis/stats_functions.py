@@ -3,7 +3,7 @@ from scipy.stats import ks_2samp
 from typing import Union
 
 
-def kolmo_smir_stats(distribution_container: Union[dict, list], type: str) -> Union[dict, np.ndarray]:
+def kolmo_smir_stats(distribution_container: Union[dict, list], dtype: str) -> Union[dict, np.ndarray]:
     """Function to calculate the Kolmogorov-Smirnov for various neuronal metrics
 
     Parameters
@@ -20,7 +20,7 @@ def kolmo_smir_stats(distribution_container: Union[dict, list], type: str) -> Un
         Returns a dict of np.ndarrays of pvalues for null of same distribution
         or an np.ndarray of the pvalues"""
 
-    if type == "isi":
+    if dtype == "isi":
         isi_values = distribution_container
         ks_vals = {}
         for stimulus in isi_values.keys():
@@ -38,7 +38,7 @@ def kolmo_smir_stats(distribution_container: Union[dict, list], type: str) -> Un
 
         return ks_vals
 
-    elif type == "latency":
+    elif dtype == "latency":
         latencies = distribution_container
         ks_vals = {}
 
