@@ -63,7 +63,6 @@ class StimulusData:
         if "dig_analog" in files:
             with open("dig_analog_events.json") as read_file:
                 self.dig_analog_events = json.load(read_file)
-                print(self.dig_analog_events)
             raw_analog = glob.glob("raw_analog*")[0]
             self.analog_data = np.load(raw_analog)
 
