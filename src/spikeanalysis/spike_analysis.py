@@ -126,6 +126,15 @@ class SpikeAnalysis:
             self.HAVE_ANALOG = False
             print("There is no raw analog data provided. Run get_analog_data if needed.")
 
+        if self.HAVE_DIGITAL and self.HAVE_DIG_ANALOG:
+            self.events = self._merge_events(self.digital_events, self.dig_analog_events)
+        elif self.HAVE_DIGITAL:
+            self.events = self.digital_events
+        elif self.HAVE_DIG_ANALOG:
+            self.events = self.dig_analog_events
+        else:
+            raise Exception('Code requires some stimulus data')
+
     def get_raw_psth(
         self,
         window: Union[list, list[list]],
@@ -850,6 +859,11 @@ class SpikeAnalysis:
                 responsive_neurons = np.where(z_above_threshold > current_n_bins, True, False)
 
                 self.responsive_neurons[stim][key] = responsive_neurons
+
+    def _merge_events(self, event_0, event_1):
+        """Utility function for merging digital and analog events into one dictionary"""
+        events = {**event_0, **event_1}
+        return events
 
     def _get_key_for_stim(self) -> dict:
         """
