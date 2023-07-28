@@ -507,6 +507,11 @@ class SpikeData:
             if self.CACHING:
                 np.save("qc_threshold.npy", threshold)
 
+            if np.sum(threshold)==0:
+                print("Current qc_preprocessing values led to 0 units.")
+                print(f"Iso: {np.sum(iso_d_thres)}, sil: {np.sum(sil)}")
+                print(f"RPV: {np.sum(rpv)}")
+
         self._return_to_dir(current_dir)
 
     def set_qc(self):
