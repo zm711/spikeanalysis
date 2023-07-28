@@ -77,7 +77,7 @@ def test_get_raw_psths(sa_mocked):
 
 
 def test_z_score_data(sa):
-    sa.dig_analog_events = {
+    sa.events = {
         "0": {
             "events": np.array([100, 200]),
             "lengths": np.array([100, 100]),
@@ -136,7 +136,7 @@ def test_compute_event_interspike_intervals(sa_mocked):
 
 
 def test_compute_event_interspike_intervals_digital(sa_mocked):
-    sa_mocked.digital_events = {
+    sa_mocked.events = {
         "DIGITAL-IN-01": {
             "events": np.array([100, 200]),
             "lengths": np.array([100, 100]),
@@ -144,7 +144,6 @@ def test_compute_event_interspike_intervals_digital(sa_mocked):
             "stim": "DIG",
         }
     }
-    sa_mocked.HAVE_DIGITAL = True
     sa_mocked.get_raw_psth(
         window=[0, 300],
         time_bin_ms=50,
@@ -153,11 +152,19 @@ def test_compute_event_interspike_intervals_digital(sa_mocked):
     sa_mocked.compute_event_interspike_intervals(200)
 
     print(sa_mocked.isi)
-    sa_mocked.HAVE_DIGITAL = False
 
     assert len(sa_mocked.isi.keys()) == 2
 
     nptest.assert_array_equal(sa_mocked.isi["DIG"]["bins"], sa_mocked.isi["test"]["bins"])
+
+    sa.events = {
+        "0": {
+            "events": np.array([100, 200]),
+            "lengths": np.array([100, 100]),
+            "trial_groups": np.array([1, 1]),
+            "stim": "test",
+        }
+    }
 
 
 def test_trial_correlation_exception(sa):
@@ -169,7 +176,7 @@ def test_trial_correlation_exception(sa):
 
 
 def test_trial_correlation(sa):
-    sa.dig_analog_events = {
+    sa.events= {
         "0": {
             "events": np.array([100, 200]),
             "lengths": np.array([100, 100]),
@@ -212,7 +219,7 @@ def test_generate_z_scores(sa, tmp_path):
 def test_get_key_for_stim(sa):
     mocked_digital_events = {"DIG-IN-01": {"stim": "test"}}
 
-    sa.digital_events = mocked_digital_events
+    sa.events = mocked_digital_events
     stim_name = "test"  # from mocked data
     channel = "DIG-IN-01"  # from mocked data
 
@@ -269,7 +276,7 @@ def test_responsive_neurons(sa):
 
 
 def test_latencies(sa):
-    sa.dig_analog_events = {
+    sa.events = {
         "0": {
             "events": np.array([100, 200]),
             "lengths": np.array([100, 100]),
