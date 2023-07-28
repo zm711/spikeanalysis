@@ -32,6 +32,19 @@ def test_attributes_sa(sa):
     assert sa.HAVE_DIG_ANALOG
     assert len(sa.raw_spike_times) == 10
 
+def test_merge_dicts(sa):
+    dict1 = {1: {'a': [1,2,3]}}
+    dict2 = {2: {'b': [4,5,6]}}
+
+    merged_dict = sa._merge_events(dict1,dict2)
+    assert isinstance(merged_dict, dict)
+
+    for key in [1,2]:
+        assert key in merged_dict.keys()
+    
+    for value in merged_dict.values():
+        assert isinstance(value, dict)
+
 
 @pytest.fixture(scope="module")
 def sa_mocked(sa):

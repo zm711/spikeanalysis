@@ -168,11 +168,8 @@ class SpikeAnalysis:
             minumum bin size in ms is {1000/self._sampling_rate}"
 
         time_bin_size = np.int64((time_bin_ms / 1000) * self._sampling_rate)
-
         TOTAL_STIM = len(self.events.keys())
-
         windows = verify_window_format(window=window, num_stim=TOTAL_STIM)
-
         psths = {}
         
         for idx, stimulus in enumerate(self.events.keys()):
@@ -259,9 +256,7 @@ class SpikeAnalysis:
         except AttributeError:
             raise Exception("Run get_raw_psth before running z_score_data")
 
-
         stim_dict = self._get_key_for_stim()
-
         NUM_STIM = self.NUM_STIM
 
         if isinstance(time_bin_ms, float) or isinstance(time_bin_ms, int):
@@ -313,12 +308,10 @@ class SpikeAnalysis:
                 mean_fr = np.mean(np.sum(bsl_trial, axis=2), axis=1) / ((bsl_current[1] - bsl_current[0]))
                 std_fr = np.std(np.sum(bsl_trial, axis=2), axis=1) / ((bsl_current[1] - bsl_current[0]))
                 z_trial = z_psth[:, trials == trial, :] / time_bin_current
-
                 z_trials = hf.z_score_values(z_trial, mean_fr, std_fr)
-
                 z_scores[stim][:, trials == trial, :] = z_trials[:, :, :]
-
                 final_z_scores[stim][:, trial_number, :] = np.nanmean(z_trials, axis=1)
+
             self.z_bins[stim] = bins[z_window_values]
         self.z_scores = final_z_scores
 
