@@ -32,16 +32,17 @@ def test_attributes_sa(sa):
     assert sa.HAVE_DIG_ANALOG
     assert len(sa.raw_spike_times) == 10
 
-def test_merge_dicts(sa):
-    dict1 = {1: {'a': [1,2,3]}}
-    dict2 = {2: {'b': [4,5,6]}}
 
-    merged_dict = sa._merge_events(dict1,dict2)
+def test_merge_dicts(sa):
+    dict1 = {1: {"a": [1, 2, 3]}}
+    dict2 = {2: {"b": [4, 5, 6]}}
+
+    merged_dict = sa._merge_events(dict1, dict2)
     assert isinstance(merged_dict, dict)
 
-    for key in [1,2]:
+    for key in [1, 2]:
         assert key in merged_dict.keys()
-    
+
     for value in merged_dict.values():
         assert isinstance(value, dict)
 
@@ -136,14 +137,16 @@ def test_compute_event_interspike_intervals(sa_mocked):
 
 
 def test_compute_event_interspike_intervals_digital(sa_mocked):
-    sa_mocked.events.update({
-        "DIGITAL-IN-01": {
-            "events": np.array([100, 200]),
-            "lengths": np.array([100, 100]),
-            "trial_groups": np.array([1, 1]),
-            "stim": "DIG",
+    sa_mocked.events.update(
+        {
+            "DIGITAL-IN-01": {
+                "events": np.array([100, 200]),
+                "lengths": np.array([100, 100]),
+                "trial_groups": np.array([1, 1]),
+                "stim": "DIG",
+            }
         }
-    })
+    )
     sa_mocked.get_raw_psth(
         window=[0, 300],
         time_bin_ms=50,
@@ -176,7 +179,7 @@ def test_trial_correlation_exception(sa):
 
 
 def test_trial_correlation(sa):
-    sa.events= {
+    sa.events = {
         "0": {
             "events": np.array([100, 200]),
             "lengths": np.array([100, 100]),
