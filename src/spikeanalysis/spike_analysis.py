@@ -19,14 +19,17 @@ class SpikeAnalysis:
     """Class for spike train analysis utilizing a SpikeData object and a StimulusData object"""
 
     def __init__(self):
-        pass
+        self._file_path = None
+        self.events = {}
 
     def __repr__(self):
         var_methods = dir(self)
         var = list(vars(self).keys())  # get our currents variables
         methods = list(set(var_methods) - set(var))
         final_methods = [method for method in methods if "__" not in method and method[0] != "_"]
-        return f"The methods are {final_methods}"
+        final_vars = [current_var for current_var in var if "_" not in current_var]
+        print(f"The methods are: {final_methods}")
+        print(f"Variables are: {final_vars}")
 
     def set_spike_data(self, sp: SpikeData):
         """
@@ -42,14 +45,14 @@ class SpikeAnalysis:
         None.
 
         """
-        try:
-            file_path = self._file_path
-            assert (
-                file_path == sp._file_path
-            ), f"Stim data and Spike data must have same root Stim: {file_path}, spike:\
-                {sp._file_path}"
-        except AttributeError:
+        if self._file_path is None:
             self._file_path = sp._file_path
+        else:
+            assert (
+                self._file_path == sp._file_path
+            ), f"Stim data and Spike data must have same root Stim: {self._file_path}, spike:\
+                {sp._file_path}"
+
         try:
             self.spike_times = sp.spike_times
         except AttributeError:
@@ -97,14 +100,13 @@ class SpikeAnalysis:
         None.
 
         """
-        try:
-            file_path = self._file_path
-            assert (
-                file_path == event_times._file_path
-            ), f"Stim data and Spike data must have same root Stim: \
-                {event_times._file_path}, Spike: {file_path}"
-        except AttributeError:
+        if self._file_path is None:
             self._file_path = event_times._file_path
+        else:
+            assert (
+                self._file_path == event_times._file_path
+            ), f"Stim data and Spike data must have same root Stim: \
+                {event_times._file_path}, Spike: {self._file_path}"
 
         try:
             self.digital_events = event_times.digital_events
@@ -118,7 +120,9 @@ class SpikeAnalysis:
             self.HAVE_DIG_ANALOG = True
         except AttributeError as err:
             self.HAVE_DIG_ANALOG = False
-            print(f"{err}. Run possible analog functions {_possible_analog} if should be present.")
+            print(
+                f"{err}. If should be present. Run possible analog functions {_possible_analog} if should be present."
+            )
         try:
             self.analog_data = event_times.analog_data
             self.HAVE_ANALOG = True
@@ -133,7 +137,7 @@ class SpikeAnalysis:
         elif self.HAVE_DIG_ANALOG:
             self.events = self.dig_analog_events
         else:
-            raise Exception('Code requires some stimulus data')
+            raise Exception("Code requires some stimulus data")
 
     def get_raw_psth(
         self,
@@ -171,7 +175,7 @@ class SpikeAnalysis:
         TOTAL_STIM = len(self.events.keys())
         windows = verify_window_format(window=window, num_stim=TOTAL_STIM)
         psths = {}
-        
+
         for idx, stimulus in enumerate(self.events.keys()):
             multispike_bin = 0
             events = np.array(self.events[stimulus]["events"])
@@ -342,7 +346,6 @@ class SpikeAnalysis:
         psths = self.psths
         self.latency = {}
         for idx, stim in enumerate(self.psths.keys()):
-
             trials = self.events[stim_dict[stim]]["trial_groups"]
             print(stim)
             trial_set = np.unique(np.array(trials))
@@ -481,9 +484,7 @@ class SpikeAnalysis:
                     final_counts[idy, idz, :] = isi_counts
                     final_counts_bsl[idy, idz, :] = bsl_counts
                     raw_data[stim_name][cluster]["isi_values"].append(list(current_isi_raw / self._sampling_rate))
-                    raw_data[stim_name][cluster]["bsl_isi_values"].append(
-                        list(baseline_isi_raw / self._sampling_rate)
-                    )
+                    raw_data[stim_name][cluster]["bsl_isi_values"].append(list(baseline_isi_raw / self._sampling_rate))
                 raw_data[stim_name][cluster]["isi_values"] = np.array(
                     [value for sub_list in raw_data[stim_name][cluster]["isi_values"] for value in sub_list]
                 )
@@ -571,7 +572,6 @@ class SpikeAnalysis:
 
         correlations = {}
         for idx, stimulus in enumerate(data.keys()):
-
             trial_groups = np.array(self.events[stim_dict[stimulus]]["trial_groups"])
             current_window = windows[idx]
             current_data = data[stimulus]
