@@ -48,7 +48,7 @@ def test_merge_dicts(sa):
 
 @pytest.fixture(scope="module")
 def sa_mocked(sa):
-    sa.dig_analog_events = {
+    sa.events = {
         "0": {"events": np.array([100]), "lengths": np.array([200]), "trial_groups": np.array([1]), "stim": "test"}
     }
 
@@ -136,14 +136,14 @@ def test_compute_event_interspike_intervals(sa_mocked):
 
 
 def test_compute_event_interspike_intervals_digital(sa_mocked):
-    sa_mocked.events = {
+    sa_mocked.events.update({
         "DIGITAL-IN-01": {
             "events": np.array([100, 200]),
             "lengths": np.array([100, 100]),
             "trial_groups": np.array([1, 1]),
             "stim": "DIG",
         }
-    }
+    })
     sa_mocked.get_raw_psth(
         window=[0, 300],
         time_bin_ms=50,
