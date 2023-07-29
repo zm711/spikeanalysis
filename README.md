@@ -21,4 +21,5 @@ Then cd to folder containing the yaml and in terminal or Anaconda Prompt type
 conda env create -f environment.yml
 conda activate spikeanalysis_env
 ```
-This does not install in editable mode. For editable mode modify the downloaded `.yml` appropriately.
+This does not install in editable mode. For editable mode modify the downloaded `.yml` by removing the `pip install` of `spikeanalysis`
+and instead do `git clone` and run `pip install -e .` from the folder.
