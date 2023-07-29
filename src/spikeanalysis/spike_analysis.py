@@ -571,10 +571,8 @@ class SpikeAnalysis:
 
         correlations = {}
         for idx, stimulus in enumerate(data.keys()):
-            if idx < self.NUM_DIG:
-                trial_groups = np.array(self.digital_events[stim_dict[stimulus]]["trial_groups"])
-            else:
-                trial_groups = np.array(self.dig_analog_events[str(idx - self.NUM_DIG)]["trial_groups"])
+
+            trial_groups = np.array(self.events[stim_dict[stimulus]]["trial_groups"])
             current_window = windows[idx]
             current_data = data[stimulus]
 
