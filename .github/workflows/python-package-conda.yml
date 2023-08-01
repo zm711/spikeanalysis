@@ -46,10 +46,10 @@ jobs:
     - name: Set cache date
       run: echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: ${{ matrix.prefix }}
-        key: ${{ matrix.label }}-conda-${{ hashFiles('test_env.yml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
+        key: ${{ matrix.label }}-conda-${{ hashFiles('pyproject.toml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
       id: cache
       
     - name: Update environment
