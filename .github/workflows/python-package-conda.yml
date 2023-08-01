@@ -60,8 +60,8 @@ jobs:
         
     - name: Install package
       run: |
-        pip install git+https://github.com/NeuralEnsemble/python-neo.git --target ${{ matrix.prefix}}
-        pip install git+https://github.com/zm711/spikeanalysis.git --target ${{ matrix.prefix}}
+        pip install git+https://github.com/NeuralEnsemble/python-neo.git 
+        pip install git+https://github.com/zm711/spikeanalysis.git 
         
 
     - name: Test with pytest
