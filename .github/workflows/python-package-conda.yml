@@ -14,6 +14,9 @@ jobs:
   testing:
     name: Test on ${{ matrix.os }} OS
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -el {0}
     strategy:
       fail-fast: false
       matrix:
@@ -42,6 +45,7 @@ jobs:
        
     - name: Set cache date
       run: echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
+      shell: bash
 
     - uses: actions/cache@v3
       with:
@@ -59,7 +63,7 @@ jobs:
         pip install git+https://github.com/NeuralEnsemble/python-neo.git --target ${{ matrix.prefix}}
         pip install git+https://github.com/zm711/spikeanalysis.git --target ${{ matrix.prefix}}
         
+
     - name: Test with pytest
       run: |
-        conda install -n test_env pytest pytest-cov
         pytest --cov-config=pyproject.toml --cov=spikeanalysis
