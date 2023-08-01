@@ -44,9 +44,10 @@ jobs:
         key: ${{ matrix.label }}-conda-${{ hashFiles('pyproject.toml') }}-${{ env.DATE }}
       id: cache
       
-    - name: Update environment
+    - if: ${{steps.cache.outputs.cache-hit != 'true'}}
+      name: Update environment
       run: conda env update -n test_env -f test_env.yml
-      if: steps.cache.outputs.cache-hit != 'true'
+      
         
     - name: Install package
       run: |
