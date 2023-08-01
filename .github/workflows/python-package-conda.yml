@@ -30,7 +30,21 @@ jobs:
         echo $CONDA/bin >> $GITHUB_PATH
     - uses: conda-incubator/setup-miniconda@v2.2.0
       with:
-       environment-file: test_env.yml
+       activate-environment: test_env
+       
+    - name: Set cache date
+      run: echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
+
+    - uses: actions/cache@v2
+      with:
+        path: ${{ matrix.prefix }}
+        key: ${{ matrix.label }}-conda-${{ hashFiles('test_env.yml') }}-${{ env.DATE }}-${{ env.CACHE_NUMBER }}
+      id: cache
+      
+    - name: Update environment
+      run: conda env update -n test_env -f test_env.yml
+      if: steps.cache.outputs.cache-hit != 'true'
+        
     - name: Install package
       run: |
         pip install git+https://github.com/NeuralEnsemble/python-neo.git
