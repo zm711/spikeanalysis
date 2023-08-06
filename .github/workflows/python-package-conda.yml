@@ -1,6 +1,9 @@
 name: Install and Testing with Conda
 
 on:
+  push:
+    branches:
+      - add-cache
   pull_request:
     types: [synchronize, opened, reopened]
     branches:
