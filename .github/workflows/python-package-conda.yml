@@ -54,7 +54,7 @@ jobs:
     - uses: actions/cache@v3
       with:
         path: ${{ matrix.prefix }}
-        key: ${{ matrix.label }}-conda-${{ hashFiles('pyproject.toml') }}-${{ env.DATE }}
+        key: ${{ matrix.label }}-conda-${{ hashFiles('**/pyproject.toml') }}-${{ env.DATE }}
       id: cache
       
     - if: ${{steps.cache.outputs.cache-hit != 'true'}}
