@@ -5,6 +5,7 @@ on:
     types: [synchronize, opened, reopened]
     branches:
       - main
+      - add-cache
 
 concurrency:  # Cancel previous workflows on the same pull request
   group: ${{ github.workflow }}-${{ github.ref }}
