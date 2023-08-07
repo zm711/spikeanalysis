@@ -1,4 +1,4 @@
-name: Install, Build, Test with Pip
+name: Install and Test with Pip
 
 on:
   pull_request:
