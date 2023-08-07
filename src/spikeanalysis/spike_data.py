@@ -120,6 +120,9 @@ class SpikeData:
             Whether to save files for future analysis, default True
         depth: float
             The depth of the probe in order to provide 'Real' depth rather than distance from probe"""
+
+        assert isinstance(recurated, bool), "Please enter a bool for recurating"
+        assert isinstance(set_caching, bool), "Please enter a bool for set_caching"
         current_dir = os.getcwd()
         self._goto_file_path()
         try:
