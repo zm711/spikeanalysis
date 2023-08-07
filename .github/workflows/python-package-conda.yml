@@ -28,15 +28,12 @@ jobs:
           - os: ubuntu-latest
             label: linux-64
             prefix: /usr/share/miniconda3/envs/test_env
-
           - os: macos-latest
             label: osx-64
             prefix: /Users/runner/miniconda3/envs/test_env
-
           - os: windows-latest
             label: win-64
             prefix: C:\Miniconda3\envs\test_env
-            
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python 3.10
@@ -46,28 +43,21 @@ jobs:
     - uses: conda-incubator/setup-miniconda@v2.2.0
       with:
        activate-environment: test_env
-       
     - name: Set cache date
-      run: echo "DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
+      run: echo "DATE=$(date +'%Y%m')" >> $GITHUB_ENV
       shell: bash
-
     - uses: actions/cache@v3
+      id: cache
       with:
         path: ${{ matrix.prefix }}
         key: ${{ matrix.label }}-conda-${{ hashFiles('**/pyproject.toml') }}-${{ env.DATE }}
-      id: cache
-      
     - if: ${{steps.cache.outputs.cache-hit != 'true'}}
       name: Update environment
       run: conda env update -n test_env -f test_env.yml
-      
-        
     - name: Install package
       run: |
         pip install git+https://github.com/NeuralEnsemble/python-neo.git 
         pip install git+https://github.com/zm711/spikeanalysis.git 
-        
-
     - name: Test with pytest
       run: |
         pytest --cov-config=pyproject.toml --cov=spikeanalysis
