@@ -152,7 +152,7 @@ def histdiff(time_stamps: np.array, events: np.array, bin_borders: np.array) -> 
     return counts, bin_centers
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def convert_to_new_bins(
     array: numba.int32[:, :, :],
     bin_number: np.int32,
@@ -175,7 +175,7 @@ def convert_to_new_bins(
     return new_array
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def convert_bins(bins: np.array, bin_number: np.int32) -> np.array:
     start, end = bins[0], bins[-1]
     new_bins = np.linspace(start, end, num=bin_number)
@@ -185,7 +185,7 @@ def convert_bins(bins: np.array, bin_number: np.int32) -> np.array:
     return new_bins
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def z_score_values(z_trial: numba.float32[:, :, :], mean_fr: numba.float32[:], std_fr: numba.float32[:]) -> np.array:
     z_trials = np.zeros(np.shape(z_trial))
     for idx in range(len(mean_fr)):
