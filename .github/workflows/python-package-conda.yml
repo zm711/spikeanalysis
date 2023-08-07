@@ -42,7 +42,10 @@ jobs:
           python-version: '3.10'
     - uses: conda-incubator/setup-miniconda@v2.2.0
       with:
-       activate-environment: test_env
+        miniforge-variant: Mambaforge
+        miniforge-version: latest
+        use-mamba: true
+        activate-environment: test_env
     - name: Set cache date
       run: echo "DATE=$(date +'%Y%m')" >> $GITHUB_ENV
       shell: bash
@@ -53,7 +56,7 @@ jobs:
         key: ${{ matrix.label }}-conda-${{ hashFiles('**/pyproject.toml') }}-${{ env.DATE }}
     - if: ${{steps.cache.outputs.cache-hit != 'true'}}
       name: Update environment
-      run: conda env update -n test_env -f test_env.yml
+      run: mamba env update -n test_env -f test_env.yml
     - name: Install package
       run: |
         pip install git+https://github.com/NeuralEnsemble/python-neo.git 
