@@ -28,8 +28,7 @@ class SpikeAnalysis:
         methods = list(set(var_methods) - set(var))
         final_methods = [method for method in methods if "__" not in method and method[0] != "_"]
         final_vars = [current_var for current_var in var if "_" not in current_var]
-        print(f"The methods are: {final_methods}")
-        print(f"Variables are: {final_vars}")
+        return f"The methods are: {final_methods} Variables are: {final_vars}"
 
     def set_spike_data(self, sp: SpikeData):
         """
