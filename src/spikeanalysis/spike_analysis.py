@@ -352,14 +352,14 @@ class SpikeAnalysis:
             psth = psths[stim]["psth"]
             bins = psths[stim]["bins"]
             time_bin_size = bins[1] - bins[0]
-            new_time_bin_size = time_bin_ms / 1000
+            time_bin_seconds = time_bin_ms / 1000
             n_bins = np.shape(psth)[2]
-            new_bin_number = np.int32((n_bins * time_bin_size) / new_time_bin_size)
+            new_bin_number = np.int32((n_bins * time_bin_size) / time_bin_seconds)
 
             if new_bin_number != n_bins:
                 psth = hf.convert_to_new_bins(psth, new_bin_number)
                 bins = hf.convert_bins(bins, new_bin_number)
-
+            final_time_bin_size = bins[1]-bins[0]
             bsl_shuffled = (
                 np.random.rand(
                     np.shape(psth)[0],
@@ -396,24 +396,24 @@ class SpikeAnalysis:
 
                     if bsl_fr > 2:
                         self.latency[stim]["latency"][idx, trials == trial] = 1000 * lf.latency_core_stats(
-                            bsl_fr, psth_by_trial[:, bins >= 0], time_bin_size
+                            bsl_fr, psth_by_trial[:, bins >= 0], final_time_bin_size
                         )
                         for shuffle in tqdm(range(num_shuffles)):
                             self.latency[stim]["latency_shuffled"][
                                 idx, trials == trial, shuffle
                             ] = 1000 * lf.latency_core_stats(
-                                bsl_fr, psth_by_trial[:, bins >= bsl_shuffled_trial_cluster[shuffle]], time_bin_size
+                                bsl_fr, psth_by_trial[:, bins >= bsl_shuffled_trial_cluster[shuffle]], final_time_bin_size
                             )
 
                     else:
                         self.latency[stim]["latency"][idx, trials == trial] = 1000 * lf.latency_median(
-                            psth_by_trial[:, bins >= 0], time_bin_size
+                            psth_by_trial[:, bins >= 0], final_time_bin_size
                         )
                         for shuffle in tqdm(range(num_shuffles)):
                             self.latency[stim]["latency_shuffled"][
                                 idx, trials == trial, shuffle
                             ] = 1000 * lf.latency_median(
-                                psth_by_trial[:, bins >= bsl_shuffled_trial_cluster[shuffle]], time_bin_size
+                                psth_by_trial[:, bins >= bsl_shuffled_trial_cluster[shuffle]], final_time_bin_size
                             )
 
     def get_interspike_intervals(self):
