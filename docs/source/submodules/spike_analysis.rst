@@ -107,7 +107,7 @@ first latency to spike based on all trials being merged, but in :code:`spikeanal
 can be determined of the latencies rather than just one value. The take a threshold of :math:`10^{-6}`, which is maintained, but may be
 changed in the future.
 
-**note :math:`\lambda` * :math`t_n` gives us the :math:`\mu` from the standard Poisson PMF**
+Note :math:`\lambda` * :math:`t_n` gives us the :math:`\mu` from the standard Poisson PMF.
 
 Below 2Hz Taking the first-spike
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
