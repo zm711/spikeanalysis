@@ -359,7 +359,7 @@ class SpikeAnalysis:
             if new_bin_number != n_bins:
                 psth = hf.convert_to_new_bins(psth, new_bin_number)
                 bins = hf.convert_bins(bins, new_bin_number)
-            final_time_bin_size = bins[1]-bins[0]
+            final_time_bin_size = bins[1] - bins[0]
             bsl_shuffled = (
                 np.random.rand(
                     np.shape(psth)[0],
@@ -402,7 +402,9 @@ class SpikeAnalysis:
                             self.latency[stim]["latency_shuffled"][
                                 idx, trials == trial, shuffle
                             ] = 1000 * lf.latency_core_stats(
-                                bsl_fr, psth_by_trial[:, bins >= bsl_shuffled_trial_cluster[shuffle]], final_time_bin_size
+                                bsl_fr,
+                                psth_by_trial[:, bins >= bsl_shuffled_trial_cluster[shuffle]],
+                                final_time_bin_size,
                             )
 
                     else:
