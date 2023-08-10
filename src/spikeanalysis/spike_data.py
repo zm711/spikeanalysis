@@ -120,6 +120,9 @@ class SpikeData:
             Whether to save files for future analysis, default True
         depth: float
             The depth of the probe in order to provide 'Real' depth rather than distance from probe"""
+
+        assert isinstance(recurated, bool), "Please enter a bool for recurating"
+        assert isinstance(set_caching, bool), "Please enter a bool for set_caching"
         current_dir = os.getcwd()
         self._goto_file_path()
         try:
@@ -184,7 +187,7 @@ class SpikeData:
         self._goto_file_path()
         self.raw_spike_times = np.squeeze(np.load("spike_times.npy"))
         self._spike_templates = np.squeeze(np.load("spike_templates.npy"))
-
+        self.template_scaling_amplitudes = np.squeeze(np.load("amplitudes.npy"))
         if os.path.isfile("spike_clusters.npy"):
             self.spike_clusters = np.squeeze(np.load("spike_clusters.npy"))
         else:
@@ -506,6 +509,11 @@ class SpikeData:
 
             if self.CACHING:
                 np.save("qc_threshold.npy", threshold)
+
+            if np.sum(threshold) == 0:
+                print("Current qc_preprocessing values led to 0 units.")
+                print(f"Iso: {np.sum(iso_d_thres)}, sil: {np.sum(sil)}")
+                print(f"RPV: {np.sum(rpv)}")
 
         self._return_to_dir(current_dir)
 

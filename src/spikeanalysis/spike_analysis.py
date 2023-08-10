@@ -19,14 +19,16 @@ class SpikeAnalysis:
     """Class for spike train analysis utilizing a SpikeData object and a StimulusData object"""
 
     def __init__(self):
-        pass
+        self._file_path = None
+        self.events = {}
 
     def __repr__(self):
         var_methods = dir(self)
         var = list(vars(self).keys())  # get our currents variables
         methods = list(set(var_methods) - set(var))
         final_methods = [method for method in methods if "__" not in method and method[0] != "_"]
-        return f"The methods are {final_methods}"
+        final_vars = [current_var for current_var in var if "_" not in current_var]
+        return f"The methods are: {final_methods} Variables are: {final_vars}"
 
     def set_spike_data(self, sp: SpikeData):
         """
@@ -42,14 +44,14 @@ class SpikeAnalysis:
         None.
 
         """
-        try:
-            file_path = self._file_path
-            assert (
-                file_path == sp._file_path
-            ), f"Stim data and Spike data must have same root Stim: {file_path}, spike:\
-                {sp._file_path}"
-        except AttributeError:
+        if self._file_path is None:
             self._file_path = sp._file_path
+        else:
+            assert (
+                self._file_path == sp._file_path
+            ), f"Stim data and Spike data must have same root Stim: {self._file_path}, spike:\
+                {sp._file_path}"
+
         try:
             self.spike_times = sp.spike_times
         except AttributeError:
@@ -97,14 +99,13 @@ class SpikeAnalysis:
         None.
 
         """
-        try:
-            file_path = self._file_path
-            assert (
-                file_path == event_times._file_path
-            ), f"Stim data and Spike data must have same root Stim: \
-                {event_times._file_path}, Spike: {file_path}"
-        except AttributeError:
+        if self._file_path is None:
             self._file_path = event_times._file_path
+        else:
+            assert (
+                self._file_path == event_times._file_path
+            ), f"Stim data and Spike data must have same root Stim: \
+                {event_times._file_path}, Spike: {self._file_path}"
 
         try:
             self.digital_events = event_times.digital_events
@@ -118,13 +119,24 @@ class SpikeAnalysis:
             self.HAVE_DIG_ANALOG = True
         except AttributeError as err:
             self.HAVE_DIG_ANALOG = False
-            print(f"{err}. Run possible analog functions {_possible_analog} if should be present.")
+            print(
+                f"{err}. If should be present. Run possible analog functions {_possible_analog} if should be present."
+            )
         try:
             self.analog_data = event_times.analog_data
             self.HAVE_ANALOG = True
         except AttributeError:
             self.HAVE_ANALOG = False
             print("There is no raw analog data provided. Run get_analog_data if needed.")
+
+        if self.HAVE_DIGITAL and self.HAVE_DIG_ANALOG:
+            self.events = self._merge_events(self.digital_events, self.dig_analog_events)
+        elif self.HAVE_DIGITAL:
+            self.events = self.digital_events
+        elif self.HAVE_DIG_ANALOG:
+            self.events = self.dig_analog_events
+        else:
+            raise Exception("Code requires some stimulus data")
 
     def get_raw_psth(
         self,
@@ -159,109 +171,52 @@ class SpikeAnalysis:
             minumum bin size in ms is {1000/self._sampling_rate}"
 
         time_bin_size = np.int64((time_bin_ms / 1000) * self._sampling_rate)
-
-        TOTAL_STIM = 0
-
-        if self.HAVE_DIGITAL:
-            TOTAL_STIM = len(self.digital_events.keys())
-
-        if self.HAVE_DIG_ANALOG:
-            TOTAL_STIM += len(self.dig_analog_events.keys())
-
+        TOTAL_STIM = len(self.events.keys())
         windows = verify_window_format(window=window, num_stim=TOTAL_STIM)
+        psths = {}
 
-        psths = dict()
-        MULTISPIKE_BIN = 0
-        if self.HAVE_DIGITAL:
-            for idx, stimulus in enumerate(self.digital_events.keys()):
-                stimulus_counter = idx
-                events = np.array(self.digital_events[stimulus]["events"])
-                stim_name = self.digital_events[stimulus]["stim"]
-                print(stim_name)
-                current_window = windows[stimulus_counter]
+        for idx, stimulus in enumerate(self.events.keys()):
+            multispike_bin = 0
+            events = np.array(self.events[stimulus]["events"])
+            stim_name = self.events[stimulus]["stim"]
+            print(f"{stim_name}\n")
+            current_window = windows[idx]
 
-                window_start = np.int64(current_window[0] * self._sampling_rate)
-                window_end = np.int64(current_window[1] * self._sampling_rate)
-                psth = np.zeros(
-                    (
-                        len(cluster_ids),
-                        len(events),
-                        int((window_end - window_start) / time_bin_size),
-                    ),
-                    dtype=np.int32,
+            window_start = np.int64(current_window[0] * self._sampling_rate)
+            window_end = np.int64(current_window[1] * self._sampling_rate)
+            psth = np.zeros(
+                (
+                    len(cluster_ids),
+                    len(events),
+                    int((window_end - window_start) / time_bin_size),
+                ),
+                dtype=np.int32,
+            )
+
+            psths[stim_name] = {}
+            min_time = np.min(events) + window_start
+            max_time = np.max(events) + window_end
+            current_spike_clusters = spike_clusters[np.logical_and(spike_times > min_time, spike_times < max_time)]
+            current_spikes = spike_times[np.logical_and(spike_times > min_time, spike_times < max_time)]
+
+            for idy, cluster in enumerate(tqdm(cluster_ids)):
+                spikes_array, bins_sub = hf.spike_times_to_bins(
+                    current_spikes[current_spike_clusters == cluster],
+                    events,
+                    time_bin_size,
+                    window_start,
+                    window_end,
                 )
-
-                psths[stim_name] = {}
-                min_time = np.min(events) + window_start
-                max_time = np.max(events) + window_end
-                current_spike_clusters = spike_clusters[np.logical_and(spike_times > min_time, spike_times < max_time)]
-                current_spikes = spike_times[np.logical_and(spike_times > min_time, spike_times < max_time)]
-
-                for idy, cluster in enumerate(tqdm(cluster_ids)):
-                    spikes_array, bins_sub = hf.spike_times_to_bins(
-                        current_spikes[current_spike_clusters == cluster],
-                        events,
-                        time_bin_size,
-                        window_start,
-                        window_end,
-                    )
-                    psth[idy] = spikes_array
-                    if len(np.where(spikes_array > 1)[0]) != 0 or len(np.where(spikes_array > 1)[1]) != 0:
-                        MULTISPIKE_BIN += 1
-                if MULTISPIKE_BIN:
-                    print(f"Minimum time_bin size in ms is  {1000/self._sampling_rate}")
-                    print(
-                        f"There are {MULTISPIKE_BIN} bins with more than 1 spike. For best psth results bins should only be 0 or 1"
-                    )
-                psths[stim_name]["psth"] = psth
-                psths[stim_name]["bins"] = bins_sub / self._sampling_rate
-        else:
-            stimulus_counter = -1
-
-        if self.HAVE_DIG_ANALOG:
-            MULTISPIKE_BIN = 0
-            stimulus_counter += 1
-            for idx, stimulus in enumerate(tqdm(self.dig_analog_events.keys())):
-                stimulus_counter = stimulus_counter + idx
-                events = np.array(self.dig_analog_events[stimulus]["events"])
-                stim_name = self.dig_analog_events[stimulus]["stim"]
-                print(stim_name)
-                current_window = windows[stimulus_counter]
-                window_start = np.int64(current_window[0] * self._sampling_rate)
-                window_end = np.int64(current_window[1] * self._sampling_rate)
-                psth = np.zeros(
-                    (
-                        len(cluster_ids),
-                        len(events),
-                        int((window_end - window_start) / time_bin_size),
-                    ),
-                    dtype=np.int32,
+                psth[idy] = spikes_array
+                if len(np.where(spikes_array > 1)[0]) != 0 or len(np.where(spikes_array > 1)[1]) != 0:
+                    multispike_bin += 1
+            if multispike_bin:
+                print(f"Minimum time_bin size in ms is {1000/self._sampling_rate}")
+                print(
+                    f"There are {multispike_bin} bins with more than 1 spike. For best psth results bins should only be 0 or 1"
                 )
-
-                psths[stim_name] = {}
-                min_time = np.min(events) + window_start
-                max_time = np.max(events) + window_end
-                current_spike_clusters = spike_clusters[np.logical_and(spike_times > min_time, spike_times < max_time)]
-                current_spikes = spike_times[np.logical_and(spike_times > min_time, spike_times < max_time)]
-
-                for idy, cluster in enumerate(tqdm(cluster_ids)):
-                    spikes_array, bins_sub = hf.spike_times_to_bins(
-                        current_spikes[current_spike_clusters == cluster],
-                        events,
-                        time_bin_size,
-                        window_start,
-                        window_end,
-                    )
-                    psth[idy] = spikes_array
-                    if len(np.where(spikes_array > 1)[0]) != 0 or len(np.where(spikes_array > 1)[1]) != 0:
-                        MULTISPIKE_BIN += 1
-                if MULTISPIKE_BIN:
-                    print(f"\nMinimum time_bin size in ms is  {1000/self._sampling_rate}")
-                    print(
-                        f"There are {MULTISPIKE_BIN} bins with more than 1 spike. For best psth results bins should only be 0 or 1"
-                    )
-                psths[stim_name]["psth"] = psth
-                psths[stim_name]["bins"] = bins_sub / self._sampling_rate
+            psths[stim_name]["psth"] = psth
+            psths[stim_name]["bins"] = bins_sub / self._sampling_rate
 
         self.NUM_STIM = TOTAL_STIM
         self.psths = psths
@@ -304,14 +259,7 @@ class SpikeAnalysis:
         except AttributeError:
             raise Exception("Run get_raw_psth before running z_score_data")
 
-        try:
-            stim_dict = self._get_key_for_stim()
-            NUM_DIG = len(stim_dict.keys())
-            self.NUM_DIG = NUM_DIG
-        except AttributeError:
-            self.NUM_DIG = 0
-            NUM_DIG = 0
-
+        stim_dict = self._get_key_for_stim()
         NUM_STIM = self.NUM_STIM
 
         if isinstance(time_bin_ms, float) or isinstance(time_bin_ms, int):
@@ -333,10 +281,8 @@ class SpikeAnalysis:
         self.z_bins = {}
         for idx, stim in enumerate(self.psths.keys()):
             print(stim)
-            if idx < NUM_DIG:
-                trials = self.digital_events[stim_dict[stim]]["trial_groups"]
-            else:
-                trials = self.dig_analog_events[str(idx - NUM_DIG)]["trial_groups"]
+
+            trials = self.events[stim_dict[stim]]["trial_groups"]
 
             trial_set = np.sort(np.unique(np.array(trials)))
             time_bin_current = time_bin_size[idx]
@@ -365,12 +311,10 @@ class SpikeAnalysis:
                 mean_fr = np.mean(np.sum(bsl_trial, axis=2), axis=1) / ((bsl_current[1] - bsl_current[0]))
                 std_fr = np.std(np.sum(bsl_trial, axis=2), axis=1) / ((bsl_current[1] - bsl_current[0]))
                 z_trial = z_psth[:, trials == trial, :] / time_bin_current
-
                 z_trials = hf.z_score_values(z_trial, mean_fr, std_fr)
-
                 z_scores[stim][:, trials == trial, :] = z_trials[:, :, :]
-
                 final_z_scores[stim][:, trial_number, :] = np.nanmean(z_trials, axis=1)
+
             self.z_bins[stim] = bins[z_window_values]
         self.z_scores = final_z_scores
 
@@ -394,32 +338,28 @@ class SpikeAnalysis:
         """
 
         NUM_STIM = self.NUM_STIM
-        NUM_DIG = self.NUM_DIG
 
         bsl_windows = verify_window_format(window=bsl_window, num_stim=NUM_STIM)
-        if NUM_DIG:
-            stim_dict = self._get_key_for_stim()
+
+        stim_dict = self._get_key_for_stim()
         psths = self.psths
         self.latency = {}
         for idx, stim in enumerate(self.psths.keys()):
-            if idx < NUM_DIG:
-                trials = self.digital_events[stim_dict[stim]]["trial_groups"]
-            else:
-                trials = self.dig_analog_events[str(idx - NUM_DIG)]["trial_groups"]
+            trials = self.events[stim_dict[stim]]["trial_groups"]
             print(stim)
             trial_set = np.unique(np.array(trials))
             current_bsl = bsl_windows[idx]
             psth = psths[stim]["psth"]
             bins = psths[stim]["bins"]
             time_bin_size = bins[1] - bins[0]
-            new_time_bin_size = time_bin_ms / 1000
+            time_bin_seconds = time_bin_ms / 1000
             n_bins = np.shape(psth)[2]
-            new_bin_number = np.int32((n_bins * time_bin_size) / new_time_bin_size)
+            new_bin_number = np.int32((n_bins * time_bin_size) / time_bin_seconds)
 
             if new_bin_number != n_bins:
                 psth = hf.convert_to_new_bins(psth, new_bin_number)
                 bins = hf.convert_bins(bins, new_bin_number)
-
+            final_time_bin_size = bins[1] - bins[0]
             bsl_shuffled = (
                 np.random.rand(
                     np.shape(psth)[0],
@@ -456,24 +396,26 @@ class SpikeAnalysis:
 
                     if bsl_fr > 2:
                         self.latency[stim]["latency"][idx, trials == trial] = 1000 * lf.latency_core_stats(
-                            bsl_fr, psth_by_trial[:, bins >= 0], time_bin_size
+                            bsl_fr, psth_by_trial[:, bins >= 0], final_time_bin_size
                         )
                         for shuffle in tqdm(range(num_shuffles)):
                             self.latency[stim]["latency_shuffled"][
                                 idx, trials == trial, shuffle
                             ] = 1000 * lf.latency_core_stats(
-                                bsl_fr, psth_by_trial[:, bins >= bsl_shuffled_trial_cluster[shuffle]], time_bin_size
+                                bsl_fr,
+                                psth_by_trial[:, bins >= bsl_shuffled_trial_cluster[shuffle]],
+                                final_time_bin_size,
                             )
 
                     else:
                         self.latency[stim]["latency"][idx, trials == trial] = 1000 * lf.latency_median(
-                            psth_by_trial[:, bins >= 0], time_bin_size
+                            psth_by_trial[:, bins >= 0], final_time_bin_size
                         )
                         for shuffle in tqdm(range(num_shuffles)):
                             self.latency[stim]["latency_shuffled"][
                                 idx, trials == trial, shuffle
                             ] = 1000 * lf.latency_median(
-                                psth_by_trial[:, bins >= bsl_shuffled_trial_cluster[shuffle]], time_bin_size
+                                psth_by_trial[:, bins >= bsl_shuffled_trial_cluster[shuffle]], final_time_bin_size
                             )
 
     def get_interspike_intervals(self):
@@ -518,83 +460,41 @@ class SpikeAnalysis:
         bins = np.linspace(0, time_ms / 1000, num=int(time_ms + 1))
         final_isi = {}
         raw_data = {}
-        if self.HAVE_DIGITAL:
-            for idx, stimulus in enumerate(self.digital_events.keys()):
-                events = np.array(self.digital_events[stimulus]["events"])
-                lengths = np.array(self.digital_events[stimulus]["lengths"])
-                stim_name = self.digital_events[stimulus]["stim"]
-                raw_data[stim_name] = {}
-                final_isi[stim_name] = {}
-                final_counts = np.zeros((len(self.isi_raw.keys()), len(events), len(bins) - 1))
-                final_counts_bsl = np.zeros((len(self.isi_raw.keys()), len(events), len(bins) - 1))
-                for idy, cluster in enumerate(self.isi_raw.keys()):
-                    current_times = self.isi_raw[cluster]["times"]
-                    cluster_isi_raw = self.isi_raw[cluster]["isi"]
-                    raw_data[stim_name][cluster] = {"isi_values": [], "bsl_isi_values": []}
-                    for idz, event in enumerate(events):
-                        current_isi_raw = cluster_isi_raw[
-                            np.logical_and(current_times > event, current_times < event + lengths[idx])
-                        ]
-                        baseline_isi_raw = cluster_isi_raw[
-                            np.logical_and(current_times > event - lengths[idx], current_times < event)
-                        ]
+        for idx, stimulus in enumerate(self.events.keys()):
+            events = np.array(self.events[stimulus]["events"])
+            lengths = np.array(self.events[stimulus]["lengths"])
+            stim_name = self.events[stimulus]["stim"]
+            raw_data[stim_name] = {}
+            final_isi[stim_name] = {}
+            final_counts = np.zeros((len(self.isi_raw.keys()), len(events), len(bins) - 1))
+            final_counts_bsl = np.zeros((len(self.isi_raw.keys()), len(events), len(bins) - 1))
+            for idy, cluster in enumerate(self.isi_raw.keys()):
+                current_times = self.isi_raw[cluster]["times"]
+                cluster_isi_raw = self.isi_raw[cluster]["isi"]
+                raw_data[stim_name][cluster] = {"isi_values": [], "bsl_isi_values": []}
+                for idz, event in enumerate(events):
+                    current_isi_raw = cluster_isi_raw[
+                        np.logical_and(current_times > event, current_times < event + lengths[idx])
+                    ]
+                    baseline_isi_raw = cluster_isi_raw[
+                        np.logical_and(current_times > event - lengths[idx], current_times < event)
+                    ]
 
-                        isi_counts, isi_bins = np.histogram(current_isi_raw / self._sampling_rate, bins=bins)
-                        bsl_counts, bsl_bins = np.histogram(baseline_isi_raw / self._sampling_rate, bins=bins)
-                        final_counts[idy, idz, :] = isi_counts
-                        final_counts_bsl[idy, idz, :] = bsl_counts
-                        raw_data[stim_name][cluster]["isi_values"].append(list(current_isi_raw / self._sampling_rate))
-                        raw_data[stim_name][cluster]["bsl_isi_values"].append(
-                            list(baseline_isi_raw / self._sampling_rate)
-                        )
-                    raw_data[stim_name][cluster]["isi_values"] = np.array(
-                        [value for sub_list in raw_data[stim_name][cluster]["isi_values"] for value in sub_list]
-                    )
-                    raw_data[stim_name][cluster]["bsl_isi_values"] = np.array(
-                        [value for sub_list in raw_data[stim_name][cluster]["bsl_isi_values"] for value in sub_list]
-                    )
-                final_isi[stim_name]["isi"] = final_counts
-                final_isi[stim_name]["bsl_isi"] = final_counts_bsl
-                final_isi[stim_name]["bins"] = isi_bins
-
-        if self.HAVE_DIG_ANALOG:
-            for idx, stimulus in enumerate(self.dig_analog_events.keys()):
-                events = np.array(self.dig_analog_events[stimulus]["events"])
-                lengths = np.array(self.dig_analog_events[stimulus]["lengths"])
-                stim_name = self.dig_analog_events[stimulus]["stim"]
-                final_isi[stim_name] = {}
-                raw_data[stim_name] = {}
-                final_counts = np.zeros((len(self.isi_raw.keys()), len(events), len(bins) - 1))
-                final_counts_bsl = np.zeros((len(self.isi_raw.keys()), len(events), len(bins) - 1))
-                for idy, cluster in enumerate(self.isi_raw.keys()):
-                    current_times = self.isi_raw[cluster]["times"]
-                    cluster_isi_raw = self.isi_raw[cluster]["isi"]
-                    raw_data[stim_name][cluster] = {"isi_values": [], "bsl_isi_values": []}
-                    for idz, event in enumerate(events):
-                        current_isi_raw = cluster_isi_raw[
-                            np.logical_and(current_times > event, current_times < event + lengths[idx])
-                        ]
-                        baseline_isi_raw = cluster_isi_raw[
-                            np.logical_and(current_times > event - lengths[idx], current_times < event)
-                        ]
-
-                        isi_counts, isi_bins = np.histogram(current_isi_raw / self._sampling_rate, bins=bins)
-                        bsl_counts, bsl_bins = np.histogram(baseline_isi_raw / self._sampling_rate, bins=bins)
-                        final_counts[idy, idz, :] = isi_counts
-                        final_counts_bsl[idy, idz, :] = bsl_counts
-                        raw_data[stim_name][cluster]["isi_values"].append(list(current_isi_raw / self._sampling_rate))
-                        raw_data[stim_name][cluster]["bsl_isi_values"].append(
-                            list(baseline_isi_raw / self._sampling_rate)
-                        )
-                    raw_data[stim_name][cluster]["isi_values"] = np.array(
-                        [value for sub_list in raw_data[stim_name][cluster]["isi_values"] for value in sub_list]
-                    )
-                    raw_data[stim_name][cluster]["bsl_isi_values"] = np.array(
-                        [value for sub_list in raw_data[stim_name][cluster]["bsl_isi_values"] for value in sub_list]
-                    )
-                final_isi[stim_name]["isi"] = final_counts
-                final_isi[stim_name]["bsl_isi"] = final_counts_bsl
-                final_isi[stim_name]["bins"] = isi_bins
+                    isi_counts, isi_bins = np.histogram(current_isi_raw / self._sampling_rate, bins=bins)
+                    bsl_counts, _ = np.histogram(baseline_isi_raw / self._sampling_rate, bins=bins)
+                    final_counts[idy, idz, :] = isi_counts
+                    final_counts_bsl[idy, idz, :] = bsl_counts
+                    raw_data[stim_name][cluster]["isi_values"].append(list(current_isi_raw / self._sampling_rate))
+                    raw_data[stim_name][cluster]["bsl_isi_values"].append(list(baseline_isi_raw / self._sampling_rate))
+                raw_data[stim_name][cluster]["isi_values"] = np.array(
+                    [value for sub_list in raw_data[stim_name][cluster]["isi_values"] for value in sub_list]
+                )
+                raw_data[stim_name][cluster]["bsl_isi_values"] = np.array(
+                    [value for sub_list in raw_data[stim_name][cluster]["bsl_isi_values"] for value in sub_list]
+                )
+            final_isi[stim_name]["isi"] = final_counts
+            final_isi[stim_name]["bsl_isi"] = final_counts_bsl
+            final_isi[stim_name]["bins"] = isi_bins
 
         self.isi = final_isi
         self.isi_values = raw_data
@@ -673,10 +573,7 @@ class SpikeAnalysis:
 
         correlations = {}
         for idx, stimulus in enumerate(data.keys()):
-            if idx < self.NUM_DIG:
-                trial_groups = np.array(self.digital_events[stim_dict[stimulus]]["trial_groups"])
-            else:
-                trial_groups = np.array(self.dig_analog_events[str(idx - self.NUM_DIG)]["trial_groups"])
+            trial_groups = np.array(self.events[stim_dict[stimulus]]["trial_groups"])
             current_window = windows[idx]
             current_data = data[stimulus]
 
@@ -851,6 +748,11 @@ class SpikeAnalysis:
 
                 self.responsive_neurons[stim][key] = responsive_neurons
 
+    def _merge_events(self, event_0, event_1):
+        """Utility function for merging digital and analog events into one dictionary"""
+        events = {**event_0, **event_1}
+        return events
+
     def _get_key_for_stim(self) -> dict:
         """
         Utility function for helping to access correct value for get_raw_psth
@@ -862,8 +764,8 @@ class SpikeAnalysis:
 
         """
         stim_dict = {}
-        for channel in self.digital_events.keys():
-            stim_name = self.digital_events[channel]["stim"]
+        for channel in self.events.keys():
+            stim_name = self.events[channel]["stim"]
             stim_dict[stim_name] = channel
 
         return stim_dict

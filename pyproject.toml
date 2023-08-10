@@ -1,6 +1,6 @@
 [project]
 name = "spikeanalysis"
-version = '0.0.5'
+version = '0.0.7'
 authors = [{name="Zach McKenzie", email="mineurs-torrent0x@icloud.com"}]
 description = "Analysis of Spike Trains"
 requires-python = ">=3.9"
@@ -44,7 +44,7 @@ exclude_also = [
 
 [tool.coverage.run]
 omit = [
-  "src/spikeanalysis/analysis_utils/histogram_functions.py", # histogram functions are almost all numba-based
+  "src/spikeanalysis/analysis_utils/*", # utils are all numba
   "src/spikeanalysis/spike_plotter.py", # no testing for actual plotting yet
   "src/spikeanalysis/intrinsic_plotter.py", # no testing for plotting yet
 ]
