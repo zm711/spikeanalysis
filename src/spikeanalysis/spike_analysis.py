@@ -422,7 +422,7 @@ class SpikeAnalysis:
             bsl_psth = psth[:, :, bsl_values]
             z_psth = psth[:, :, z_window_values]
             z_scores[stim] = np.zeros(np.shape(z_psth))
-            self.raw_zscores[stim] = np.zero(np.shape(z_psth))
+            self.raw_zscores[stim] = np.zeros(np.shape(z_psth))
             final_z_scores[stim] = np.zeros((np.shape(z_psth)[0], len(trial_set), np.shape(z_psth)[2]))
             for trial_number, trial in enumerate(tqdm(trial_set)):
                 bsl_trial = bsl_psth[:, trials == trial, :]
