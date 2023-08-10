@@ -77,6 +77,35 @@ def test_get_raw_psths(sa_mocked):
     assert np.sum(spike[0, 0, :]) == 4
 
 
+def test_fr_data(sa):
+    sa.events = {
+        "0": {
+            "events": np.array([100, 200]),
+            "lengths": np.array([100, 100]),
+            "trial_groups": np.array([1, 1]),
+            "stim": "test",
+        }
+    }
+    sa.get_raw_psth(window=[0, 300], time_bin_ms=50)
+    sa.get_raw_firing_rate(time_bin_ms=1000, bsl_window=[0, 50], fr_window=[0, 300], mode="raw")
+    print(sa.mean_firing_rate)
+
+    assert sa.mean_firing_rate["test"][0, 0, 0] == 0.5
+    assert sa.mean_firing_rate["test"][1, 0, 2] == 1.0
+
+    sa.get_raw_firing_rate(time_bin_ms=1000, bsl_window=[0, 50], fr_window=[0, 300], mode="bsl")
+
+    print(sa.mean_firing_rate)
+    assert round(sa.mean_firing_rate["test"][0, 0, 0], 2) == 0.42
+    assert round(sa.mean_firing_rate["test"][1, 0, 2], 2) == 0.9
+
+    sa.get_raw_firing_rate(time_bin_ms=1000, bsl_window=[0, 50], fr_window=[0, 300], mode="smooth", sm_time_ms=0.5)
+
+    print(sa.mean_firing_rate)
+    assert round(sa.mean_firing_rate["test"][0, 0, 0], 2) == round(0.5, 2)
+    assert round(sa.mean_firing_rate["test"][1, 0, 2], 2) == 1.0
+
+
 def test_z_score_data(sa):
     sa.events = {
         "0": {
