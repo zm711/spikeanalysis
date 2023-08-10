@@ -545,7 +545,7 @@ class StimulusData:
             A dictionary of all the channel information of the rhd file
 
         """
-        # Michael Gibson 23 APRIL 2015
+        # Michael Gibson 23 APRIL 2015 
         # Adrian Foy Sep 2018
         import struct
 

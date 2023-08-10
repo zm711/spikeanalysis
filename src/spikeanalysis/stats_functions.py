@@ -74,3 +74,37 @@ def kolmo_smir_stats(distribution_container: Union[dict, list], type: str) -> Un
                 ks_vals[value] = ks_2samp(dist0[value], dist1[value]).pvalue
 
             return ks_vals
+
+
+"""""" """""" """""" """""" """""" """"""
+
+
+def kolmo_smir_stats_kd(distribution_container: Union[dict, list], type: str) -> Union[dict, np.ndarray]:
+    if type == "isi":
+        return {
+            stimulus: np.array(
+                [
+                    ks_2samp(sub_isi[cluster]["isi_values"], sub_isi[cluster]["bsl_isi_values"]).pvalue
+                    if len(sub_isi[cluster]["isi_values"]) > 0 and len(sub_isi[cluster]["bsl_isi_values"]) > 0
+                    else np.nan
+                    for cluster in sub_isi.keys()
+                ]
+            )
+            for stimulus, sub_isi in distribution_container.items()
+        }
+    elif type == "latency":
+        return {
+            stimulus: np.array(
+                [
+                    ks_2samp(lats[row], np.nanmedian(latencies[stimulus]["latency_shuffled"][:, row, :], axis=1)).pvalue
+                    for row in range(lats.shape[0])
+                ]
+            )
+            for stimulus, lats in distribution_container.items()
+        }
+    else:
+        if len(distribution_container) == 2:
+            dist0, dist1 = distribution_container
+            return np.array([ks_2samp(dist0[value], dist1[value]).pvalue for value in range(dist0.shape[0])])
+        else:
+            raise AssertionError("must contain the two sets of distributions to analyze")

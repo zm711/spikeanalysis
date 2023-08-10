@@ -428,7 +428,7 @@ class SpikePlotter(PlotterBase):
         else:
             cmap = self.cmap
 
-        if self.y_axis is None:
+        if self.y_axis is None: 
             y_axis = "Units"
         else:
             y_axis = self.y_axis
