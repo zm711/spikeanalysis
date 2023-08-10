@@ -25,6 +25,13 @@ dependencies = [
 requires = ["setuptools>=62.0"]
 build-backend = "setuptools.build_meta"
 
+[project.optional-dependencies]
+
+test = [
+  "pytest",
+  "pytest-cov"
+]
+
 [tool.setuptools.exclude-package-data]
 spikeanalysis = ["**/test/*"]
 
