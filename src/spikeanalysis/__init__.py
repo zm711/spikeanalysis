@@ -5,3 +5,7 @@ from .spike_plotter import SpikePlotter
 from .intrinsic_plotter import IntrinsicPlotter
 from .analog_analysis import AnalogAnalysis
 from .stats_functions import kolmo_smir_stats
+
+import importlib.metadata
+
+__version__ = importlib.metadata.version("spikeanalysis")

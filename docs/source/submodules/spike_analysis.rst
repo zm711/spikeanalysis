@@ -48,6 +48,23 @@ or
 
     spiketrain.get_raw_psth(time_bin_ms=1, window=[[-10,20], [-.5, 1]]) # different windows
 
+
+Raw Firing Rate
+---------------
+
+Neuron firing rate can be obtained by just taking the total spikes occurring within a time bin size. This value can then be
+corrected by either subtracting the baseline firing rate during non-stimulus directed times or by performing a Gaussian smoothing
+convolution to reduce variation between bins. In :code:`spikeanalysis` this is accomplished by using the :code:`get_raw_firing_rate`
+function. This function takes a a :code:`bsl_window` as well as the :code:`fr_window` which is relative to stimulus onsets. It also
+takes the :code:`mode` argument which can be :code:`raw` indicates just spikes/sec, :code:`smooth` which will be smoothed with the 
+option :code:`sm_time_ms` argument, or :code:`bsl_subtracted`, which will subtract the mean spikes/sec from the given :code:`bsl_window`
+before each stimulus event.
+
+.. code-block:: python
+
+    spiketrain.get_raw_firing_rate(time_bin_ms = 50, bsl_window = [-10, 0], fr_window = [-10,20], mode = "raw") # only does raw
+    spiketrainget_raw_firing_rate(time_bin_ms = 50, bsl_window = [-10, 0], fr_window = [-10,20], mode = "smooth", sm_time_ms=10) # smoothes data
+
 Z-scoring Data
 --------------
 
@@ -62,10 +79,12 @@ changed. Simimlarly each stimulus can have its own window by doing nested lists.
 
     Z = \frac{x - \mu}{\sigma}
 
+.. math::
+    
     Z_{avg} = \frac{1}{N_{trials}} \Sigma^{N_{trials}} Z
 
 In our example below we determine both our :math:`\mu` and our :math:`\sigma` with the :code:`bsl_window` and 
-then z score each time bin given by :code:`time_bin_ms` over the :code:`window`
+then z score each time bin given by :code:`time_bin_ms` over the :code:`z_window`
 
 .. code-block:: python
     
