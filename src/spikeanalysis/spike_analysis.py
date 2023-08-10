@@ -221,7 +221,7 @@ class SpikeAnalysis:
         self.NUM_STIM = TOTAL_STIM
         self.psths = psths
 
-    def raw_firing_rate(
+    def get_raw_firing_rate(
         self,
         time_bin_ms: Union[list[float], float],
         bsl_window: Union[list, list[list]],
