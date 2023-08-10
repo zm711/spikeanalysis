@@ -285,6 +285,7 @@ class SpikeAnalysis:
         fr = {}
         final_fr = {}
         self.fr_bins = {}
+        self.raw_firing_rate = {}
         for idx, stim in enumerate(self.psths.keys()):
             print(stim)
 
@@ -312,6 +313,7 @@ class SpikeAnalysis:
             fr_psth = psth[:, :, fr_window_values]
             fr[stim] = np.zeros(np.shape(fr_psth))
             final_fr[stim] = np.zeros((np.shape(fr_psth)[0], len(trial_set), np.shape(fr_psth)[2]))
+            self.raw_firing_rate[stim] = np.zeros(np.shape(fr_psth))
 
             for trial_number, trial in enumerate(tqdm(trial_set)):
                 bsl_trial = bsl_psth[:, trials == trial, :]
@@ -329,11 +331,12 @@ class SpikeAnalysis:
                             fr_trial[cluster_number], (bins[1] - bins[0]), sm_std
                         )
                 else:
-                    fr_trial = fr_trial - mean_fr
+                    for row in range(len(mean_fr)):
+                        fr_trial[row] = fr_trial[row] - mean_fr[row]
 
                 fr[stim][:, trials == trial, :] = fr_trial[:, :, :]
                 final_fr[stim][:, trial_number, :] = np.nanmean(fr_trial, axis=1)
-                self.raw_firing_rate[stim][:, trial_number, :] = fr_trial[:, :, :]
+                self.raw_firing_rate[stim][:, trials == trial, :] = fr_trial[:, :, :]
                 self.fr_bins[stim] = bins[fr_window_values]
             self.mean_firing_rate = final_fr
 
