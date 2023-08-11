@@ -5,8 +5,6 @@ on:
     types: [synchronize, opened, reopened]
     branches:
       - main
-  schedule:  # once a day at midnight UTC
-    - cron: '0 0 * * *'
 
 concurrency:  # Cancel previous workflows on the same pull request
   group: ${{ github.workflow }}-${{ github.ref }}
