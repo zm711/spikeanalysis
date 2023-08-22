@@ -18,4 +18,3 @@ spikeanalysis
         :members:
     .. autoclass:: AnalogAnalysis
         :members:
-    .. autofunction:: kolmo_smir_stats
