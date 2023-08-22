@@ -1,5 +1,12 @@
 sphinx==5.3.0
 sphinx_rtd_theme==1.1.1
 readthedocs-sphinx-search==0.1.1
+numpy
+scipy
+matplotlib
+numba
+seaborn
+pandas
+spikeanalysis @ git+https://github.com/zm711/spikeanalysis@main
 
 
