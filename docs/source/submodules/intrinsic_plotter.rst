@@ -33,7 +33,7 @@ Or we can change some default settings to zoom in looking for refractory period 
     # window_ms indicates only calculate 10 ms around each spike
     # ref_dur_ms indicates that a line should be drawn at 2 ms to help
     # visualization potential violations.
-    iplotter.plot_acgs(sp=spiketrain, window = 10, ref_dur_ms = 2) 
+    iplotter.plot_acgs(sp=spiketrain, window_ms = 10, ref_dur_ms = 2) 
 
 
 Note, to use the :code:`autocorrelograms` for further analyis the code for :code:`SpikeAnalysis` has its own :code:`autocorrelogram()` These values 
@@ -66,8 +66,8 @@ and then indices these features to only take the top 2 PCs for each unit and com
 Plot firing rate by depth
 -------------------------
 
-Simple function for looking at the firing rates at each depth. This could be useful to quickly see if a particular layer of the cortex of 
-lamina of the cord has most of the units found during sorting.
+Simple function for looking at the firing rates at each depth. This could be useful to quickly see if a particular layer of the cortex or 
+lamina of the spinal cord has most of the units found during sorting.
 
 .. code-block:: python
 
@@ -76,7 +76,7 @@ lamina of the cord has most of the units found during sorting.
 CDF
 ---
 
-A cumulative distribution function helps indicate the distribition of spike rates, depths, and amplitudes of a dataset based on the templates
+A cumulative distribution function helps indicate the distribution of spike rates, depths, and amplitudes of a dataset based on the templates
 analyzed.
 
 .. code-block:: python

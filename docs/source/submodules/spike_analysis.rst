@@ -34,7 +34,7 @@ a :code:`window=[-10, 20]` would be 10 seconds before each stimulus to 20 second
 The window can always be shrunk for plotting functions, but keeping a wide, but non-overlapping
 window can demonstrate some patterns that might be missed by only focusing on right around the stimulus
 onset. Also traditionally PSTHs should only have 0 or 1 spikes/bin and so the code will indicate
-if your current time_bin_ms is too large to fulfil this condition. It is up to the user whether this
+if your current :code:`time_bin_ms`` is too large to fulfil this condition. It is up to the user whether this
 matters for their purposes. Additionally this function can globally apply values or each stimulus can have
 a value given.
 
@@ -109,7 +109,7 @@ and the :code:`num_shuffles` indicates how many baseline shuffles to store.
 Above 2Hz Assuming a Poisson
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Adapted from Chase and Young **PNAS** 2007 the neurons firing rate is assumed to follow a Poisson distribution with a PMF of:
+Adapted from Chase and Young **PNAS** 2007 the neuron's firing rate is assumed to follow a Poisson distribution with a PMF of:
 
 .. math:: 
 
@@ -121,9 +121,9 @@ To calculate the potential deviation from this distribution we perform a calcula
 
     P_{t_n}(\geq n) = 1 - \sum_{m=0}^{n-1} \frac{( \lambda t_n)^m e^{- \lambda t_n}}{m!}
 
-In this case the :math:`\lambda` is the baseline firing rate of the neuron and :math:`t_n` will be the time window. They calcuate to see
+In this case the :math:`\lambda` is the baseline firing rate of the neuron and :math:`t_n` will be the time window. Chase and Young calculate to see
 first latency to spike based on all trials being merged, but in :code:`spikeanalysis` each trial is taken separately so that a distribution
-can be determined of the latencies rather than just one value. The take a threshold of :math:`10^{-6}`, which is maintained, but may be
+can be determined for all the latencies rather than just one value. They take a threshold of :math:`10^{-6}`, which is maintained, but may be
 changed in the future.
 
 Note :math:`\lambda` * :math:`t_n` gives us the :math:`\mu` from the standard Poisson PMF.
@@ -131,8 +131,8 @@ Note :math:`\lambda` * :math:`t_n` gives us the :math:`\mu` from the standard Po
 Below 2Hz Taking the first-spike
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If the mean firing rate is below 2Hz for a neuron, the first spike is taken to be the true first spike as related to the stimulus. This 
-means that the neuron is not following a Poisson distribution and so taking the first spike time is likely acceptable see Emmanuel et al. 2021
+If the mean firing rate is below 2Hz for a neuron, the first spike is taken to be the true first spike as related to the stimulus. This relies on the fact that
+neurons which fire at lower rates typically do not follow a Poisson distribution. For papers that use first spike time see Emmanuel et al. 2021
 for use of this technique in DRG neurons and Mornmann et al. 2008 for use in human cortex.
 
 
@@ -157,7 +157,8 @@ Autocorrelogram
 ---------------
 
 Calculating an Autocorrelogram for each unit based on its spike times. The 0 lag sample is removed. This is returned as a :code:`np.ndarray` for ease of use.
-Currently it is based on bins with size :math:`\frac{1}{2} SampleSize`, but this may evenutually become an argument in the function.
+Currently it is based on take 500 ms after stimulus onset and dividing this into bins which are sized at :math:`2 * sample_rate`. In the future these may 
+become user specifiable agruments.
 
 .. code-block:: python
 
