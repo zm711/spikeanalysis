@@ -4,3 +4,4 @@ matplotlib
 numba
 seaborn
 pandas
+spikeanalysis @ git+https://github.com/zm711/spikeanalysis@main
