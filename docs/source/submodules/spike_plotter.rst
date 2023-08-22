@@ -8,7 +8,7 @@ seaborn features, which have been mostly removed to reduce the dependencies.
 Initializing Plotting Classes
 -----------------------------
 
-Utilizing matplotlib under the hood allows for some customization. During the intialization of the class 
+Utilizing :code:`matplotlib`` under the hood allows for some customization. During the intialization of the class 
 different defaults can be applied using the :code:`kwargs`. These should be a dictionary of standard matplotlib
 values, eg, :code:`{"dpi": 300, "figsize": (10,8)}`. The class will warn if the attempted value is not currently
 customizable (ie, it is not used internally currently). Defaults are reasonable :code:`x-axis` defaults to :code:`"Time (s)"`

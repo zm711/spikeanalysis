@@ -37,7 +37,7 @@ method can be used to switching caching to False
 
 .. code-block:: python
 
-    spikes.set_cahcing(cache=False) # files will not be saved
+    spikes.set_caching(cache=False) # files will not be saved
 
 
 Caching the data is done as either :code:`json` or :code:`.npy` depending on whether the data being saved is a 
@@ -93,7 +93,8 @@ matrix of cluster distances it helps reduce less significant and highly coordina
 as well as the fact that many contacts of the probes are in similar locations and so should have correlated PC spaces. The Isolation
 Distance relies on the mahalobnis distances and is reported as the smallest mahalobnis distance of the nearest spike not found in the 
 current cluster. Proposed by Harris et al (2001) and equation adapted from Schmitzer-Torbert et al (2005). Isolation distances can vary 
-from :math:`0` to :math:`\infty` with great distance indicating that clusters are farther apart in PC space.
+from :math:`0` to :math:`\infty` with greater distance indicating that clusters are farther apart in PC space and thus likely cleaner
+clusters.
 
 .. math::
 
@@ -121,7 +122,7 @@ The silhouette score is than:
     s(i) = \frac{b(i) - a(i)}{max(a(i), b(i))}
 
 For :code:`spikenalysis`, rather than this implementation proposed by Rousseeuw, the simplified silhouette is used as proposed by Hruschka et al.
-This makes use of the centroid distance rather than pair wise. So,
+This makes use of the centroid distance rather than pairwise. So,
 
 .. math::
 
@@ -186,7 +187,7 @@ as understandable and maintainable a weighted average is used (faster, slightly 
 
 .. math:: 
 
-    \frac{1}{\Sigma amplitudes} \Sigma amplitudes * y-coords
+    \frac{1}{\Sigma amplitudes} \sum{amplitudes * depths}
     
 
 Pipeline Function
