@@ -324,7 +324,7 @@ class IntrinsicPlotter(PlotterBase):
 
     def _generate_amp_depth_bins(
         self,
-        sp,
+        sp: SpikeData,
         spike_amps: np.ndarray,
         probe_len: float,
         pitch: float,
@@ -349,7 +349,12 @@ class IntrinsicPlotter(PlotterBase):
         return depth_bins, amp_bins, recording_duration
 
     def _compute_cdf_pdf(
-        self, spike_amps, spike_depths, amp_bins, depth_bins, recording_dur
+        self,
+        spike_amps: np.ndarray,
+        spike_depths: np.ndarray,
+        amp_bins: np.ndarray,
+        depth_bins: np.ndarray,
+        recording_dur: float,
     ) -> tuple[np.ndarray, np.ndarray]:
         n_depth_bins = len(depth_bins) - 1
         n_amp_bins = len(amp_bins) - 1

@@ -869,7 +869,7 @@ class SpikeAnalysis:
 
                 self.responsive_neurons[stim][key] = responsive_neurons
 
-    def _merge_events(self, event_0, event_1):
+    def _merge_events(self, event_0: dict, event_1: dict):
         """Utility function for merging digital and analog events into one dictionary"""
         events = {**event_0, **event_1}
         return events

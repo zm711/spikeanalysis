@@ -131,6 +131,17 @@ class StimulusData:
         """
         Function that creates a Neo IntanRawIO reader and then parses the header
 
+        Parameters
+        ----------
+        file_name: Optional[filename]
+            Default None uses the internal function, whereas providing a file_name will call
+            the neo function `get_rawio_class` to return a neo reader that can be used
+
+        Returns
+        -------
+        neo_class: neo.rawio
+            Returns a neo.rawio class if filename is given otherwise stores values internally
+
         """
         if file_name is None:
             reader = neo.rawio.IntanRawIO(filename=self._filename)
@@ -146,7 +157,7 @@ class StimulusData:
         self.sample_frequency = sample_freq
         self.reader = reader
 
-    def get_analog_data(self, time_slice=(None, None)):
+    def get_analog_data(self, time_slice: tuple = (None, None)):
         """
         Function to load analog data from an Intan file. Requires the IntanRawIO to be generated with
         `create_neo_reader`
@@ -259,7 +270,7 @@ class StimulusData:
         """
         return round(base * round(float(x) / base), precision)
 
-    def get_raw_digital_data(self, time_slice=(None, None)):
+    def get_raw_digital_data(self, time_slice: tuple = (None, None)):
         """
         This is a function that in the future will get the digital data, but currently due
         to the inability to grab digital from neo automatically. Calls on internal hack to
