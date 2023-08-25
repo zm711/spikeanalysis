@@ -228,9 +228,7 @@ class SpikeData:
         spike_clusters = np.squeeze(np.load("spike_clusters.npy"))
         violations = np.zeros((len(set(spike_clusters))))
         violations[:] = np.nan
-
-
-        spike_times = self.raw_spike_times / self._sampling_rate
+        spike_times = self.raw_spike_times
 
         for idx, cluster in enumerate(tqdm(set(spike_clusters))):
             spikes = spike_times[self.spike_clusters == cluster]
