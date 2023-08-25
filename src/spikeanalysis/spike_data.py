@@ -224,15 +224,11 @@ class SpikeData:
         """
         print("calculating refractory period violation fraction")
         self._goto_file_path()
-        ref_dur = ref_dur_ms / 1000
+        ref_dur_samples = ref_dur_ms / 1000 * self._sampling_rate
         spike_clusters = np.squeeze(np.load("spike_clusters.npy"))
         violations = np.zeros((len(set(spike_clusters))))
         violations[:] = np.nan
-
-        try:
-            spike_times = self.spike_times
-        except AttributeError:
-            spike_times = self.raw_spike_times / self._sampling_rate
+        spike_times = self.raw_spike_times
 
         for idx, cluster in enumerate(tqdm(set(spike_clusters))):
             spikes = spike_times[self.spike_clusters == cluster]
@@ -240,7 +236,7 @@ class SpikeData:
             if len(spikes) < 10:
                 continue
             else:
-                num_violations = float(len(np.where(np.diff(spikes) <= ref_dur)[0]))
+                num_violations = float(len(np.where(np.diff(spikes) <= ref_dur_samples)[0]))
                 total_spikes = len(spikes)
                 violations[idx] = num_violations / total_spikes
 
