@@ -97,7 +97,7 @@ class SpikePlotter(PlotterBase):
         -------
         ordered_cluster_ids: np.array
             if indices is True, the function will return the cluster ids as displayed in the z bar graph
-            
+
         """
 
         try:
