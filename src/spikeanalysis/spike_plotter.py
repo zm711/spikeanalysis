@@ -223,7 +223,7 @@ class SpikePlotter(PlotterBase):
                 sorting_index = None
 
         if indices:
-            return self.cluster_ids[z_score_sorting_index]
+            return self.data.cluster_ids[z_score_sorting_index]
 
     def plot_raster(self, window: Union[list, list[list]]):
         """
@@ -234,8 +234,6 @@ class SpikePlotter(PlotterBase):
         window : Union[list, list[list]]
             The window [start, stop] to plot the raster over. Either one global list or nested list
             of [start, stop] format
-
-
         """
         from .analysis_utils import histogram_functions as hf
 
