@@ -87,7 +87,7 @@ def test_fr_data(sa):
         }
     }
     sa.get_raw_psth(window=[0, 300], time_bin_ms=50)
-    sa.get_raw_firing_rate(time_bin_ms=1000, bsl_window=[0, 50], fr_window=[0, 300], mode="raw")
+    sa.get_raw_firing_rate(time_bin_ms=1000, bsl_window=None, fr_window=[0, 300], mode="raw")
     print(sa.mean_firing_rate)
 
     assert sa.mean_firing_rate["test"][0, 0, 0] == 0.5
@@ -99,7 +99,7 @@ def test_fr_data(sa):
     assert round(sa.mean_firing_rate["test"][0, 0, 0], 2) == 0.42
     assert round(sa.mean_firing_rate["test"][1, 0, 2], 2) == 0.9
 
-    sa.get_raw_firing_rate(time_bin_ms=1000, bsl_window=[0, 50], fr_window=[0, 300], mode="smooth", sm_time_ms=0.5)
+    sa.get_raw_firing_rate(time_bin_ms=1000, bsl_window=None, fr_window=[0, 300], mode="smooth", sm_time_ms=0.5)
 
     print(sa.mean_firing_rate)
     assert round(sa.mean_firing_rate["test"][0, 0, 0], 2) == round(0.5, 2)
