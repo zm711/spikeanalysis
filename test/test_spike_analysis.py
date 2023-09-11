@@ -93,7 +93,7 @@ def test_fr_data(sa):
     assert sa.mean_firing_rate["test"][0, 0, 0] == 0.5
     assert sa.mean_firing_rate["test"][1, 0, 2] == 1.0
 
-    sa.get_raw_firing_rate(time_bin_ms=1000, bsl_window=[0, 50], fr_window=[0, 300], mode="bsl")
+    sa.get_raw_firing_rate(time_bin_ms=1000, bsl_window=[0, 50], fr_window=[0, 300], mode="bsl-subtracted")
 
     print(sa.mean_firing_rate)
     assert round(sa.mean_firing_rate["test"][0, 0, 0], 2) == 0.42
