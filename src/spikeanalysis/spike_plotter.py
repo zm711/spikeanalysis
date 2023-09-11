@@ -310,7 +310,12 @@ class SpikePlotter(PlotterBase):
                 plt.figure(dpi=self.dpi)
                 plt.show()
 
-    def plot_sm_fr(self, window: Union[list, list[list]], sm_time_ms: Union[float, list[float]]):
+    def plot_sm_fr(
+        self,
+        window: Union[list, list[list]],
+        time_bin_ms: Union[float, list[float]],
+        sm_time_ms: Union[float, list[float]],
+    ):
         """
         Function to plot smoothed firing rates
 
@@ -319,12 +324,15 @@ class SpikePlotter(PlotterBase):
         window : Union[list, list[list]]
             The window [start, stop] to plot the raster over. Either one global list or nested list
             of [start, stop] format
+        time_bin_ms: Union[list, list[float]]
+            The new time bin size desired.
         sm_time_ms : Union[float, list[float]]
             Smoothing time in milliseconds. Either one global smoothing time or a list of smoothing time stds for each
             stimulus
 
         """
         import matplotlib as mpl
+        from .analysis_utils import histogram_functions as hf
 
         if self.cmap is not None:
             cmap = mpl.colormap[self.cmap]
@@ -346,11 +354,31 @@ class SpikePlotter(PlotterBase):
             sm_time_ms = [sm_time_ms] * len(windows)
         else:
             assert len(sm_time_ms) == len(windows), "Enter one smoothing value per stim or one global smoothing value"
+
+        NUM_STIM = self.data.NUM_STIM
+        if isinstance(time_bin_ms, float) or isinstance(time_bin_ms, int):
+            time_bin_size = [time_bin_ms / 1000] * NUM_STIM
+        else:
+            assert (
+                len(time_bin_ms) == NUM_STIM
+            ), f"Please enter the correct number of time bins\
+                number of bins is{len(time_bin_ms)} and should be {NUM_STIM}"
+            time_bin_size = np.array(time_bin_ms) / 1000
+
         stim_trial_groups = self._get_trial_groups()
         event_lengths = self._get_event_lengths_all()
         for idx, stimulus in enumerate(psths.keys()):
             bins = psths[stimulus]["bins"]
             psth = psths[stimulus]["psth"]
+            bin_size = bins[1] - bins[0]
+            n_bins = bins.shape[0]
+            time_bin_current = time_bin_size[idx]
+            new_bin_number = np.int32((n_bins * bin_size) / time_bin_current)
+
+            if new_bin_number != n_bins:
+                psth = hf.convert_to_new_bins(psth, new_bin_number)
+                bins = hf.convert_bins(bins, new_bin_number)
+
             trial_groups = stim_trial_groups[stimulus]
             sub_window = windows[idx]
             psth = psth[:, :, np.logical_and(bins > sub_window[0], bins < sub_window[1])]
