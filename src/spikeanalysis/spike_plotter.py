@@ -49,6 +49,10 @@ class SpikePlotter(PlotterBase):
             assert isinstance(analysis, SpikeAnalysis), "analysis must be a SpikeAnalysis dataset"
             self.data = analysis
 
+    def set_kwargs(self, **kwargs):
+        self._check_kwargs(**kwargs)
+        self._set_kwargs(**kwargs)
+
     def __repr__(self):
         var_methods = dir(self)
         var = list(vars(self).keys())  # get our currents variables
