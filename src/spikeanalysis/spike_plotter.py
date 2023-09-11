@@ -439,7 +439,7 @@ class SpikePlotter(PlotterBase):
                     else:
                         self._despine(ax)
 
-                plt.title(f"{stimulus}: {self.data._cids[cluster_number]}", fontsize=8)
+                plt.title(f"{stimulus}: {self.data.cluster_ids[cluster_number]}", fontsize=8)
                 plt.figure(dpi=self.dpi)
                 plt.show()
 
