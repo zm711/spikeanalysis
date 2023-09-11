@@ -103,11 +103,93 @@ class SpikePlotter(PlotterBase):
             if indices is True, the function will return the cluster ids as displayed in the z bar graph
 
         """
+        if self.cmap == "viridis":
+            self.cmap = "vlag"
 
-        try:
+        index_array = self._plot_scores(
+            data="zscore", figsize=figsize, sorting_index=sorting_index, bar=z_bar, indices=indices
+        )
+        if indices:
+            return index_array
+
+    def plot_raw_firing(
+        self,
+        figsize: Optional[tuple] = (24, 10),
+        sorting_index: Optional[int] = None,
+        bar: Optional[list[int]] = None,
+        indices: bool = False,
+    ) -> Optional[np.array]:
+        """
+        Function to plot heatmaps of raw firing rate data. Can be baseline subtracted, raw or smoothed
+        Based on what was run in SpikeAnalysis. All trial groups are plotted on the same axes.
+        So it is best to have a figsize that wide to fit all different trial groups. In this plot each
+        row across all heat maps is the same unit/neuron and all plots share the same min/max firing score
+        colormap.
+
+        Parameters
+        ----------
+        figsize : Optional[tuple], optional
+            Matplotlib figsize tuple. For multiple trial groups bigger is better. The default is (24, 10).
+        sorting_index : Optional[int], optional
+            The trial group to sort all values on. The default is None (which uses the largest trial group).
+        bar: list[int]
+            If given a list with min firing rate for the cbar at index 0 and the max at index 1. Overrides cbar generation
+        indices: bool, default False
+            If true will return the cluster ids sorted in the order they appear in the graph
+
+        Returns
+        -------
+        ordered_cluster_ids: Optional[np.array]
+            if indices is True, the function will return the cluster ids as displayed in the z bar graph
+
+        """
+        if self.cmap == "vlag":
+            self.cmap = "viridis"
+
+        index_array = self._plot_scores(
+            data="raw-data", figsize=figsize, sorting_index=sorting_index, bar=bar, indices=indices
+        )
+
+        if indices:
+            return index_array
+
+    def _plot_scores(
+        self,
+        data: str = "zscore",
+        figsize: Optional[tuple] = (24, 10),
+        sorting_index: Optional[int] = None,
+        bar: Optional[list[int]] = None,
+        indices: bool = False,
+    ) -> Optional[np.array]:
+        """
+        Function to plot heatmaps of firing rate data
+
+        Parameters
+        ----------
+        data : str ('zscore', 'raw-data')
+            Determines which type of data to use for plotting.
+        figsize : Optional[tuple], optional
+            Matplotlib figsize tuple. For multiple trial groups bigger is better. The default is (24, 10).
+        sorting_index : Optional[int], optional
+            The trial group to sort all values on. The default is None (which uses the largest trial group).
+        bar: list[int]
+            If given a list with min for the cbar at index 0 and the max at index 1. Overrides cbar generation
+        indices: bool, default False
+            If true will return the cluster ids sorted in the order they appear in the graph
+
+        Returns
+        -------
+        ordered_cluster_ids: Optional[np.array]
+            if indices is True, the function will return the cluster ids as displayed in the z bar graph
+
+        """
+
+        if data == "zscore":
             z_scores = self.data.z_scores
-        except AttributeError:
-            raise Exception(f"SpikeAnalysis is missing zscores object, run {_z_scores_code}")
+        elif data == "raw-data":
+            z_scores = self.data.mean_firing_rate
+        else:
+            raise Exception(f"plotting not initialized for data of {data}")
 
         if figsize is None:
             figsize = self.figsize
@@ -122,8 +204,8 @@ class SpikePlotter(PlotterBase):
         else:
             y_axis = self.y_axis
 
-        if z_bar is not None:
-            assert len(z_bar) == 2, f"Please give z_bar as [min, max], you entered {z_bar}"
+        if bar is not None:
+            assert len(bar) == 2, f"Please give z_bar as [min, max], you entered {bar}"
 
         stim_lengths = self._get_event_lengths()
 
@@ -161,9 +243,9 @@ class SpikePlotter(PlotterBase):
             if len(np.shape(sorted_z_scores)) == 2:
                 sorted_z_scores = np.expand_dims(sorted_z_scores, axis=1)
 
-            if z_bar is not None:
-                vmax = z_bar[1]
-                vmin = z_bar[0]
+            if bar is not None:
+                vmax = bar[1]
+                vmin = bar[0]
             elif np.max(sorted_z_scores) > 30:
                 vmax = 10
                 vmin = -10
