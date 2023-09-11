@@ -274,6 +274,8 @@ class SpikeAnalysis:
             bsl_windows = verify_window_format(window=bsl_window, num_stim=NUM_STIM)
             baseline = True
             assert mode == "bsl-subtracted", "only give baseline for baseline subtracted"
+        else:
+            baseline = False
         fr_windows = verify_window_format(window=fr_window, num_stim=NUM_STIM)
 
         if mode == "smooth":
