@@ -286,6 +286,7 @@ def test_qc_preprocessing(spikes, tmp_path):
     np.save("isolation_distances.npy", id)
     np.save("silhouette_scores.npy", sil)
     np.save("refractory_period_violations.npy", ref)
+    np.save("ampltiude_distribution.npy", amp)
     spikes.CACHING = True
     spikes.qc_preprocessing(15, 0.02, 0.35, 0.97)
 
