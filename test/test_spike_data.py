@@ -155,6 +155,7 @@ def test_save_qc_parameters(spikes, tmp_path):
     spikes._isolation_threshold = 10
     spikes._rpv = 0.02
     spikes._sil_threshold = 0.4
+    spikes._amp_cutoff = 0.98
     spikes.save_qc_parameters()
     have_json = False
 
@@ -280,12 +281,13 @@ def test_qc_preprocessing(spikes, tmp_path):
     id = np.array([10, 30, 20])
     sil = np.array([0.1, 0.4, 0.5])
     ref = np.array([0.3, 0.001, 0.1])
+    amp = np.array([0.98, 0.98, 0.98])
 
     np.save("isolation_distances.npy", id)
     np.save("silhouette_scores.npy", sil)
     np.save("refractory_period_violations.npy", ref)
     spikes.CACHING = True
-    spikes.qc_preprocessing(15, 0.02, 0.35)
+    spikes.qc_preprocessing(15, 0.02, 0.35, 0.97)
 
     assert isinstance(spikes._qc_threshold, np.ndarray)
 
