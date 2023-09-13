@@ -348,10 +348,14 @@ def test_load_waveforms(spikes, tmp_path):
 
 
 def test_get_amplitudes(spikes):
-    samples = np.random.normal(loc=1.0, scale=1, size=(82))
-    samples2 = samples * 0.5
+    samples = np.random.normal(loc=5.0, scale=1, size=(82))
+    samples2 = samples * 50
 
-    waveforms = np.random.rand(2, 10, 4, 82)
+    large_std = samples
+    large_std2 = samples * 1000
+    waveforms = np.zeros((2, 1000, 4, 82))
+    waveforms[0, :, 2, :] = large_std
+    waveforms[0, :40, 2, :] = large_std2
     waveforms[1, :, 1, :] = samples
     waveforms[1, ::2, 1, :] = samples2
 
