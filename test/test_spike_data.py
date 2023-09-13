@@ -345,3 +345,21 @@ def test_load_waveforms(spikes, tmp_path):
 
     spikes._file_path = file_path
     os.chdir(spikes._file_path)
+
+
+def test_get_amplitudes(spikes):
+    samples = np.random.normal(loc=1.0, scale=1, size=(82))
+    samples2 = samples * 0.5
+
+    waveforms = np.random.rand(2, 10, 4, 82)
+    waveforms[1, :, 1, :] = samples
+    waveforms[1, ::2, 1, :] = samples2
+
+    spikes.waveforms = waveforms
+    spikes.get_amplitudes()
+    assert len(spikes.amplitude_index) == 2, "function failed"
+    print(spikes.amplitude_index)
+
+    assert spikes.amplitude_index[1] == 1.0
+
+    assert spikes.amplitude_index[0] < spikes.amplitude_index[1]
