@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional
 import os
 
 import numpy as np
@@ -460,19 +460,29 @@ class SpikeData:
 
         self.amplitude_index = amplitude_index
 
-    def qc_preprocessing(self, idthres: float, rpv: float, sil: float, amp_cutoff: float, recurated: bool = False):
+    def qc_preprocessing(
+        self,
+        idthres: Optional[float] = None,
+        rpv: Optional[float] = None,
+        sil: Optional[float] = None,
+        amp_cutoff: Optional[float] = None,
+        recurated: bool = False,
+    ):
         """
         function for curating data based on qc metrics and refractory periods
 
         Parameters
         ----------
-        idthres : float
+        idthres : Optional[float], default: None
             The cutoff isolation distance, 0 means no curation.
-        rpv : float
+        rpv : Optional[float], default: None
             Fractional rate of refractory period violations, 0 is no violations and 1 would be all violations okay
-        sil : float
+        sil : Optional[float], default: None
             Minimum silhouette score, [-1, 1], where bigger is better.
-        recurated : bool, optional
+        amp_cutoff: Optional[float], default = None
+            The percentage of spikes allowed to be over the user specified standard deviations (default 2) given as the
+            desired percentage. E.g. 0.98 means 98% of spikes are within 2 stds.
+        recurated : bool, default: False
             If data has been recurated in phy since the last data run. The default is False.
 
         Raises
@@ -504,35 +514,49 @@ class SpikeData:
                     self.silhouette_scores = np.load("silhouette_scores.npy")
                     self.isolation_distances = np.load("isolation_distances.npy")
                 except FileNotFoundError:
-                    raise Exception("qc metrics has not been run")
+                    if idthres is None and sil is None:
+                        pass
+                    else:
+                        raise Exception("qc metrics has not been run")
             try:
                 _ = self.refractory_period_violations
             except AttributeError:
                 try:
                     self.refractory_period_violations = np.load("refractory_period_violations.npy")
                 except FileNotFoundError:
-                    raise Exception("refractory period violations not calculated")
+                    if rpv is None:
+                        pass
+                    else:
+                        raise Exception("refractory period violations not calculated")
             try:
                 _ = self.amplitude_index
             except AttributeError:
                 try:
                     self.amplitude_index = np.load("amplitude_distribution.npy")
                 except FileNotFoundError:
-                    raise Exception("ampltiude scores not calculated")
+                    if amp_cutoff is None:
+                        pass
+                    else:
+                        raise Exception("amplitude scores not calculated")
 
-            assert len(self.silhouette_scores) == len(self.isolation_distances), "Qc metrics should be same length"
-            assert len(self.silhouette_scores) == len(
-                self.refractory_period_violations
-            ), "Refractory period violations should be same length as qc"
-            assert len(self.amplitude_index) == len(self.silhouette_scores), "amplitudes scores must be the same length"
+            if idthres is not None:
+                assert len(self.silhouette_scores) == len(self.isolation_distances), "Qc metrics should be same length"
+                iso_d_thres = np.where(self.isolation_distances > idthres, True, False)
+                sil_thres = np.where(self.silhouette_scores > sil, True, False)
+                threshold = np.logical_and(iso_d_thres, sil_thres)
+            else:
+                threshold = np.array([True] * len(self._cids))
 
-            iso_d_thres = np.where(self.isolation_distances > idthres, True, False)
-            sil_thres = np.where(self.silhouette_scores > sil, True, False)
-            rpv_thres = np.where(self.refractory_period_violations < rpv, True, False)
-            amp_thres = np.where(self.amplitude_index > amp_cutoff, True, False)
-            threshold = np.logical_and(iso_d_thres, sil_thres)
-            threshold = np.logical_and(threshold, rpv_thres)
-            threshold = np.logical_and(threshold, amp_thres)
+            if rpv is not None:
+                assert len(self.refractory_period_violations) == len(
+                    self._cids
+                ), "mismatch between refactory period and cids"
+                rpv_thres = np.where(self.refractory_period_violations < rpv, True, False)
+                threshold = np.logical_and(threshold, rpv_thres)
+            if amp_cutoff is not None:
+                assert len(self.amplitude_index) == len(self._cids), "mismatch between amplitudes and cids"
+                amp_thres = np.where(self.amplitude_index > amp_cutoff, True, False)
+                threshold = np.logical_and(threshold, amp_thres)
 
             self._qc_threshold = threshold
 
