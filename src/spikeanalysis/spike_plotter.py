@@ -49,6 +49,10 @@ class SpikePlotter(PlotterBase):
             assert isinstance(analysis, SpikeAnalysis), "analysis must be a SpikeAnalysis dataset"
             self.data = analysis
 
+    def set_kwargs(self, **kwargs):
+        self._check_kwargs(**kwargs)
+        self._set_kwargs(**kwargs)
+
     def __repr__(self):
         var_methods = dir(self)
         var = list(vars(self).keys())  # get our currents variables
@@ -99,11 +103,93 @@ class SpikePlotter(PlotterBase):
             if indices is True, the function will return the cluster ids as displayed in the z bar graph
 
         """
+        if self.cmap == "viridis":
+            self.cmap = "vlag"
 
-        try:
+        index_array = self._plot_scores(
+            data="zscore", figsize=figsize, sorting_index=sorting_index, bar=z_bar, indices=indices
+        )
+        if indices:
+            return index_array
+
+    def plot_raw_firing(
+        self,
+        figsize: Optional[tuple] = (24, 10),
+        sorting_index: Optional[int] = None,
+        bar: Optional[list[int]] = None,
+        indices: bool = False,
+    ) -> Optional[np.array]:
+        """
+        Function to plot heatmaps of raw firing rate data. Can be baseline subtracted, raw or smoothed
+        Based on what was run in SpikeAnalysis. All trial groups are plotted on the same axes.
+        So it is best to have a figsize that wide to fit all different trial groups. In this plot each
+        row across all heat maps is the same unit/neuron and all plots share the same min/max firing score
+        colormap.
+
+        Parameters
+        ----------
+        figsize : Optional[tuple], optional
+            Matplotlib figsize tuple. For multiple trial groups bigger is better. The default is (24, 10).
+        sorting_index : Optional[int], optional
+            The trial group to sort all values on. The default is None (which uses the largest trial group).
+        bar: list[int]
+            If given a list with min firing rate for the cbar at index 0 and the max at index 1. Overrides cbar generation
+        indices: bool, default False
+            If true will return the cluster ids sorted in the order they appear in the graph
+
+        Returns
+        -------
+        ordered_cluster_ids: Optional[np.array]
+            if indices is True, the function will return the cluster ids as displayed in the z bar graph
+
+        """
+        if self.cmap == "vlag":
+            self.cmap = "viridis"
+
+        index_array = self._plot_scores(
+            data="raw-data", figsize=figsize, sorting_index=sorting_index, bar=bar, indices=indices
+        )
+
+        if indices:
+            return index_array
+
+    def _plot_scores(
+        self,
+        data: str = "zscore",
+        figsize: Optional[tuple] = (24, 10),
+        sorting_index: Optional[int] = None,
+        bar: Optional[list[int]] = None,
+        indices: bool = False,
+    ) -> Optional[np.array]:
+        """
+        Function to plot heatmaps of firing rate data
+
+        Parameters
+        ----------
+        data : str ('zscore', 'raw-data')
+            Determines which type of data to use for plotting.
+        figsize : Optional[tuple], optional
+            Matplotlib figsize tuple. For multiple trial groups bigger is better. The default is (24, 10).
+        sorting_index : Optional[int], optional
+            The trial group to sort all values on. The default is None (which uses the largest trial group).
+        bar: list[int]
+            If given a list with min for the cbar at index 0 and the max at index 1. Overrides cbar generation
+        indices: bool, default False
+            If true will return the cluster ids sorted in the order they appear in the graph
+
+        Returns
+        -------
+        ordered_cluster_ids: Optional[np.array]
+            if indices is True, the function will return the cluster ids as displayed in the z bar graph
+
+        """
+
+        if data == "zscore":
             z_scores = self.data.z_scores
-        except AttributeError:
-            raise Exception(f"SpikeAnalysis is missing zscores object, run {_z_scores_code}")
+        elif data == "raw-data":
+            z_scores = self.data.mean_firing_rate
+        else:
+            raise Exception(f"plotting not initialized for data of {data}")
 
         if figsize is None:
             figsize = self.figsize
@@ -118,8 +204,8 @@ class SpikePlotter(PlotterBase):
         else:
             y_axis = self.y_axis
 
-        if z_bar is not None:
-            assert len(z_bar) == 2, f"Please give z_bar as [min, max], you entered {z_bar}"
+        if bar is not None:
+            assert len(bar) == 2, f"Please give z_bar as [min, max], you entered {bar}"
 
         stim_lengths = self._get_event_lengths()
 
@@ -157,9 +243,9 @@ class SpikePlotter(PlotterBase):
             if len(np.shape(sorted_z_scores)) == 2:
                 sorted_z_scores = np.expand_dims(sorted_z_scores, axis=1)
 
-            if z_bar is not None:
-                vmax = z_bar[1]
-                vmin = z_bar[0]
+            if bar is not None:
+                vmax = bar[1]
+                vmin = bar[0]
             elif np.max(sorted_z_scores) > 30:
                 vmax = 10
                 vmin = -10
@@ -310,7 +396,12 @@ class SpikePlotter(PlotterBase):
                 plt.figure(dpi=self.dpi)
                 plt.show()
 
-    def plot_sm_fr(self, window: Union[list, list[list]], sm_time_ms: Union[float, list[float]]):
+    def plot_sm_fr(
+        self,
+        window: Union[list, list[list]],
+        time_bin_ms: Union[float, list[float]],
+        sm_time_ms: Union[float, list[float]],
+    ):
         """
         Function to plot smoothed firing rates
 
@@ -319,12 +410,15 @@ class SpikePlotter(PlotterBase):
         window : Union[list, list[list]]
             The window [start, stop] to plot the raster over. Either one global list or nested list
             of [start, stop] format
+        time_bin_ms: Union[list, list[float]]
+            The new time bin size desired.
         sm_time_ms : Union[float, list[float]]
             Smoothing time in milliseconds. Either one global smoothing time or a list of smoothing time stds for each
             stimulus
 
         """
         import matplotlib as mpl
+        from .analysis_utils import histogram_functions as hf
 
         if self.cmap is not None:
             cmap = mpl.colormap[self.cmap]
@@ -346,11 +440,31 @@ class SpikePlotter(PlotterBase):
             sm_time_ms = [sm_time_ms] * len(windows)
         else:
             assert len(sm_time_ms) == len(windows), "Enter one smoothing value per stim or one global smoothing value"
+
+        NUM_STIM = self.data.NUM_STIM
+        if isinstance(time_bin_ms, float) or isinstance(time_bin_ms, int):
+            time_bin_size = [time_bin_ms / 1000] * NUM_STIM
+        else:
+            assert (
+                len(time_bin_ms) == NUM_STIM
+            ), f"Please enter the correct number of time bins\
+                number of bins is{len(time_bin_ms)} and should be {NUM_STIM}"
+            time_bin_size = np.array(time_bin_ms) / 1000
+
         stim_trial_groups = self._get_trial_groups()
         event_lengths = self._get_event_lengths_all()
         for idx, stimulus in enumerate(psths.keys()):
             bins = psths[stimulus]["bins"]
             psth = psths[stimulus]["psth"]
+            bin_size = bins[1] - bins[0]
+            n_bins = bins.shape[0]
+            time_bin_current = time_bin_size[idx]
+            new_bin_number = np.int32((n_bins * bin_size) / time_bin_current)
+
+            if new_bin_number != n_bins:
+                psth = hf.convert_to_new_bins(psth, new_bin_number)
+                bins = hf.convert_bins(bins, new_bin_number)
+
             trial_groups = stim_trial_groups[stimulus]
             sub_window = windows[idx]
             psth = psth[:, :, np.logical_and(bins > sub_window[0], bins < sub_window[1])]
@@ -411,7 +525,7 @@ class SpikePlotter(PlotterBase):
                     else:
                         self._despine(ax)
 
-                plt.title(f"{stimulus}: {self.data._cids[cluster_number]}", fontsize=8)
+                plt.title(f"{stimulus}: {self.data.cluster_ids[cluster_number]}", fontsize=8)
                 plt.figure(dpi=self.dpi)
                 plt.show()
 

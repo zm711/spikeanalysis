@@ -224,9 +224,9 @@ class SpikeAnalysis:
     def get_raw_firing_rate(
         self,
         time_bin_ms: Union[list[float], float],
-        bsl_window: Union[list, list[list]],
         fr_window: Union[list, list[list]],
         mode: str,
+        bsl_window: Optional[Union[list, list[list]]] = None,
         sm_time_ms: Optional[Union[list[float], float]] = None,
     ):
         """
@@ -237,10 +237,6 @@ class SpikeAnalysis:
         time_bin_ms : Union[list[float], float]
             The time bin desired for generating firing rates(larger bins lead to smoother data). Either
             a single float applied to all stim or a list with a value for each stimulus
-        bsl_window : Union[list, list[list]]
-            The baseline window for finding the baseline mean and std firing rate. Either a single
-            sequence of (start, end) in relation to stim onset at 0 applied for all stim. Or a list
-            of lists where each stimulus has its own (start, end)
         fr_window :  Union[list, list[list]],
             The event window for finding the firing rate/time_bin. Either a single
             sequence of (start, end) in relation to stim onset at 0 applied for all stim. Or a list
@@ -249,6 +245,10 @@ class SpikeAnalysis:
             Value to return firing rate as either a raw firing rate based on time_bin_ms, as a gaussian
             smoothed firing rate (requires sm_time_ms), or with baseline subtraction in which the mean
             firing rate during the baseline is subtracted from each bin
+        bsl_window : Union[list, list[list]]
+            The baseline window for finding the baseline mean and std firing rate. Either a single
+            sequence of (start, end) in relation to stim onset at 0 applied for all stim. Or a list
+            of lists where each stimulus has its own (start, end)
         sm_time_ms: Optional[Union[list[float], float]], default None
             The smoothing standard deviation to use for the gaussian smoothing. Default is None, but this
             value must be given if mode is set to 'smooth'
@@ -270,10 +270,16 @@ class SpikeAnalysis:
                 number of bins is{len(time_bin_ms)} and should be {NUM_STIM}"
             time_bin_size = np.array(time_bin_ms) / 1000
 
-        bsl_windows = verify_window_format(window=bsl_window, num_stim=NUM_STIM)
+        if bsl_window is not None:
+            bsl_windows = verify_window_format(window=bsl_window, num_stim=NUM_STIM)
+            baseline = True
+            assert mode == "bsl-subtracted", "only give baseline for baseline subtracted"
+        else:
+            baseline = False
         fr_windows = verify_window_format(window=fr_window, num_stim=NUM_STIM)
 
         if mode == "smooth":
+            assert sm_time_ms is not None, "to smooth data please give the sm_time_ms"
             if isinstance(sm_time_ms, (int, float)):
                 sm_time_ms = [sm_time_ms] * len(fr_windows)
             else:
@@ -298,7 +304,8 @@ class SpikeAnalysis:
             bins = psths[stim]["bins"]
             bin_size = bins[1] - bins[0]
             n_bins = np.shape(bins)[0]
-            bsl_current = bsl_windows[idx]
+            if baseline:
+                bsl_current = bsl_windows[idx]
             fr_window_current = fr_windows[idx]
             self.fr_windows[stim] = fr_window_current
 
@@ -307,17 +314,20 @@ class SpikeAnalysis:
             if new_bin_number != n_bins:
                 psth = hf.convert_to_new_bins(psth, new_bin_number)
                 bins = hf.convert_bins(bins, new_bin_number)
-            bsl_values = np.logical_and(bins >= bsl_current[0], bins <= bsl_current[1])
+            if baseline:
+                bsl_values = np.logical_and(bins >= bsl_current[0], bins <= bsl_current[1])
+                bsl_psth = psth[:, :, bsl_values]
+
             fr_window_values = np.logical_and(bins >= fr_window_current[0], bins <= fr_window_current[1])
-            bsl_psth = psth[:, :, bsl_values]
             fr_psth = psth[:, :, fr_window_values]
             fr[stim] = np.zeros(np.shape(fr_psth))
             final_fr[stim] = np.zeros((np.shape(fr_psth)[0], len(trial_set), np.shape(fr_psth)[2]))
             self.raw_firing_rate[stim] = np.zeros(np.shape(fr_psth))
 
             for trial_number, trial in enumerate(tqdm(trial_set)):
-                bsl_trial = bsl_psth[:, trials == trial, :]
-                mean_fr = np.mean(np.sum(bsl_trial, axis=2), axis=1) / ((bsl_current[1] - bsl_current[0]))
+                if baseline:
+                    bsl_trial = bsl_psth[:, trials == trial, :]
+                    mean_fr = np.mean(np.sum(bsl_trial, axis=2), axis=1) / ((bsl_current[1] - bsl_current[0]))
 
                 fr_trial = fr_psth[:, trials == trial, :] / time_bin_current
                 if mode == "raw":
