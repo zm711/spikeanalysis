@@ -155,6 +155,7 @@ def test_save_qc_parameters(spikes, tmp_path):
     spikes._isolation_threshold = 10
     spikes._rpv = 0.02
     spikes._sil_threshold = 0.4
+    spikes._amp_cutoff = 0.98
     spikes.save_qc_parameters()
     have_json = False
 
@@ -277,21 +278,32 @@ def test_qc_preprocessing(spikes, tmp_path):
     file_path = spikes._file_path
     spikes._file_path = spikes._file_path / tmp_path
     os.chdir(spikes._file_path)
-    id = np.array([10, 30, 20])
+    ids = np.array([10, 30, 20])
     sil = np.array([0.1, 0.4, 0.5])
     ref = np.array([0.3, 0.001, 0.1])
+    amp = np.array([0.98, 0.98, 0.98])
 
-    np.save("isolation_distances.npy", id)
+    np.save("isolation_distances.npy", ids)
     np.save("silhouette_scores.npy", sil)
     np.save("refractory_period_violations.npy", ref)
+    np.save("amplitude_distribution.npy", amp)
     spikes.CACHING = True
-    spikes.qc_preprocessing(15, 0.02, 0.35)
+    cids = spikes._cids
+    spikes._cids = np.array(
+        [
+            0,
+            1,
+            2,
+        ]
+    )
+    spikes.qc_preprocessing(15, 0.02, 0.35, 0.97)
 
     assert isinstance(spikes._qc_threshold, np.ndarray)
 
     assert spikes._qc_threshold[0] == False
     assert spikes._qc_threshold[1] == True
     assert spikes._qc_threshold[2] == False
+    spikes._cids = cids
     spikes._file_path = file_path
     os.chdir(file_path)
 
@@ -342,3 +354,25 @@ def test_load_waveforms(spikes, tmp_path):
 
     spikes._file_path = file_path
     os.chdir(spikes._file_path)
+
+
+def test_get_amplitudes(spikes):
+    samples = np.random.normal(loc=5.0, scale=1, size=(82))
+    samples2 = samples * 50
+
+    large_std = samples
+    large_std2 = samples * 1000
+    waveforms = np.zeros((2, 1000, 4, 82))
+    waveforms[0, :, 2, :] = large_std
+    waveforms[0, :40, 2, :] = large_std2
+    waveforms[1, :, 1, :] = samples
+    waveforms[1, ::2, 1, :] = samples2
+
+    spikes.waveforms = waveforms
+    spikes.get_amplitudes()
+    assert len(spikes.amplitude_index) == 2, "function failed"
+    print(spikes.amplitude_index)
+
+    assert spikes.amplitude_index[1] == 1.0
+
+    assert spikes.amplitude_index[0] < spikes.amplitude_index[1]
