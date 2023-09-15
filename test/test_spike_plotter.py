@@ -76,4 +76,4 @@ def test_sm_fr_sm_time_ms():
 
     with pytest.raises(AssertionError):
         plotter = SpikePlotter(mocked_sa)
-        plotter.plot_sm_fr(window=[1, 1], sm_time_ms=[1, 1, 1])
+        plotter.plot_sm_fr(window=[1, 1], time_bin_ms=1, sm_time_ms=[1, 1, 1])

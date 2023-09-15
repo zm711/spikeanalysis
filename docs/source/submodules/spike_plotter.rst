@@ -38,6 +38,15 @@ To initialize with dataset:
 
     plotter = SpikePlotter(analysis=spiketrain, **{"figsize": (20,16)})
 
+
+If at any time the user would like to change the plotting kwargs used they can use the :code:`set_kwargs()` function to change.
+
+.. code-block:: python
+
+    plotter.set_kwargs(**{'figsize': (10,8)})
+
+
+
 Using the :code:`SpikePlotter` Class
 ------------------------------------
 
@@ -46,8 +55,15 @@ Once the class is initialized various plotting fuctions can be used: :code:`plot
 own section below.
 
 
-Plotting Z scores
+Plotting Heatmaps
 -----------------
+
+Heat maps can be plotted for z scores or raw firing rate data. These use common parameters including :code:`sorting_index`, :code:`fig_size`.
+They also have an optional return value of :code:`ordered_cluster_ids` which returns the :code:`cluster_ids` organized based on how they were
+plotting for use with other code. This is controlled with the flag :code:`indices`.
+
+Plotting Z scores
+^^^^^^^^^^^^^^^^^
 
 Two functions are provided to generate z score heatmaps: :code:`plot_zscores` and :code:`plot_z_scores_ind`. First :code:`plot_zscores` switches
 the default :code:`figsize` to (24,10) because it separates data by trial groupings. This requires a long, but not tall figure. It also
@@ -69,6 +85,24 @@ or to see individually (with z bar example)
 .. code-block:: python
 
     plotter.plot_zscores_ind(z_bar = [-15,15])
+
+
+Plotting Raw Firing Rate heatmap
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In a similar vein a heatmap of raw firing rates can be plotted with :code:`plot_raw_firing()`. It uses the exact same parameters as above, :code:`sorting_index`, :code:`bar`
+
+.. code-block:: python
+
+    plotter.plot_raw_firing(bar=[-5, 10])
+
+And an example return values:
+
+.. code-block:: python
+
+    ordered_cluster_ids = plotter.plot_raw_firing(bar=[-5, 10], sorting_index = 1, indices = True)
+
+
 
 Plotting Raster plots
 ---------------------
