@@ -655,7 +655,7 @@ class SpikePlotter(PlotterBase):
 
         for key, value in stim_dict.items():
             stim_lengths[key] = np.mean(
-                np.array(self.data.digital_events[value]["lengths"]) / self.data._sampling_rate
+                np.array(self.data.events[value]["lengths"]) / self.data._sampling_rate
             )
         return stim_lengths
 
