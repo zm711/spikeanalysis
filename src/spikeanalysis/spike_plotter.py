@@ -651,26 +651,12 @@ class SpikePlotter(PlotterBase):
         """
 
         stim_lengths = {}
-        try:
-            stim_dict = self.data._get_key_for_stim()
+        stim_dict = self.data._get_key_for_stim()
 
-            for key, value in stim_dict.items():
-                stim_lengths[key] = np.mean(
-                    np.array(self.data.digital_events[value]["lengths"]) / self.data._sampling_rate
-                )
-            self.HAVE_DIGITAL = True
-        except AttributeError:
-            self.HAVE_DIGITAL = False
-
-        try:
-            for key in self.data.dig_analog_events.keys():
-                stim_lengths[self.data.dig_analog_events[key]["stim"]] = np.mean(
-                    np.array(self.data.dig_analog_events[key]["lengths"]) / self.data._sampling_rate
-                )
-            self.HAVE_ANALOG = True
-        except AttributeError:
-            self.HAVE_ANALOG = False
-
+        for key, value in stim_dict.items():
+            stim_lengths[key] = np.mean(
+                np.array(self.data.digital_events[value]["lengths"]) / self.data._sampling_rate
+            )
         return stim_lengths
 
     def _get_event_lengths_all(self) -> dict:
