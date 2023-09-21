@@ -682,48 +682,19 @@ class SpikePlotter(PlotterBase):
         stim_lengths: dict
             dictionary of stimulus lengths on a per event basis"""
         stim_lengths = {}
-        try:
-            stim_dict = self.data._get_key_for_stim()
+        stim_dict = self.data._get_key_for_stim()
 
-            for key, value in stim_dict.items():
-                stim_lengths[key] = np.array(self.data.digital_events[value]["lengths"]) / self.data._sampling_rate
-
-            self.HAVE_DIGITAL = True
-        except AttributeError:
-            self.HAVE_DIGITAL = False
-
-        try:
-            for key in self.data.dig_analog_events.keys():
-                stim_lengths[self.data.dig_analog_events[key]["stim"]] = (
-                    np.array(self.data.dig_analog_events[key]["lengths"]) / self.data._sampling_rate
-                )
-
-            self.HAVE_ANALOG = True
-        except AttributeError:
-            self.HAVE_ANALOG = False
-
+        for key, value in stim_dict.items():
+            stim_lengths[key] = np.array(self.data.events[value]["lengths"]) / self.data._sampling_rate
+            
         return stim_lengths
 
     def _get_trial_groups(self) -> dict:
         stim_trial_groups = {}
-        try:
-            stim_dict = self.data._get_key_for_stim()
+        stim_dict = self.data._get_key_for_stim()
 
-            for key, value in stim_dict.items():
-                stim_trial_groups[key] = np.array(self.data.digital_events[value]["trial_groups"])
-            self.HAVE_DIGITAL = True
-        except AttributeError:
-            self.HAVE_DIGITAL = False
-
-        try:
-            for key in self.data.dig_analog_events.keys():
-                stim_trial_groups[self.data.dig_analog_events[key]["stim"]] = np.array(
-                    self.data.dig_analog_events[key]["trial_groups"]
-                )
-
-            self.HAVE_ANALOG = True
-        except AttributeError:
-            self.HAVE_ANALOG = False
+        for key, value in stim_dict.items():
+            stim_trial_groups[key] = np.array(self.data.events[value]["trial_groups"])
 
         return stim_trial_groups
 
