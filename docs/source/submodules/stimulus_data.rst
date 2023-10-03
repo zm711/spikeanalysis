@@ -92,9 +92,9 @@ trial groups can be set with a utility function. :code:`set_trial_groups`, which
 a key of the Intan channel and a value of the desired trial groups as an :code:`np.array`. Since the channel names are not always easy to know
 they can be returned using :code:`get_stimulus_channels`. Finally stimulus' should be named with :code:`set_stimulus_name`.
 
-.. code:-block:: python
+.. code-block:: python
 
-    stim_dict = stim.get_stimluus_channels()
+    stim_dict = stim.get_stimulus_channels()
     stim.set_trial_groups(trial_dictionary=trial_dictionary) # dict as explained above
     sitm.set_stimulus_names(stim_names = name_dictionary) # same keys with str values
 
@@ -107,6 +107,17 @@ in the case of optogenetic trains rather than looking at :code:`events`, :code:`
 :code:`trains` into the :code:`events`. To do this a :code:`channel_name`, a :code:`stim_freq` (frequency of stimulus) and 
 :code:`stim_time_secs` (length of the train) must be given.
 
+
+Deleting Accidental events
+--------------------------
+
+In the case of an accidental event (for example turning on a TTL signal for just a moment accidental) one can use the :code:`delete_events()`
+function. Either one :code:`del_index` is given or a list of indices to delete. This means that if event "25" was a mistaken signal one could
+do the following:
+
+.. code-block:: python
+
+    stim.delete_events(del_index=24, digital=True, digital_channel="DIGITAL-IN-01") #python is 0 based so 25th event is 24 index
 
 Saving files for easy loading
 -----------------------------
@@ -148,5 +159,5 @@ And remember to :code:`save_events`.
     stim = StimulusData(file_path='home/myawesomedata')
     stim.run_all(stim_length_seconds=10, stim_name=['ana1'])
     stim.set_trial_groups(trial_dictionary=my_dictionary)
-    stim.set_stimulus_names(stim_names=my_name_dictionary)
+    stim.set_stimulus_name(stim_names=my_name_dictionary)
     stim.save_events()

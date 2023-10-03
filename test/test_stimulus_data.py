@@ -212,7 +212,7 @@ def test_final_digital_data(stim):
     stim.get_final_digital_data()
     assert np.shape(stim.digital_data) == (1, 62080)
     assert stim.digital_data[0, -1] == 0.0
-    assert stim.dig_in_channels[0]["native_channel_name"] == "DIGITAL-IN-01"
+    assert stim.dig_in_channels[0] == 1
 
 
 def test_final_digital_data_failure(stim):
@@ -305,16 +305,12 @@ def test_set_stimulus_name(stim):
     assert stim.digital_events["DIGITAL-IN-01"]["stim"] == "TEST"
 
 
-def test_read_intan_header(stim):
-    file_name = stim._filename
-
-    fid = open(file_name, "rb")
-    header = stim._read_header(fid)
-    assert isinstance(header, dict)
-    print(header.keys())
-    assert header["version"] == {"major": 3, "minor": 2}
-    assert header["sample_rate"] == 3000.0
-    assert header["num_samples_per_data_block"] == 128
+def test_delete_events(stim):
+    stim.get_raw_digital_data()
+    stim.get_final_digital_data()
+    stim.generate_digital_events()
+    stim.delete_events(del_index=1, channel_name="DIGITAL-IN-01")
+    assert len(stim.digital_events["DIGITAL-IN-01"]["events"]) == 1
 
 
 def test_run_all(stim):

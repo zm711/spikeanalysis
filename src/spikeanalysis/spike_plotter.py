@@ -654,9 +654,7 @@ class SpikePlotter(PlotterBase):
         stim_dict = self.data._get_key_for_stim()
 
         for key, value in stim_dict.items():
-            stim_lengths[key] = np.mean(
-                np.array(self.data.events[value]["lengths"]) / self.data._sampling_rate
-            )
+            stim_lengths[key] = np.mean(np.array(self.data.events[value]["lengths"]) / self.data._sampling_rate)
         return stim_lengths
 
     def _get_event_lengths_all(self) -> dict:
@@ -672,7 +670,7 @@ class SpikePlotter(PlotterBase):
 
         for key, value in stim_dict.items():
             stim_lengths[key] = np.array(self.data.events[value]["lengths"]) / self.data._sampling_rate
-            
+
         return stim_lengths
 
     def _get_trial_groups(self) -> dict:
