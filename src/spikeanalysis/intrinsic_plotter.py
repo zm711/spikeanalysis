@@ -159,7 +159,7 @@ class IntrinsicPlotter(PlotterBase):
                 ax.plot(np.linspace(-40, 41, num=82), current_waves[wave], color="gray")
             ax.plot(np.linspace(-40, 41, num=82), current_mean, color="black")
 
-            ax.set(xlabel="Samples", ylabel="Voltage (μV)")
+            ax.set(xlabel="Samples", ylabel="Arbitary Units")
             plt.tight_layout()
             if self.title:
                 plt.title(self.title)
@@ -246,7 +246,7 @@ class IntrinsicPlotter(PlotterBase):
         ax.set_xlabel("Spike Rate (Hz)")
         ax.set_ylabel("Depth (um)")
         plt.figure(dpi=self.dpi)
-        ax.title("depth by firing rate")
+        plt.title("depth by firing rate")
         plt.show()
 
     def plot_cdf(self, sp: SpikeData):
@@ -281,7 +281,7 @@ class IntrinsicPlotter(PlotterBase):
         pdfs, cdfs = self._compute_cdf_pdf(spike_amplitudes, spike_depths, amp_bins, depth_bins, recording_duration)
 
         final_depths = ["%.1f" % float(x) for x in depth_bins[1:]]
-        final_amps = ["%.2f" % float(x for x in amp_bins[1:])]
+        final_amps = ["%.2f" % float(x) for x in amp_bins[1:]]
 
         pdf_df = pd.DataFrame(pdfs, columns=final_amps, index=final_depths)
         self._plot_cdf_pdf(pdf_df)
