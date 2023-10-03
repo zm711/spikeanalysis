@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 import os
 from .utils import NumpyEncoder
@@ -302,23 +303,18 @@ class StimulusData:
         except TypeError:
             raise Exception("There is no digital data present")
 
-        fid = open(self._filename, "rb")
-        intan_header = self._read_header(fid)
-        fid.close()
-        dig_in_channels = intan_header["board_dig_in_channels"]
-        self.intan = intan_header
-
-        values = np.zeros((len(dig_in_channels), len(self._raw_digital_data)))
-        for value in range(len(dig_in_channels)):
-            values[value, :] = np.not_equal(  # this operation comes from the python Intan code
+        values = np.zeros((16, len(self._raw_digital_data)))  # 16 digital-in for intan
+        for value in range(1, 17):
+            values[value-1, :] = np.not_equal(  # this operation comes from the python Intan code
                 np.bitwise_and(
                     self._raw_digital_data,
-                    (1 << dig_in_channels[value]["native_order"]),
+                    (1 << value),
                 ),
                 0,
             )
-        self.digital_data = values
-        self.dig_in_channels = dig_in_channels
+        
+        self.dig_in_channels = np.nonzero(np.sum(values, axis=1))[0]+1
+        self.digital_data = values[np.nonzero(np.sum(values, axis=1))[0]]
 
     def generate_digital_events(self):
         assert self.digital_data is not None, "There is no final digital data, run `get_final_digital_data` first"
@@ -326,17 +322,19 @@ class StimulusData:
         self.digital_events = {}
         self.digital_channels = []
         for idx, row in enumerate(tqdm(self.digital_data)):
-            self.digital_events[self.dig_in_channels[idx]["native_channel_name"]] = {}
-            events, lengths = self._calculate_events(self.digital_data[idx])
-            self.digital_events[self.dig_in_channels[idx]["native_channel_name"]]["events"] = events
-            self.digital_events[self.dig_in_channels[idx]["native_channel_name"]]["lengths"] = lengths
-            self.digital_events[self.dig_in_channels[idx]["native_channel_name"]]["trial_groups"] = np.ones(
-                (len(events))
-            )
-            if len(events) == 0:
-                del self.digital_events[self.dig_in_channels[idx]["native_channel_name"]]
+            if idx < 10:
+                title = "DIGITAL-IN-0"
             else:
-                self.digital_channels.append(self.dig_in_channels[idx]["native_channel_name"])
+                title = "DIGITAL-IN-"
+            self.digital_events[title + str(self.dig_in_channels[idx])] = {}
+            events, lengths = self._calculate_events(self.digital_data[idx])
+            self.digital_events[title + str(self.dig_in_channels[idx])]["events"] = events
+            self.digital_events[title + str(self.dig_in_channels[idx])]["lengths"] = lengths
+            self.digital_events[title + str(self.dig_in_channels[idx])]["trial_groups"] = np.ones((len(events)))
+            if len(events) == 0:
+                del self.digital_events[title + str(self.dig_in_channels[idx])]
+            else:
+                self.digital_channels.append(title + str(self.dig_in_channels[idx]))
 
     def get_stimulus_channels(self) -> dict:
         """
@@ -387,6 +385,11 @@ class StimulusData:
         """
         try:
             for channel in trial_dictionary.keys():
+                trial_groups = self.digital_events[channel]["trial_groups"]
+                assert len(trial_groups) == len(
+                    trial_dictionary[channel]
+                ), f"for {channel} you have {len(trial_groups)} trial groups, \
+                                                                            but you put in {len(trial_dictionary[channel])} trial groups"
                 self.digital_events[channel]["trial_groups"] = trial_dictionary[channel]
         except KeyError:
             raise Exception(
@@ -468,6 +471,49 @@ class StimulusData:
         except AttributeError:
             print("No analog events to save")
 
+    def delete_events(
+        self,
+        del_index: int | list[int],
+        digital: bool = True,
+        channel_name: Optional[str] = None,
+        channel_index: Optional[int] = None,
+    ):
+        """
+        Function for deleting a spurious event, eg, an accident trigger event
+
+        Parameters
+        ----------
+        digital: bool, default: True
+            Whether to delete digital or analog events
+        channel_name: str | None, default: None
+            the channel name of a digital signal to clean up, must be given if digital=True
+        channel_index: int | None, default: None
+            the channel index of an analog event to delete, must be given if digital=False
+        del_index: int | None, default: None
+            the index of the event which is to be delete
+        """
+
+        del_index = np.array(del_index)
+        if digital:
+            assert channel_name is not None, "must give channel_name if removing a digital event"
+            data = self.digital_events
+            key = channel_name
+        else:
+            assert channel_index is not None, " must give channel_index if removing an analog event"
+            data = self.dig_analog_events
+            key = str(channel_index)
+
+        data_to_clean = data[key]
+
+        for keys in ["events", "lengths", "trial_groups"]:
+            assert np.max(del_index) < len(data_to_clean[keys])
+            data_to_clean[keys] = np.delete(data_to_clean[keys], del_index)
+
+        if digital:
+            self.digital_events[key] = data_to_clean
+        else:
+            self.dig_analog_events[key] = data_to_clean
+
     def _intan_neo_read_no_dig(self, reader: neo.rawio.IntanRawIO, time_slice=(None, None)) -> np.array:
         """
         Utility function that hacks the Neo memmap structure to be able to read
@@ -538,217 +584,3 @@ class StimulusData:
         lengths = offset - onset
 
         return onset, lengths
-
-    def _read_header(self, fid) -> dict:
-        """
-        The official Intan reader header function with edits. This function is needed
-        until Neo allows access to digital information in their IntanRawIO class
-
-        Parameters
-        ----------
-        fid : file id
-            id of the rhd file
-
-
-        Returns
-        -------
-        header: dict
-            A dictionary of all the channel information of the rhd file
-
-        """
-        # Michael Gibson 23 APRIL 2015
-        # Adrian Foy Sep 2018
-        import struct
-
-        (magic_number,) = struct.unpack("<I", fid.read(4))
-        if magic_number != int("c6912702", 16):
-            raise Exception("Unrecognized file type.")
-
-        header = {}
-        version = {}
-        (version["major"], version["minor"]) = struct.unpack("<hh", fid.read(4))
-        header["version"] = version
-
-        freq = {}
-
-        # Read information of sampling rate and amplifier frequency settings.
-        (header["sample_rate"],) = struct.unpack("<f", fid.read(4))
-        (
-            freq["dsp_enabled"],
-            freq["actual_dsp_cutoff_frequency"],
-            freq["actual_lower_bandwidth"],
-            freq["actual_upper_bandwidth"],
-            freq["desired_dsp_cutoff_frequency"],
-            freq["desired_lower_bandwidth"],
-            freq["desired_upper_bandwidth"],
-        ) = struct.unpack("<hffffff", fid.read(26))
-
-        # This tells us if a software 50/60 Hz notch filter was enabled during
-        # the data acquisition.
-        (notch_filter_mode,) = struct.unpack("<h", fid.read(2))
-        header["notch_filter_frequency"] = 0
-        if notch_filter_mode == 1:
-            header["notch_filter_frequency"] = 50
-        elif notch_filter_mode == 2:
-            header["notch_filter_frequency"] = 60
-        freq["notch_filter_frequency"] = header["notch_filter_frequency"]
-
-        (
-            freq["desired_impedance_test_frequency"],
-            freq["actual_impedance_test_frequency"],
-        ) = struct.unpack("<ff", fid.read(8))
-
-        note1 = self._read_qstring(fid)
-        note2 = self._read_qstring(fid)
-        note3 = self._read_qstring(fid)
-        header["notes"] = {"note1": note1, "note2": note2, "note3": note3}
-
-        # If data file is from GUI v1.1 or later, see if temperature sensor data was saved.
-        header["num_temp_sensor_channels"] = 0
-        if (version["major"] == 1 and version["minor"] >= 1) or (version["major"] > 1):
-            (header["num_temp_sensor_channels"],) = struct.unpack("<h", fid.read(2))
-
-        # If data file is from GUI v1.3 or later, load eval board mode.
-        header["eval_board_mode"] = 0
-        if ((version["major"] == 1) and (version["minor"] >= 3)) or (version["major"] > 1):
-            (header["eval_board_mode"],) = struct.unpack("<h", fid.read(2))
-
-        header["num_samples_per_data_block"] = 60
-        # If data file is from v2.0 or later (Intan Recording Controller), load name of digital reference channel
-        if version["major"] > 1:
-            header["reference_channel"] = self._read_qstring(fid)
-            header["num_samples_per_data_block"] = 128
-
-        # Place frequency-related information in data structure. (Note: much of this structure is set above)
-        freq["amplifier_sample_rate"] = header["sample_rate"]
-        freq["aux_input_sample_rate"] = header["sample_rate"] / 4
-        freq["supply_voltage_sample_rate"] = header["sample_rate"] / header["num_samples_per_data_block"]
-        freq["board_adc_sample_rate"] = header["sample_rate"]
-        freq["board_dig_in_sample_rate"] = header["sample_rate"]
-
-        header["frequency_parameters"] = freq
-
-        # Create structure arrays for each type of data channel.
-        header["spike_triggers"] = []
-        header["amplifier_channels"] = []
-        header["aux_input_channels"] = []
-        header["supply_voltage_channels"] = []
-        header["board_adc_channels"] = []
-        header["board_dig_in_channels"] = []
-        header["board_dig_out_channels"] = []
-
-        # Read signal summary from data file header.
-
-        (number_of_signal_groups,) = struct.unpack("<h", fid.read(2))
-        # print("n signal groups {}".format(number_of_signal_groups))
-
-        for signal_group in tqdm(range(1, number_of_signal_groups + 1)):
-            signal_group_name = self._read_qstring(fid)
-            signal_group_prefix = self._read_qstring(fid)
-            (
-                signal_group_enabled,
-                signal_group_num_channels,
-                signal_group_num_amp_channels,
-            ) = struct.unpack("<hhh", fid.read(6))
-
-            if (signal_group_num_channels > 0) and (signal_group_enabled > 0):
-                for signal_channel in range(0, signal_group_num_channels):
-                    new_channel = {
-                        "port_name": signal_group_name,
-                        "port_prefix": signal_group_prefix,
-                        "port_number": signal_group,
-                    }
-                    new_channel["native_channel_name"] = self._read_qstring(fid)
-                    new_channel["custom_channel_name"] = self._read_qstring(fid)
-                    (
-                        new_channel["native_order"],
-                        new_channel["custom_order"],
-                        signal_type,
-                        channel_enabled,
-                        new_channel["chip_channel"],
-                        new_channel["board_stream"],
-                    ) = struct.unpack("<hhhhhh", fid.read(12))
-                    new_trigger_channel = {}
-                    (
-                        new_trigger_channel["voltage_trigger_mode"],
-                        new_trigger_channel["voltage_threshold"],
-                        new_trigger_channel["digital_trigger_channel"],
-                        new_trigger_channel["digital_edge_polarity"],
-                    ) = struct.unpack("<hhhh", fid.read(8))
-                    (
-                        new_channel["electrode_impedance_magnitude"],
-                        new_channel["electrode_impedance_phase"],
-                    ) = struct.unpack("<ff", fid.read(8))
-
-                    if channel_enabled:
-                        if signal_type == 0:
-                            header["amplifier_channels"].append(new_channel)
-                            header["spike_triggers"].append(new_trigger_channel)
-                        elif signal_type == 1:
-                            header["aux_input_channels"].append(new_channel)
-                        elif signal_type == 2:
-                            header["supply_voltage_channels"].append(new_channel)
-                        elif signal_type == 3:
-                            header["board_adc_channels"].append(new_channel)
-                        elif signal_type == 4:
-                            header["board_dig_in_channels"].append(new_channel)
-                        elif signal_type == 5:
-                            header["board_dig_out_channels"].append(new_channel)
-                        else:
-                            raise Exception("Unknown channel type.")
-
-        # Summarize contents of data file.
-        header["num_amplifier_channels"] = len(header["amplifier_channels"])
-        header["num_aux_input_channels"] = len(header["aux_input_channels"])
-        header["num_supply_voltage_channels"] = len(header["supply_voltage_channels"])
-        header["num_board_adc_channels"] = len(header["board_adc_channels"])
-        header["num_board_dig_in_channels"] = len(header["board_dig_in_channels"])
-        header["num_board_dig_out_channels"] = len(header["board_dig_out_channels"])
-
-        return header
-
-    def _read_qstring(self, fid) -> str:
-        """
-        Utility function from Intan for reading qstrings. Edits from ZM
-
-        Parameters
-        ----------
-        fid : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        str
-           q string returned as string
-
-        """
-        # Michael Gibson 23APRIL2015
-        # ZM some changes
-        """
-        Parameters
-        ----------
-        fid: file id
-        Returns
-        -------
-        a string from the file"""
-        import struct, os
-
-        (length,) = struct.unpack("<I", fid.read(4))
-        if length == int("ffffffff", 16):
-            return ""
-
-        if length > (os.fstat(fid.fileno()).st_size - fid.tell() + 1):
-            print(length)
-            raise Exception("Length too long.")
-
-        # convert length from bytes to 16-bit Unicode words
-        length = int(length / 2)
-
-        data = []
-        for _ in range(0, length):
-            (c,) = struct.unpack("<H", fid.read(2))
-            data.append(c)
-
-        a = "".join([chr(c) for c in data])
-
-        return a

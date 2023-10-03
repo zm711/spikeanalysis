@@ -95,6 +95,8 @@ class SpikeData:
         idthres: float,
         rpv: float,
         sil: float,
+        amp_std: float,
+        amp_cutoff: float,
         recurated: bool = False,
         set_caching: bool = True,
         depth: float = 0,
@@ -113,6 +115,11 @@ class SpikeData:
             the refractory period violation fraction allowed: 0.02 would be 2% violations
         sil: float
             the silhouette score allowed -1 (bad) to 1 (perfect)
+        amp_std: float
+            the std to use for calculating the number of spikes which past that range
+        amp_cutoff: float
+            the cutoff value to use for qc for the amplitudes values, example .98 means 98% fall within
+            amp_std stds of the mean amplitude
         recurated: bool
             If more Phy curation has occurred such that any cached or currently loaded values
             need to be overwritten (True), Default False
@@ -140,10 +147,12 @@ class SpikeData:
             except AttributeError:
                 self.generate_pcs()
                 self.generate_qcmetrics()
-            self.qc_preprocessing(idthres=idthres, rpv=rpv, sil=sil, recurated=recurated)
-            self.set_qc()
+
             self.get_waveforms()
             self.get_waveform_values(depth=depth)
+            self.get_amplitudes(std=amp_std)
+            self.qc_preprocessing(idthres=idthres, rpv=rpv, sil=sil, amp_cutoff=amp_cutoff, recurated=recurated)
+            self.set_qc()
             self._return_to_dir(current_dir)
 
     def denoise_data(self):
