@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional, Union, Literal
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -671,6 +671,10 @@ class SpikePlotter(PlotterBase):
                 plt.show()
 
     def plot_latencies(self):
+        """
+        Function for plotting latencies
+        """
+
         try:
             latency = self.data.latency
         except AttributeError:
@@ -698,7 +702,12 @@ class SpikePlotter(PlotterBase):
                 plt.figure(dpi=self.dpi)
                 plt.show()
 
+
     def plot_isi(self):
+        """
+        Function for plotting ISI distributions
+        """
+
         try:
             raw_isi = self.data.isi_raw
         except AttributeError:
@@ -711,10 +720,73 @@ class SpikePlotter(PlotterBase):
             ax.hist(isi, density=True, bins=bins, color="k")
             ax.set_xlabel("Time (ms)")
             ax.set_ylabel("Counts")
+            self._despine(ax)
             plt.title(f"ISI {cluster}")
             plt.tight_layout()
             plt.figure(dpi=self.dpi)
             plt.show()
+
+
+    def plot_response_trace(self, type: Literal['zscore', 'raw'] = 'zscore', by_neuron: bool = False, by_trial:bool = False, ebar: bool = False, color='black'):
+
+        assert type in ['zscore', 'raw'], 'type of data must be zscore or raw'
+
+        if type == "zscore":
+            data = self.data.z_scores
+            bins = self.data.z_bins
+        elif type == "raw":
+            data = self.data.mean_firing_rate
+            bins = self.data.fr_bins
+
+        for stimulus, response in data.items():
+            current_bins = bins[stimulus]
+            if by_trial and by_neuron:
+                for neuron in range(np.shape(response)[0]):
+                    for trial in range(np.shape(response)[1]):
+                        self._plot_one_trace(current_bins, response[neuron, trial, :], ebars=None, color=color, stim=stimulus)
+            elif by_neuron:
+                for neuron in range(np.shape(response)[0]):
+                    avg_response = np.mean(response[neuron], axis=0)
+                    ebars = np.std(response[neuron], axis=0)
+                    if ebar:
+                        self._plot_one_trace(current_bins, avg_response, ebars=ebars, color=color,stim=stimulus)
+                    else:
+                        self._plot_one_trace(current_bins, avg_response, ebars=None, color=color,stim=stimulus)
+            elif by_trial:
+                for trial in range(np.shape(response)[1]):
+                    avg_response= np.mean(response[:, trial, :], axis=0)
+                    ebars = np.std(response[:, trial, :], axis=0)
+                    if ebar:
+                        self._plot_one_trace(current_bins, avg_response, ebars=ebars, color=color,stim=stimulus)
+                    else:
+                        self._plot_one_trace(current_bins, avg_response, ebars=None, color=color, stim=stimulus)
+            else:
+                avg_response = np.mean(np.mean(response, axis=1), axis=0)
+                if ebar:
+                    self._plot_one_trace(current_bins, avg_response, ebars=ebars, color=color, stim=stimulus)
+                else:
+                    self._plot_one_trace(current_bins, avg_response, ebars=None, color=color,stim=stimulus)
+
+
+
+    
+    def _plot_one_trace(self, bins, trace, ebars=None, color='black', stim=''):
+
+        fig, ax = plt.subplots(figsize=self.figsize)
+        ax.plot(bins, trace, color=color)
+        if ebars is not None:
+            ax.plot(bins, trace+ebars, color=color)
+            ax.plot(bins, trace-ebars, color=color)
+            ax.fill_between(bins, trace-ebars, trace+ebars, color=color, alpha=0.02)
+
+        ax.set_xlabel("Time (s)")
+        ax.set_ylabel(self.y_axis)
+        self._despine(ax)
+        plt.title(f"trace {stim}")
+        plt.tight_layout()
+        plt.figure(dpi=self.dpi)
+        plt.show()
+
 
     def _get_event_lengths(self) -> dict:
         """
