@@ -79,6 +79,7 @@ class SpikePlotter(PlotterBase):
         sorting_index: Optional[int] = None,
         z_bar: Optional[list[int]] = None,
         indices: bool = False,
+        show_stim: bool = True,
     ) -> Optional[np.array]:
         """
         Function to plot heatmaps of z scored firing rate. All trial groups are plotted on the same axes.
@@ -96,6 +97,8 @@ class SpikePlotter(PlotterBase):
             If given a list with min z score for the cbar at index 0 and the max at index 1. Overrides cbar generation
         indices: bool, default False
             If true will return the cluster ids sorted in the order they appear in the graph
+        show_stim: bool, default True
+            Show lines where stim onset and offset are
 
         Returns
         -------
@@ -107,7 +110,7 @@ class SpikePlotter(PlotterBase):
             self.cmap = "vlag"
 
         index_array = self._plot_scores(
-            data="zscore", figsize=figsize, sorting_index=sorting_index, bar=z_bar, indices=indices
+            data="zscore", figsize=figsize, sorting_index=sorting_index, bar=z_bar, indices=indices, show_stim=show_stim,
         )
         if indices:
             return index_array
@@ -118,6 +121,7 @@ class SpikePlotter(PlotterBase):
         sorting_index: Optional[int] = None,
         bar: Optional[list[int]] = None,
         indices: bool = False,
+        show_stim: bool = True,
     ) -> Optional[np.array]:
         """
         Function to plot heatmaps of raw firing rate data. Can be baseline subtracted, raw or smoothed
@@ -136,6 +140,8 @@ class SpikePlotter(PlotterBase):
             If given a list with min firing rate for the cbar at index 0 and the max at index 1. Overrides cbar generation
         indices: bool, default False
             If true will return the cluster ids sorted in the order they appear in the graph
+        show_stim: bool, default True
+            Show lines where stim onset and offset are
 
         Returns
         -------
@@ -147,7 +153,7 @@ class SpikePlotter(PlotterBase):
             self.cmap = "viridis"
 
         index_array = self._plot_scores(
-            data="raw-data", figsize=figsize, sorting_index=sorting_index, bar=bar, indices=indices
+            data="raw-data", figsize=figsize, sorting_index=sorting_index, bar=bar, indices=indices, show_stim=show_stim
         )
 
         if indices:
@@ -160,6 +166,7 @@ class SpikePlotter(PlotterBase):
         sorting_index: Optional[int] = None,
         bar: Optional[list[int]] = None,
         indices: bool = False,
+        show_stim: bool = True
     ) -> Optional[np.array]:
         """
         Function to plot heatmaps of firing rate data
@@ -176,6 +183,8 @@ class SpikePlotter(PlotterBase):
             If given a list with min for the cbar at index 0 and the max at index 1. Overrides cbar generation
         indices: bool, default False
             If true will return the cluster ids sorted in the order they appear in the graph
+        show_stim: bool, default True
+            Show lines where stim onset and offset are
 
         Returns
         -------
@@ -216,8 +225,11 @@ class SpikePlotter(PlotterBase):
             sub_zscores = z_scores[stimulus]
 
             columns = np.shape(sub_zscores)[1]  # trial groups
-
-            z_window = self.data.z_windows[stimulus]
+            
+            if data=="zscore":
+                z_window = self.data.z_windows[stimulus]
+            else:
+                z_window = self.data.fr_windows[stimulus]
             length = stim_lengths[stimulus]
 
             sub_zscores = sub_zscores[:, :, np.logical_and(bins >= z_window[0], bins <= z_window[1])]
@@ -271,22 +283,23 @@ class SpikePlotter(PlotterBase):
                 sub_ax.set_xticklabels([round(bins[i * bins_length], 4) if i < 7 else z_window[1] for i in range(7)])
                 if idx == 0:
                     sub_ax.set_ylabel(y_axis, fontsize="small")
-                sub_ax.axvline(
-                    zero_point,
-                    0,
-                    np.shape(sorted_z_scores)[0],
-                    color="black",
-                    linestyle=":",
-                    linewidth=0.5,
-                )
-                sub_ax.axvline(
-                    end_point,
-                    0,
-                    np.shape(sorted_z_scores)[0],
-                    color="black",
-                    linestyle=":",
-                    linewidth=0.5,
-                )
+                if show_stim:
+                    sub_ax.axvline(
+                        zero_point,
+                        0,
+                        np.shape(sorted_z_scores)[0],
+                        color="black",
+                        linestyle=":",
+                        linewidth=0.5,
+                    )
+                    sub_ax.axvline(
+                        end_point,
+                        0,
+                        np.shape(sorted_z_scores)[0],
+                        color="black",
+                        linestyle=":",
+                        linewidth=0.5,
+                    )
                 self._despine(sub_ax)
                 sub_ax.spines["bottom"].set_visible(False)
                 sub_ax.spines["left"].set_visible(False)
@@ -311,7 +324,7 @@ class SpikePlotter(PlotterBase):
         if indices:
             return self.data.cluster_ids[z_score_sorting_index]
 
-    def plot_raster(self, window: Union[list, list[list]]):
+    def plot_raster(self, window: Union[list, list[list]], show_stim: bool =True):
         """
         Function to plot rasters
 
@@ -320,6 +333,8 @@ class SpikePlotter(PlotterBase):
         window : Union[list, list[list]]
             The window [start, stop] to plot the raster over. Either one global list or nested list
             of [start, stop] format
+        show_stim: bool, default True
+            Show lines where stim onset and offset are
         """
         from .analysis_utils import histogram_functions as hf
 
@@ -380,8 +395,9 @@ class SpikePlotter(PlotterBase):
 
                 fig, ax = plt.subplots(figsize=self.figsize)
                 ax.plot(raster_x, raster_y, color="black")
-                ax.plot([0, 0], [0, np.nanmax(raster_y) + 1], color="red", linestyle=":")
-                ax.plot([events, events], [0, np.nanmax(raster_y) + 1], color="red", linestyle=":")
+                if show_stim:
+                    ax.plot([0, 0], [0, np.nanmax(raster_y) + 1], color="red", linestyle=":")
+                    ax.plot([events, events], [0, np.nanmax(raster_y) + 1], color="red", linestyle=":")
 
                 ax.set(xlabel=self.x_axis, ylabel=ylabel)
 
@@ -401,6 +417,7 @@ class SpikePlotter(PlotterBase):
         window: Union[list, list[list]],
         time_bin_ms: Union[float, list[float]],
         sm_time_ms: Union[float, list[float]],
+        show_stim: bool = True,
     ):
         """
         Function to plot smoothed firing rates
@@ -415,6 +432,8 @@ class SpikePlotter(PlotterBase):
         sm_time_ms : Union[float, list[float]]
             Smoothing time in milliseconds. Either one global smoothing time or a list of smoothing time stds for each
             stimulus
+        show_stim: bool, default True
+            Show lines where stim onset and offset are
 
         """
         import matplotlib as mpl
@@ -503,18 +522,19 @@ class SpikePlotter(PlotterBase):
                     ax.plot(bins, err_minus, color=cmap(norm(value)), linewidth=0.25)
                     ax.plot(bins, err_plus, color=cmap(norm(value)), linewidth=0.25)
                     ax.fill_between(bins, err_minus, err_plus, color=cmap(norm(value)), alpha=0.2)
-                    ax.plot(
-                        [0, 0],
-                        [min_value, np.max(mean_smoothed_psth) + np.max(err_plus) + 1],
-                        color="red",
-                        linestyle=":",
-                    )
-                    ax.plot(
-                        [event_len[value], event_len[value]],
-                        [min_value, np.max(mean_smoothed_psth) + np.max(err_plus) + 1],
-                        color=cmap(norm(value)),
-                        linestyle=":",
-                    )
+                    if show_stim:
+                        ax.plot(
+                            [0, 0],
+                            [min_value, np.max(mean_smoothed_psth) + np.max(err_plus) + 1],
+                            color="red",
+                            linestyle=":",
+                        )
+                        ax.plot(
+                            [event_len[value], event_len[value]],
+                            [min_value, np.max(mean_smoothed_psth) + np.max(err_plus) + 1],
+                            color=cmap(norm(value)),
+                            linestyle=":",
+                        )
 
                     ax.set(ylim=(0, np.max(mean_smoothed_psth) + np.max(stderr) + 1))
                     ax.set_ylabel(ylabel)
