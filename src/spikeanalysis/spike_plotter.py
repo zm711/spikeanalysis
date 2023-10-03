@@ -684,7 +684,7 @@ class SpikePlotter(PlotterBase):
 
             for neuron in range(np.shape(stim_lats)[0]):
                 lat_by_neuron = stim_lats[neuron]
-                shuf_bsl_neuron = shuffled_lats[neuron].flatten()
+                shufl_bsl_neuron = shuffled_lats[neuron].flatten()
                 lat_by_neuron = lat_by_neuron[~np.isnan(lat_by_neuron)]
                 shufl_bsl_neuron = shufl_bsl_neuron[~np.isnan(shufl_bsl_neuron)]
                 fig, ax = plt.subplots(figsize=self.figsize)
