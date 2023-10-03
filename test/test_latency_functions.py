@@ -49,9 +49,13 @@ def test_latency_median():
         ]
     )
     test_array = np.expand_dims(test_array, axis=0)
-    lat = lf.latency_median(test_array, time_bin_size=1)
+    lat = lf.latency_median(test_array, time_bin_size=0.1)
     print(lat)
-    assert lat == [3.0]
+    assert round(lat[0], 2) == 0.30
+
+    # nan test
+    lat = lf.latency_median(test_array, time_bin_size=1)
+    assert np.isnan(lat)
 
 
 def test_latency_nan():

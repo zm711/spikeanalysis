@@ -16,14 +16,14 @@ def latency_core_stats(bsl_fr: float, firing_data: np.array, time_bin_size: floa
             )
             if final_prob <= 10e-6:
                 break
-            elif n_bin * time_bin_size >= 0.200:  # past 200 ms is not really a true latency
+            elif n_bin * time_bin_size >= 0.400:  # past 400 ms is not really a true latency
                 n_bin = np.shape(firing_data)[1] - 2
                 break
 
-    if n_bin == np.shape(firing_data)[1] - 2:  # need to go to second last bin
-        latency[trial] = np.nan
-    else:
-        latency[trial] = (n_bin + 1) * time_bin_size
+        if n_bin == np.shape(firing_data)[1] - 2:  # need to go to second last bin
+            latency[trial] = np.nan
+        else:
+            latency[trial] = (n_bin + 1) * time_bin_size
 
     return latency
 
@@ -37,7 +37,7 @@ def latency_median(firing_counts: np.array, time_bin_size: float):
     latency = np.zeros((np.shape(firing_counts)[0]))
     for trial in range(np.shape(firing_counts)[0]):
         min_spike_time = np.nonzero(firing_counts[trial])[0]
-        if len(min_spike_time) == 0:
+        if len(min_spike_time) == 0 or (np.min(min_spike_time) + 1) * time_bin_size > 0.400:
             latency[trial] = np.nan
         else:
             latency[trial] = (np.min(min_spike_time) + 1) * time_bin_size
