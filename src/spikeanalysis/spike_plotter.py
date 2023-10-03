@@ -670,45 +670,44 @@ class SpikePlotter(PlotterBase):
                 plt.figure(dpi=self.dpi)
                 plt.show()
 
-
     def plot_latencies(self):
-
         try:
-            latency =  self.data.latency
+            latency = self.data.latency
         except AttributeError:
-            raise Exception('must run `latencies()` function')
-        
+            raise Exception("must run `latencies()` function")
+
         bin_size = self.data._latency_time_bin
-        bins = np.arange(0, 400+bin_size, bin_size)
+        bins = np.arange(0, 400 + bin_size, bin_size)
         for stimulus, lats in latency.items():
+            stim_lats = lats["latency"]
+            shuffled_lats = lats["latency_shuffled"]
 
-            stim_lats = lats['latency'][~np.isnan(lats['latency'])]
-            shuffled_lats = lats['latency_shuffled'].flatten()
-            shuffled_lats = shuffled_lats[~np.isnan(shuffled_lats)]
-            fig, ax = plt.subplots(figsize=self.figsize)
-            ax.hist(stim_lats, bins=bins, color='r')
-            ax.hist(shuffled_lats, bins=bins, color='k')
-            ax.set_xlabel('Time', fontsize="small")
-            ax.set_ylabel("Counts", fontsize="small")
-            self._despine(ax)
-            plt.tight_layout()
-            plt.figure(dpi=self.dpi)
-            plt.show()
-
+            for neuron in range(np.shape(stim_lats)[0]):
+                lat_by_neuron = stim_lats[neuron]
+                shuf_bsl_neuron = shuffled_lats[neuron].flatten()
+                lat_by_neuron = lat_by_neuron[~np.isnan(lat_by_neuron)]
+                shufl_bsl_neuron = shufl_bsl_neuron[~np.isnan(shufl_bsl_neuron)]
+                fig, ax = plt.subplots(figsize=self.figsize)
+                ax.hist(stim_lats, bins=bins, color="r")
+                ax.hist(shuffled_lats, bins=bins, color="k")
+                ax.set_xlabel("Time", fontsize="small")
+                ax.set_ylabel("Counts", fontsize="small")
+                self._despine(ax)
+                plt.tight_layout()
+                plt.figure(dpi=self.dpi)
+                plt.title(f"{stimulus.title()}: {self.data.cluster_ids[neuron]}")
+                plt.show()
 
     def plot_isi(self):
-
         try:
             raw_isi = self.data.isi_raw
         except AttributeError:
-            raise Exception('must run `get_interspike_intervals()`')
-        
+            raise Exception("must run `get_interspike_intervals()`")
+
         for cluster in raw_isi.keys():
-            isi = raw_isi['isi'] / self.data._sampling_rate
+            isi = raw_isi["isi"] / self.data._sampling_rate
 
         raise NotImplementedError
-
-
 
     def _get_event_lengths(self) -> dict:
         """
