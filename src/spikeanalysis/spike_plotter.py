@@ -699,25 +699,22 @@ class SpikePlotter(PlotterBase):
                 plt.show()
 
     def plot_isi(self):
-        
         try:
             raw_isi = self.data.isi_raw
         except AttributeError:
             raise Exception("must run `get_interspike_intervals()`")
         bins = np.arange(0, 500, 10)
         for cluster in raw_isi.keys():
-            isi = raw_isi['cluster']["isi"] * 1000 / self.data._sampling_rate
+            isi = raw_isi[cluster]["isi"] * 1000 / self.data._sampling_rate
 
             fig, ax = plt.subplots(figsize=self.figsize)
-            ax.hist(isi, density=True, bins=bins, color='k' )
+            ax.hist(isi, density=True, bins=bins, color="k")
             ax.set_xlabel("Time (ms)")
             ax.set_ylabel("Counts")
             plt.title(f"ISI {cluster}")
             plt.tight_layout()
             plt.figure(dpi=self.dpi)
             plt.show()
-
-
 
     def _get_event_lengths(self) -> dict:
         """
