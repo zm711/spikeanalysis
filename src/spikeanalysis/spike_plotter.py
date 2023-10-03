@@ -110,7 +110,12 @@ class SpikePlotter(PlotterBase):
             self.cmap = "vlag"
 
         index_array = self._plot_scores(
-            data="zscore", figsize=figsize, sorting_index=sorting_index, bar=z_bar, indices=indices, show_stim=show_stim,
+            data="zscore",
+            figsize=figsize,
+            sorting_index=sorting_index,
+            bar=z_bar,
+            indices=indices,
+            show_stim=show_stim,
         )
         if indices:
             return index_array
@@ -166,7 +171,7 @@ class SpikePlotter(PlotterBase):
         sorting_index: Optional[int] = None,
         bar: Optional[list[int]] = None,
         indices: bool = False,
-        show_stim: bool = True
+        show_stim: bool = True,
     ) -> Optional[np.array]:
         """
         Function to plot heatmaps of firing rate data
@@ -219,17 +224,19 @@ class SpikePlotter(PlotterBase):
         stim_lengths = self._get_event_lengths()
 
         for stimulus in z_scores.keys():
-            bins = self.data.z_bins[stimulus]
             if len(np.shape(z_scores)) < 3:
                 sub_zscores = np.expand_dims(z_scores[stimulus], axis=1)
             sub_zscores = z_scores[stimulus]
 
             columns = np.shape(sub_zscores)[1]  # trial groups
-            
-            if data=="zscore":
+
+            if data == "zscore":
                 z_window = self.data.z_windows[stimulus]
+                bins = self.data.z_bins[stimulus]
             else:
                 z_window = self.data.fr_windows[stimulus]
+                bins = self.data.fr_bins[stimulus]
+
             length = stim_lengths[stimulus]
 
             sub_zscores = sub_zscores[:, :, np.logical_and(bins >= z_window[0], bins <= z_window[1])]
@@ -324,7 +331,7 @@ class SpikePlotter(PlotterBase):
         if indices:
             return self.data.cluster_ids[z_score_sorting_index]
 
-    def plot_raster(self, window: Union[list, list[list]], show_stim: bool =True):
+    def plot_raster(self, window: Union[list, list[list]], show_stim: bool = True):
         """
         Function to plot rasters
 
