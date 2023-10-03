@@ -459,8 +459,10 @@ class SpikeAnalysis:
         bsl_window : Union[list, list[float]]
             The baseline window for determining baseline firing rate given as sequence of (start, end)
             for all stim or a list of lists with each stimulus having (start, end)
+        time_bin_ms: float
+            Size of new time bins to use.
         num_shuffles : int
-            The number of shuffles to perform for finding the shuffled distribution, default 500
+            The number of shuffles to perform for finding the shuffled distribution, default 300
 
         Returns
         -------
@@ -469,7 +471,7 @@ class SpikeAnalysis:
         """
 
         NUM_STIM = self.NUM_STIM
-
+        self._latency_time_bin = time_bin_ms
         bsl_windows = verify_window_format(window=bsl_window, num_stim=NUM_STIM)
 
         stim_dict = self._get_key_for_stim()
