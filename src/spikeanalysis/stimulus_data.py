@@ -305,15 +305,15 @@ class StimulusData:
 
         values = np.zeros((16, len(self._raw_digital_data)))  # 16 digital-in for intan
         for value in range(1, 17):
-            values[value-1, :] = np.not_equal(  # this operation comes from the python Intan code
+            values[value - 1, :] = np.not_equal(  # this operation comes from the python Intan code
                 np.bitwise_and(
                     self._raw_digital_data,
                     (1 << value),
                 ),
                 0,
             )
-        
-        self.dig_in_channels = np.nonzero(np.sum(values, axis=1))[0]+1
+
+        self.dig_in_channels = np.nonzero(np.sum(values, axis=1))[0] + 1
         self.digital_data = values[np.nonzero(np.sum(values, axis=1))[0]]
 
     def generate_digital_events(self):
