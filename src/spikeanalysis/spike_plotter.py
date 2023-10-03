@@ -688,26 +688,36 @@ class SpikePlotter(PlotterBase):
                 lat_by_neuron = lat_by_neuron[~np.isnan(lat_by_neuron)]
                 shufl_bsl_neuron = shufl_bsl_neuron[~np.isnan(shufl_bsl_neuron)]
                 fig, ax = plt.subplots(figsize=self.figsize)
-                ax.hist(lat_by_neuron, bins=bins, color="r")
-                ax.hist(shufl_bsl_neuron, bins=bins, color="k")
-                ax.set_xlabel("Time", fontsize="small")
+                ax.hist(lat_by_neuron, density=True, bins=bins, color="r", alpha=0.8)
+                ax.hist(shufl_bsl_neuron, density=True, bins=bins, color="k", alpha=0.8)
+                ax.set_xlabel("Time (ms)", fontsize="small")
                 ax.set_ylabel("Counts", fontsize="small")
+                plt.title(f"{stimulus.title()}: {self.data.cluster_ids[neuron]}")
                 self._despine(ax)
                 plt.tight_layout()
                 plt.figure(dpi=self.dpi)
-                plt.title(f"{stimulus.title()}: {self.data.cluster_ids[neuron]}")
                 plt.show()
 
     def plot_isi(self):
+        
         try:
             raw_isi = self.data.isi_raw
         except AttributeError:
             raise Exception("must run `get_interspike_intervals()`")
-
+        bins = np.arange(0, 500, 10)
         for cluster in raw_isi.keys():
-            isi = raw_isi["isi"] / self.data._sampling_rate
+            isi = raw_isi['cluster']["isi"] * 1000 / self.data._sampling_rate
 
-        raise NotImplementedError
+            fig, ax = plt.subplots(figsize=self.figsize)
+            ax.hist(isi, density=True, bins=bins, color='k' )
+            ax.set_xlabel("Time (ms)")
+            ax.set_ylabel("Counts")
+            plt.title(f"ISI {cluster}")
+            plt.tight_layout()
+            plt.figure(dpi=self.dpi)
+            plt.show()
+
+
 
     def _get_event_lengths(self) -> dict:
         """
