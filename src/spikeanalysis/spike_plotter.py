@@ -688,8 +688,8 @@ class SpikePlotter(PlotterBase):
                 lat_by_neuron = lat_by_neuron[~np.isnan(lat_by_neuron)]
                 shufl_bsl_neuron = shufl_bsl_neuron[~np.isnan(shufl_bsl_neuron)]
                 fig, ax = plt.subplots(figsize=self.figsize)
-                ax.hist(stim_lats, bins=bins, color="r")
-                ax.hist(shuffled_lats, bins=bins, color="k")
+                ax.hist(lat_by_neuron, bins=bins, color="r")
+                ax.hist(shufl_bsl_neuron, bins=bins, color="k")
                 ax.set_xlabel("Time", fontsize="small")
                 ax.set_ylabel("Counts", fontsize="small")
                 self._despine(ax)
