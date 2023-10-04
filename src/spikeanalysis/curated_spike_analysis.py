@@ -7,16 +7,17 @@ import numpy as np
 
 from .spike_analysis import SpikeAnalysis
 
+
 def read_responsive_neurons(folder_path) -> dict:
     """
     Function for reading a response profile json file
     and converting into the appropriate dictionary for curation
-    
+
     Parameters
     ----------
     folder_path: str | Path
         The path way to the directory containing the `response_profile.json`
-        
+
     Returns
     -------
     curation: dict
@@ -24,10 +25,11 @@ def read_responsive_neurons(folder_path) -> dict:
     """
 
     import json
+
     file_path = Path(folder_path)
     assert file_path.is_dir(), "please input the directory containing the response_profile json"
 
-    with open(file_path/'response_profile.json', 'r') as read_file:
+    with open(file_path / "response_profile.json", "r") as read_file:
         response_dict = json.load(read_file)
 
     for stim in response_dict.keys():
@@ -48,7 +50,7 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
         ----------
         curation: dict
             The curation dictionary to be used for curated data
-            
+
         """
 
         self.curation = curation
@@ -69,12 +71,11 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
         by_trial: Literal["all"] | bool = False,
         trial_index: Optional[int] = None,
     ):
-
         """Function for loading the current curation
         Parameters
         ----------
         criteria: str | dict
-            
+
         by_stim: bool, default: False
            Whether to analyze data by a particular stimulus
         by_response: bool, default: False
@@ -83,7 +84,7 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
             *****
         trial_index: Optional[int], default: None
             Must be given if by_trial=True, to indicate which specific trial to be used
-            
+
         """
         curation = self.curation
 
@@ -103,7 +104,7 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
                 ), f"by_trial must be 'all' or boolean you entered {by_trial}"
 
                 if by_trial == "all":
-                    if len(sub_curation.shape)==1:
+                    if len(sub_curation.shape) == 1:
                         sub_curation = np.expand_dims(sub_curation, axis=1)
                     mask = np.all(sub_curation, axis=1)
                     self.cluster_ids = self.cluster_ids[mask]
@@ -114,7 +115,7 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
                     self.cluster_ids = self.cluster_ids[mask]
 
             else:
-                if len(sub_curation.shape)==1:
+                if len(sub_curation.shape) == 1:
                     sub_curation = np.expand_dims(sub_curation, axis=1)
                 mask = np.any(sub_curation, axis=1)
                 self.cluster_ids = self.cluster_ids[mask]
@@ -132,7 +133,7 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
             else:
                 mask_array = np.array(mask_list[0])
 
-            if len(mask_array.shape)==1:
+            if len(mask_array.shape) == 1:
                 mask_array = np.expand_dims(mask_array, axis=1)
 
             if by_trial == "all":
@@ -155,7 +156,7 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
             else:
                 mask_array = np.array(mask_list[0])
 
-            if len(mask_array.shape)==1:
+            if len(mask_array.shape) == 1:
                 mask_array = np.expand_dims(mask_array, axis=1)
 
             if by_trial == "all":

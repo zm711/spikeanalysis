@@ -44,23 +44,25 @@ def test_curation_both(csa):
     csa.curate(criteria={"test": "activated"}, by_stim=True, by_response=True, by_trial=False)
     assert len(csa.cluster_ids) == 1
     csa.revert_curation()
-    assert len(csa.cluster_ids)==2
-    
+    assert len(csa.cluster_ids) == 2
+
 
 def test_curation_stim(csa):
     csa.curate(criteria="test", by_stim=True, by_response=False, by_trial=False)
-    assert len(csa.cluster_ids)==1
+    assert len(csa.cluster_ids) == 1
     csa.revert_curation()
     assert len(csa.cluster_ids) == 2
+
 
 def test_curation_response(csa):
     csa.curate(criteria="activated", by_stim=False, by_response=True, by_trial=False)
-    assert len(csa.cluster_ids)==1
+    assert len(csa.cluster_ids) == 1
     csa.revert_curation()
     assert len(csa.cluster_ids) == 2
 
+
 def test_curation_trial_all(csa):
-    csa.curate(criteria="test", by_stim=True, by_response=False, by_trial='all')
-    assert len(csa.cluster_ids)==1
+    csa.curate(criteria="test", by_stim=True, by_response=False, by_trial="all")
+    assert len(csa.cluster_ids) == 1
     csa.revert_curation()
     assert len(csa.cluster_ids) == 2
