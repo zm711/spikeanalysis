@@ -307,6 +307,38 @@ def test_responsive_neurons(sa):
     assert np.sum(inhib_neurons["test"]["inhibitory"]) != 0
 
 
+def test_write_responsive_neurons(sa, tmp_path):
+    os.chdir(sa._file_path)
+    # test for onset
+    mocked_z_scores = {"test": np.random.normal(scale=0.5, size=(4, 3, 1000))}
+    mocked_z_scores["test"][0, 0, 100:200] = 10
+    mocked_z_bins = {"test": np.linspace(-10, 90, num=1000)}
+    print(sa._file_path)
+    print(os.getcwd())
+    sa.z_scores = mocked_z_scores
+    sa.z_bins = mocked_z_bins
+
+    print(mocked_z_scores)
+    print(mocked_z_bins)
+
+    sa.get_responsive_neurons()
+    file_path = sa._file_path
+    sa._file_path = file_path / tmp_path
+    sa.save_responsive_neurons()
+    os.chdir(sa._file_path)
+    have_json = False
+    print(sa._file_path)
+    for file in os.listdir(sa._file_path):
+        print(file)
+        if "json" in file:
+            have_json = True
+
+    assert have_json, "file not written"
+
+    sa._file_path = file_path
+    os.chdir(sa._file_path)
+
+
 def test_latencies(sa):
     sa.events = {
         "0": {
