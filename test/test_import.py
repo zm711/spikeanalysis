@@ -18,6 +18,10 @@ def test_importIntrinsicPlotter():
     from spikeanalysis.intrinsic_plotter import IntrinsicPlotter
 
 
+def test_import_function():
+    from spikeanalysis import read_responsive_neurons
+
+
 def test_import_all():
     import spikeanalysis
 
