@@ -7,7 +7,7 @@ from .spike_data import SpikeData
 from .stimulus_data import StimulusData
 from .analysis_utils import histogram_functions as hf
 from .analysis_utils import latency_functions as lf
-from .utils import verify_window_format, gaussian_smoothing
+from .utils import verify_window_format, gaussian_smoothing, NumpyEncoder
 
 
 _possible_digital = ("generate_digital_events", "set_trial_groups", "set_stimulus_name")
@@ -880,6 +880,14 @@ class SpikeAnalysis:
                 responsive_neurons = np.where(z_above_threshold > current_n_bins, True, False)
 
                 self.responsive_neurons[stim][key] = responsive_neurons
+
+    def save_responsive_neurons(self):
+        import json
+
+        file_path = self._file_path
+
+        with open(file_path / "response_profile.json", "w") as write_file:
+            json.dump(self.responsive_neurons, write_file, cls=NumpyEncoder)
 
     def _merge_events(self, event_0: dict, event_1: dict):
         """Utility function for merging digital and analog events into one dictionary"""

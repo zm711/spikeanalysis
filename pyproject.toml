@@ -1,12 +1,12 @@
 [project]
 name = "spikeanalysis"
-version = '0.0.10'
+version = '0.0.11'
 authors = [{name="Zach McKenzie", email="mineurs-torrent0x@icloud.com"}]
 description = "Analysis of Spike Trains"
 requires-python = ">=3.9"
 classifiers = [
     "Programming Language :: Python :: 3 :: Only",
-    "License :: OSI Approved :: GPL3 License",
+    "License :: OSI Approved :: MIT License",
     "Intended Audience :: Science/Research",
     "Operating System :: OS Indepedent"
     ]
@@ -27,10 +27,12 @@ build-backend = "setuptools.build_meta"
 
 [project.optional-dependencies]
 
-test = [
+dev = [
   "pytest",
-  "pytest-cov"
+  "pytest-cov",
+  "black",
 ]
+
 
 [tool.setuptools.exclude-package-data]
 spikeanalysis = ["**/test/*"]
@@ -54,4 +56,5 @@ omit = [
   "src/spikeanalysis/analysis_utils/*", # utils are all numba
   "src/spikeanalysis/spike_plotter.py", # no testing for actual plotting yet
   "src/spikeanalysis/intrinsic_plotter.py", # no testing for plotting yet
+  "src/spikeanalysis/plotting_functions.py", # no test for plotting yet
 ]
