@@ -860,6 +860,7 @@ class SpikePlotter(PlotterBase):
                         )
             else:
                 avg_response = np.mean(np.mean(response, axis=1), axis=0)
+                ebars = np.std(np.mean(response, axis=1), axis=0)
                 if ebar:
                     self._plot_one_trace(
                         current_bins,
