@@ -11,4 +11,5 @@ Submodules
    spike_plotter
    intrinsic_plotter
    analog_analysis
+   curated_spike_analysis
    functions
