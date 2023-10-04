@@ -48,7 +48,7 @@ class SpikePlotter(PlotterBase):
             self._set_kwargs(**kwargs)
 
         if analysis is not None:
-            assert isinstance(analysis, (SpikeAnalysis, CuratedSpikeAnalysis), "analysis must be a SpikeAnalysis dataset"
+            assert isinstance(analysis, (SpikeAnalysis, CuratedSpikeAnalysis)), "analysis must be a SpikeAnalysis dataset"
             self.data = analysis
 
     def set_kwargs(self, **kwargs):
