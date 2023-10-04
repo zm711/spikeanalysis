@@ -72,7 +72,7 @@ class SpikePlotter(PlotterBase):
             The SpikeAnalysis object for plotting
 
         """
-        assert isinstance(analysis, SpikeAnalysis), "analysis must be a SpikeAnalysis dataset"
+        assert isinstance(analysis, (SpikeAnalysis, CuratedSpikeAnalysis)), "analysis must be a SpikeAnalysis dataset"
         self.data = analysis
 
     def plot_zscores(
