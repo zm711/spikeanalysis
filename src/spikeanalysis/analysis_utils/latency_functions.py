@@ -4,8 +4,22 @@ import math
 
 
 @jit(nopython=True)
-def latency_core_stats(bsl_fr: float, firing_data: np.array, time_bin_size: float):
-    """idea modified from Chase and Young, 2007: PNAS  p_tn(>=n) = 1 - sum_m_n-1 ((rt)^m e^(-rt))/m!"""
+def latency_core_stats(bsl_fr: float, firing_data: np.array, time_bin_size: float) -> np.ndarray:
+    """idea modified from Chase and Young, 2007: PNAS  p_tn(>=n) = 1 - sum_m_n-1 ((rt)^m e^(-rt))/m!
+
+    Parameters
+    ----------
+    bsl_fr: float
+        the baseline firing rate of the neuron (for the poisson rate)
+    firing_data: np.ndarray
+        The array (n_trials, n_bins) to determine latency over
+    time_bin_size: float
+        The size of the time bin in seconds
+
+    Returns
+    -------
+    latency: np.ndarray
+        The array of latency values"""
 
     latency = np.zeros((np.shape(firing_data)[0]))
     for trial in range(np.shape(firing_data)[0]):
@@ -16,14 +30,14 @@ def latency_core_stats(bsl_fr: float, firing_data: np.array, time_bin_size: floa
             )
             if final_prob <= 10e-6:
                 break
-            elif n_bin * time_bin_size >= 0.200:  # past 200 ms is not really a true latency
-                n_bin = np.shape(firing_data)[1] - 2
+            elif n_bin * time_bin_size >= 0.400:  # past 400 ms is not really a true latency
+                n_bin = np.shape(firing_data)[1] - 1
                 break
 
-    if n_bin == np.shape(firing_data)[1] - 2:  # need to go to second last bin
-        latency[trial] = np.nan
-    else:
-        latency[trial] = (n_bin + 1) * time_bin_size
+        if n_bin == np.shape(firing_data)[1] - 1:  # need to go to second last bin
+            latency[trial] = np.nan
+        else:
+            latency[trial] = (n_bin + 1) * time_bin_size
 
     return latency
 
@@ -37,7 +51,7 @@ def latency_median(firing_counts: np.array, time_bin_size: float):
     latency = np.zeros((np.shape(firing_counts)[0]))
     for trial in range(np.shape(firing_counts)[0]):
         min_spike_time = np.nonzero(firing_counts[trial])[0]
-        if len(min_spike_time) == 0:
+        if len(min_spike_time) == 0 or (np.min(min_spike_time) + 1) * time_bin_size > 0.400:
             latency[trial] = np.nan
         else:
             latency[trial] = (np.min(min_spike_time) + 1) * time_bin_size
@@ -78,25 +92,53 @@ LOOKUP_TABLE = np.array(
 )
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def poisson_pdf(k: int, mu: float) -> float:
-    """just the poisson pdf"""
+    """just the poisson pdf
+    Parameters
+    ----------
+    k: int
+        The value to calculate the pdf for
+    mu: float
+        the mu of the poisson distribution
+
+    Returns
+    -------
+    value: float
+        The pdf for k for a poisson of rate mu
+    """
     return (mu**k) / factorial(k) * math.exp(-mu)
 
 
-@jit(nopython=True)
-def poisson_cdf(k: int, mu: float):
-    """cdf is sum of the pdfs"""
+@jit(nopython=True, cache=True)
+def poisson_cdf(k: int, mu: float) -> float:
+    """cdf is sum of the pdfs
+    Parameters
+    ----------
+    k: int
+        The value to calculate the cdf for
+    mu: float
+        the mu of the poisson distribution
+
+    Returns
+    -------
+    value: float
+        The cdf of k for a poisson with rate of mu"""
     value = 0.0
     for k in range(k + 1):
         value += poisson_pdf(k, mu)
     return value
 
 
-@jit(nopython=True)
-def factorial(k: int):
+@jit(nopython=True, cache=True)
+def factorial(k: int) -> float:
     """helper function that uses lookup for smaller values
-    and uses math.gamma for bigger"""
+    and uses math.gamma for bigger
+    Parameters
+    ----------
+    k: int
+        The integer to perform the factorial of. Uses gamma to approximate
+        for k>20"""
     if k <= 20:
         return LOOKUP_TABLE[k]
     else:
