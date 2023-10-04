@@ -71,7 +71,7 @@ lamina of the spinal cord has most of the units found during sorting.
 
 .. code-block:: python
 
-    iplotter.plot_spike_dpeth_fr(sp=spikes) # spikes is SpikeData
+    iplotter.plot_spike_depth_fr(sp=spikes) # spikes is SpikeData
 
 CDF
 ---

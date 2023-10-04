@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional, Union, Literal
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -102,14 +102,14 @@ class SpikePlotter(PlotterBase):
 
         Returns
         -------
-        ordered_cluster_ids: np.array
+        sorted_cluster_ids: np.array
             if indices is True, the function will return the cluster ids as displayed in the z bar graph
 
         """
-        if self.cmap == "viridis":
+        if self.cmap is None:
             self.cmap = "vlag"
 
-        index_array = self._plot_scores(
+        sorted_cluster_ids = self._plot_scores(
             data="zscore",
             figsize=figsize,
             sorting_index=sorting_index,
@@ -118,7 +118,7 @@ class SpikePlotter(PlotterBase):
             show_stim=show_stim,
         )
         if indices:
-            return index_array
+            return sorted_cluster_ids
 
     def plot_raw_firing(
         self,
@@ -150,19 +150,19 @@ class SpikePlotter(PlotterBase):
 
         Returns
         -------
-        ordered_cluster_ids: Optional[np.array]
+        ordered_cluster_ids: Optional[dict]
             if indices is True, the function will return the cluster ids as displayed in the z bar graph
 
         """
-        if self.cmap == "vlag":
+        if self.cmap is None:
             self.cmap = "viridis"
 
-        index_array = self._plot_scores(
+        sorted_cluster_ids = self._plot_scores(
             data="raw-data", figsize=figsize, sorting_index=sorting_index, bar=bar, indices=indices, show_stim=show_stim
         )
 
         if indices:
-            return index_array
+            return sorted_cluster_ids
 
     def _plot_scores(
         self,
@@ -187,13 +187,13 @@ class SpikePlotter(PlotterBase):
         bar: list[int]
             If given a list with min for the cbar at index 0 and the max at index 1. Overrides cbar generation
         indices: bool, default False
-            If true will return the cluster ids sorted in the order they appear in the graph
+            If true will return the cluster ids sorted in the order they appear in the graph as a dict of stimuli
         show_stim: bool, default True
             Show lines where stim onset and offset are
 
         Returns
         -------
-        ordered_cluster_ids: Optional[np.array]
+        sorted_cluster_ids: Optional[dict]
             if indices is True, the function will return the cluster ids as displayed in the z bar graph
 
         """
@@ -208,10 +208,7 @@ class SpikePlotter(PlotterBase):
         if figsize is None:
             figsize = self.figsize
 
-        if self.cmap is None:
-            cmap = "vlag"
-        else:
-            cmap = self.cmap
+        cmap = self.cmap
 
         if self.y_axis is None:
             y_axis = "Units"
@@ -222,7 +219,7 @@ class SpikePlotter(PlotterBase):
             assert len(bar) == 2, f"Please give z_bar as [min, max], you entered {bar}"
 
         stim_lengths = self._get_event_lengths()
-
+        sorted_cluster_ids = {}
         for stimulus in z_scores.keys():
             if len(np.shape(z_scores)) < 3:
                 sub_zscores = np.expand_dims(z_scores[stimulus], axis=1)
@@ -251,16 +248,17 @@ class SpikePlotter(PlotterBase):
             event_window = np.logical_and(bins >= 0, bins <= length)
 
             z_score_sorting_index = np.argsort(-np.sum(sub_zscores[:, sorting_index, event_window], axis=1))
-
+            sorted_cluster_ids[stimulus] = self.data.cluster_ids[z_score_sorting_index]
             sorted_z_scores = sub_zscores[z_score_sorting_index, :, :]
-            # nan_mask = np.all(
-            #    np.isnan(sorted_z_scores) | np.equal(sorted_z_scores, 0) | np.isinf(sorted_z_scores), axis=2
-            # )
-
-            # sorted_z_scores = sorted_z_scores[~nan_mask]
 
             if len(np.shape(sorted_z_scores)) == 2:
                 sorted_z_scores = np.expand_dims(sorted_z_scores, axis=1)
+
+            nan_mask = np.all(
+                np.all(np.isnan(sorted_z_scores) | np.equal(sorted_z_scores, 0) | np.isinf(sorted_z_scores), axis=2),
+                axis=1,
+            )
+            sorted_z_scores = sorted_z_scores[~nan_mask]
 
             if bar is not None:
                 vmax = bar[1]
@@ -320,7 +318,11 @@ class SpikePlotter(PlotterBase):
                 ]
             )
             cax.spines["bottom"].set_visible(False)
-            plt.colorbar(im, cax=cax, label="Z scores")  # Similar to fig.colorbar(im, cax = cax)
+            if data == "zscore":
+                cbar_label = "Z scores"
+            else:
+                cbar_label = "Raw Firing"
+            plt.colorbar(im, cax=cax, label=cbar_label)  # Similar to fig.colorbar(im, cax = cax)
             plt.title(f"{stimulus}")
             plt.figure(dpi=self.dpi)
             plt.show()
@@ -329,7 +331,7 @@ class SpikePlotter(PlotterBase):
                 sorting_index = None
 
         if indices:
-            return self.data.cluster_ids[z_score_sorting_index]
+            return sorted_cluster_ids
 
     def plot_raster(self, window: Union[list, list[list]], show_stim: bool = True):
         """
@@ -556,7 +558,7 @@ class SpikePlotter(PlotterBase):
                 plt.figure(dpi=self.dpi)
                 plt.show()
 
-    def plot_zscores_ind(self, z_bar: Optional[list[int]] = None):
+    def plot_zscores_ind(self, z_bar: Optional[list[int]] = None, show_stim: bool = True):
         """
         Function for plotting z scored heatmaps by trial group rather than all trial groups on the same set of axes. In
         This function all data is ordered based on the most responsive unit/trial group. Rows can be different units
@@ -567,6 +569,8 @@ class SpikePlotter(PlotterBase):
         ----------
         z_bar: list[int]
             If given a list with min z score for the cbar at index 0 and the max at index 1. Overrides cbar generation
+        show_stim: bool, default: True
+            Whether to mark at the stim onset and offset
         """
         try:
             z_scores = self.data.z_scores
@@ -631,22 +635,23 @@ class SpikePlotter(PlotterBase):
                 ax.set_xticks([i * bins_length for i in range(7)])
                 ax.set_xticklabels([round(bins[i * bins_length], 4) if i < 7 else z_window[1] for i in range(7)])
                 ax.set_ylabel(y_axis, fontsize="small")
-                ax.axvline(
-                    zero_point,
-                    0,
-                    np.shape(sorted_z_scores)[0],
-                    color="black",
-                    linestyle=":",
-                    linewidth=0.5,
-                )
-                ax.axvline(
-                    end_point,
-                    0,
-                    np.shape(sorted_z_scores)[0],
-                    color="black",
-                    linestyle=":",
-                    linewidth=0.5,
-                )
+                if show_stim:
+                    ax.axvline(
+                        zero_point,
+                        0,
+                        np.shape(sorted_z_scores)[0],
+                        color="black",
+                        linestyle=":",
+                        linewidth=0.5,
+                    )
+                    ax.axvline(
+                        end_point,
+                        0,
+                        np.shape(sorted_z_scores)[0],
+                        color="black",
+                        linestyle=":",
+                        linewidth=0.5,
+                    )
                 self._despine(ax)
                 ax.spines["bottom"].set_visible(False)
                 ax.spines["left"].set_visible(False)
@@ -664,6 +669,147 @@ class SpikePlotter(PlotterBase):
                 plt.title(f"{stimulus}")
                 plt.figure(dpi=self.dpi)
                 plt.show()
+
+    def plot_latencies(self):
+        """
+        Function for plotting latencies
+        """
+
+        try:
+            latency = self.data.latency
+        except AttributeError:
+            raise Exception("must run `latencies()` function")
+
+        bin_size = self.data._latency_time_bin
+        bins = np.arange(0, 400 + bin_size, bin_size)
+        for stimulus, lats in latency.items():
+            stim_lats = lats["latency"]
+            shuffled_lats = lats["latency_shuffled"]
+
+            for neuron in range(np.shape(stim_lats)[0]):
+                lat_by_neuron = stim_lats[neuron]
+                shufl_bsl_neuron = shuffled_lats[neuron].flatten()
+                lat_by_neuron = lat_by_neuron[~np.isnan(lat_by_neuron)]
+                shufl_bsl_neuron = shufl_bsl_neuron[~np.isnan(shufl_bsl_neuron)]
+                fig, ax = plt.subplots(figsize=self.figsize)
+                ax.hist(lat_by_neuron, density=True, bins=bins, color="r", alpha=0.8)
+                ax.hist(shufl_bsl_neuron, density=True, bins=bins, color="k", alpha=0.8)
+                ax.set_xlabel("Time (ms)", fontsize="small")
+                ax.set_ylabel("Counts", fontsize="small")
+                plt.title(f"{stimulus.title()}: {self.data.cluster_ids[neuron]}")
+                self._despine(ax)
+                plt.tight_layout()
+                plt.figure(dpi=self.dpi)
+                plt.show()
+
+    def plot_isi(self):
+        """
+        Function for plotting ISI distributions
+        """
+
+        try:
+            raw_isi = self.data.isi_raw
+        except AttributeError:
+            raise Exception("must run `get_interspike_intervals()`")
+        bins = np.arange(0, 500, 10)
+        for cluster in raw_isi.keys():
+            isi = raw_isi[cluster]["isi"] * 1000 / self.data._sampling_rate
+
+            fig, ax = plt.subplots(figsize=self.figsize)
+            ax.hist(isi, density=True, bins=bins, color="k")
+            ax.set_xlabel("Time (ms)")
+            ax.set_ylabel("Counts")
+            self._despine(ax)
+            plt.title(f"ISI {cluster}")
+            plt.tight_layout()
+            plt.figure(dpi=self.dpi)
+            plt.show()
+
+    def plot_response_trace(
+        self,
+        type: Literal["zscore", "raw"] = "zscore",
+        by_neuron: bool = False,
+        by_trial: bool = False,
+        ebar: bool = False,
+        color="black",
+    ):
+        """
+        Function for plotting response traces for either z scored or raw firing rates
+
+        Parameters
+        ----------
+        type: Literal['zscore', 'raw'], default: 'zscore'
+            Whether to generate traces with zscored data or raw firing rate data
+        by_neuron: bool, default: False
+            Whether to plot each neuron separate (True) or average over all neurons (False)
+        by_trial: bool, default: False
+            Whether to plot each trial separately (True) or average over all neurons (False)
+        ebar: bool, default: False
+            Whether to include error bars in the traces
+        color: matplotlib color, default: 'black'
+            Color to plot the traces in
+
+        """
+
+        assert type in ["zscore", "raw"], "type of data must be zscore or raw"
+
+        if type == "zscore":
+            data = self.data.z_scores
+            bins = self.data.z_bins
+        elif type == "raw":
+            data = self.data.mean_firing_rate
+            bins = self.data.fr_bins
+
+        for stimulus, response in data.items():
+            current_bins = bins[stimulus]
+            if by_trial and by_neuron:
+                for neuron in range(np.shape(response)[0]):
+                    for trial in range(np.shape(response)[1]):
+                        self._plot_one_trace(
+                            current_bins, response[neuron, trial, :], ebars=None, color=color, stim=stimulus
+                        )
+            elif by_neuron:
+                for neuron in range(np.shape(response)[0]):
+                    avg_response = np.mean(response[neuron], axis=0)
+                    ebars = np.std(response[neuron], axis=0)
+                    if ebar:
+                        self._plot_one_trace(current_bins, avg_response, ebars=ebars, color=color, stim=stimulus)
+                    else:
+                        self._plot_one_trace(current_bins, avg_response, ebars=None, color=color, stim=stimulus)
+            elif by_trial:
+                for trial in range(np.shape(response)[1]):
+                    avg_response = np.mean(response[:, trial, :], axis=0)
+                    ebars = np.std(response[:, trial, :], axis=0)
+                    if ebar:
+                        self._plot_one_trace(current_bins, avg_response, ebars=ebars, color=color, stim=stimulus)
+                    else:
+                        self._plot_one_trace(current_bins, avg_response, ebars=None, color=color, stim=stimulus)
+            else:
+                avg_response = np.mean(np.mean(response, axis=1), axis=0)
+                if ebar:
+                    self._plot_one_trace(current_bins, avg_response, ebars=ebars, color=color, stim=stimulus)
+                else:
+                    self._plot_one_trace(current_bins, avg_response, ebars=None, color=color, stim=stimulus)
+
+    def _plot_one_trace(self, bins, trace, ebars=None, color="black", stim=""):
+        """
+        Function for plotting one response trace in 2D. I'm going to try
+        to let it autoscale
+        """
+        fig, ax = plt.subplots(figsize=self.figsize)
+        ax.plot(bins, trace, color=color)
+        if ebars is not None:
+            ax.plot(bins, trace + ebars, color=color)
+            ax.plot(bins, trace - ebars, color=color)
+            ax.fill_between(bins, trace - ebars, trace + ebars, color=color, alpha=0.02)
+
+        ax.set_xlabel("Time (s)")
+        ax.set_ylabel(self.y_axis)
+        self._despine(ax)
+        plt.title(f"trace {stim}")
+        plt.tight_layout()
+        plt.figure(dpi=self.dpi)
+        plt.show()
 
     def _get_event_lengths(self) -> dict:
         """
