@@ -812,8 +812,8 @@ class SpikePlotter(PlotterBase):
                         )
             elif by_neuron:
                 for neuron in range(np.shape(response)[0]):
-                    avg_response = np.mean(response[neuron], axis=0)
-                    ebars = np.std(response[neuron], axis=0)
+                    avg_response = np.nanmean(response[neuron], axis=0)
+                    ebars = np.nanstd(response[neuron], axis=0)
                     if ebar:
                         self._plot_one_trace(
                             current_bins,
@@ -836,8 +836,8 @@ class SpikePlotter(PlotterBase):
                         )
             elif by_trial:
                 for trial in range(np.shape(response)[1]):
-                    avg_response = np.mean(response[:, trial, :], axis=0)
-                    ebars = np.std(response[:, trial, :], axis=0)
+                    avg_response = np.nanmean(response[:, trial, :], axis=0)
+                    ebars = np.nanstd(response[:, trial, :], axis=0)
                     if ebar:
                         self._plot_one_trace(
                             current_bins,
@@ -859,8 +859,8 @@ class SpikePlotter(PlotterBase):
                             stim_lines=current_length,
                         )
             else:
-                avg_response = np.mean(np.mean(response, axis=1), axis=0)
-                ebars = np.std(np.mean(response, axis=1), axis=0)
+                avg_response = np.nanmean(np.nanmean(response, axis=1), axis=0)
+                ebars = np.nanstd(np.nanmean(response, axis=1), axis=0)
                 if ebar:
                     self._plot_one_trace(
                         current_bins,
