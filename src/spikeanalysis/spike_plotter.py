@@ -894,7 +894,7 @@ class SpikePlotter(PlotterBase):
         to let it autoscale
         """
         fig, ax = plt.subplots(figsize=self.figsize)
-        ax.plot(bins, trace, color=color, linewdith=0.75)
+        ax.plot(bins, trace, color=color, linewidth=0.75)
         max_pt = np.max(trace)
         if ebars is not None:
             ax.plot(bins, trace + ebars, color=color, linewidth=0.25)
