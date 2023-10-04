@@ -733,6 +733,24 @@ class SpikePlotter(PlotterBase):
         ebar: bool = False,
         color="black",
     ):
+        """
+        Function for plotting response traces for either z scored or raw firing rates
+        
+        Parameters
+        ----------
+        type: Literal['zscore', 'raw'], default: 'zscore'
+            Whether to generate traces with zscored data or raw firing rate data
+        by_neuron: bool, default: False
+            Whether to plot each neuron separate (True) or average over all neurons (False)
+        by_trial: bool, default: False
+            Whether to plot each trial separately (True) or average over all neurons (False)
+        ebar: bool, default: False
+            Whether to include error bars in the traces
+        color: matplotlib color, default: 'black'
+            Color to plot the traces in
+            
+        """
+        
         assert type in ["zscore", "raw"], "type of data must be zscore or raw"
 
         if type == "zscore":
@@ -774,6 +792,10 @@ class SpikePlotter(PlotterBase):
                     self._plot_one_trace(current_bins, avg_response, ebars=None, color=color, stim=stimulus)
 
     def _plot_one_trace(self, bins, trace, ebars=None, color="black", stim=""):
+        """
+        Function for plotting one response trace in 2D. I'm going to try
+        to let it autoscale
+        """
         fig, ax = plt.subplots(figsize=self.figsize)
         ax.plot(bins, trace, color=color)
         if ebars is not None:
