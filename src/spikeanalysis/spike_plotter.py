@@ -735,7 +735,7 @@ class SpikePlotter(PlotterBase):
     ):
         """
         Function for plotting response traces for either z scored or raw firing rates
-        
+
         Parameters
         ----------
         type: Literal['zscore', 'raw'], default: 'zscore'
@@ -748,9 +748,9 @@ class SpikePlotter(PlotterBase):
             Whether to include error bars in the traces
         color: matplotlib color, default: 'black'
             Color to plot the traces in
-            
+
         """
-        
+
         assert type in ["zscore", "raw"], "type of data must be zscore or raw"
 
         if type == "zscore":
