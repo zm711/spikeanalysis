@@ -56,4 +56,5 @@ omit = [
   "src/spikeanalysis/analysis_utils/*", # utils are all numba
   "src/spikeanalysis/spike_plotter.py", # no testing for actual plotting yet
   "src/spikeanalysis/intrinsic_plotter.py", # no testing for plotting yet
+  "src/spikeanalysis/plotting.functions.py", # no test for plotting yet
 ]
