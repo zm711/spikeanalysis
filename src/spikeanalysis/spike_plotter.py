@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional, Union, Literal
 
 import numpy as np
@@ -15,6 +16,7 @@ except ImportError:
 
 from .plotbase import PlotterBase
 from .spike_analysis import SpikeAnalysis
+from .curated_spike_analysis import CuratedSpikeAnalysis
 
 
 _z_scores_code = ("get_raw_psths", "z_score_data")
@@ -24,7 +26,7 @@ class SpikePlotter(PlotterBase):
     """SpikePlotter is a plotting class which allows for plotting of PSTHs, z score heatmaps
     in the future it will plot other values"""
 
-    def __init__(self, analysis: Optional[SpikeAnalysis] = None, **kwargs):
+    def __init__(self, analysis: Optional[SpikeAnalysis | CuratedSpikeAnalysis] = None, **kwargs):
         """
         SpikePlotter requires a SpikeAnalysis object, which can be set during init
         or in the set_analysis function. Not including the SpikeAnalysis object
@@ -46,7 +48,7 @@ class SpikePlotter(PlotterBase):
             self._set_kwargs(**kwargs)
 
         if analysis is not None:
-            assert isinstance(analysis, SpikeAnalysis), "analysis must be a SpikeAnalysis dataset"
+            assert isinstance(analysis, (SpikeAnalysis, CuratedSpikeAnalysis), "analysis must be a SpikeAnalysis dataset"
             self.data = analysis
 
     def set_kwargs(self, **kwargs):
