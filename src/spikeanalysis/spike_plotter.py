@@ -735,7 +735,7 @@ class SpikePlotter(PlotterBase):
             baseline = isis["bsl_isi"].sum(axis=1)
             stimulus_isi = isis["isi"].sum(axis=1)
             bins = isis["bins"]
-            for row in range(stimulus.shape[0]):
+            for row in range(stimulus_isi.shape[0]):
                 sub_bsl = baseline[row] / baseline[row].sum()
                 sub_stim_isi = stimulus_isi[row] / stimulus_isi[row].sum()
 
