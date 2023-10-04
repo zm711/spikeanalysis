@@ -797,12 +797,7 @@ class SpikePlotter(PlotterBase):
         for stimulus, response in data.items():
             current_length = stim_lengths[stimulus]
             current_bins = bins[stimulus]
-            bin_size = current_bins[1] - current_bins[0]
-            start_pt = np.where((current_bins > -bin_size) & (current_bins < bin_size))[0][0]
-            end_pt = np.where((current_bins > current_length - bin_size) & (current_bins < current_length + bin_size))[
-                0
-            ][0]
-            stim_lines = [start_pt, end_pt]
+
             if by_trial and by_neuron:
                 for neuron in range(np.shape(response)[0]):
                     for trial in range(np.shape(response)[1]):
@@ -813,7 +808,7 @@ class SpikePlotter(PlotterBase):
                             color=color,
                             stim=stimulus,
                             show_stim=show_stim,
-                            stim_lines=stim_lines,
+                            stim_lines=current_length,
                         )
             elif by_neuron:
                 for neuron in range(np.shape(response)[0]):
@@ -827,7 +822,7 @@ class SpikePlotter(PlotterBase):
                             color=color,
                             stim=stimulus,
                             show_stim=show_stim,
-                            stim_lines=stim_lines,
+                            stim_lines=current_length,
                         )
                     else:
                         self._plot_one_trace(
@@ -837,7 +832,7 @@ class SpikePlotter(PlotterBase):
                             color=color,
                             stim=stimulus,
                             show_stim=show_stim,
-                            stim_lines=stim_lines,
+                            stim_lines=current_length,
                         )
             elif by_trial:
                 for trial in range(np.shape(response)[1]):
@@ -851,7 +846,7 @@ class SpikePlotter(PlotterBase):
                             color=color,
                             stim=stimulus,
                             show_stim=show_stim,
-                            stim_lines=stim_lines,
+                            stim_lines=current_length,
                         )
                     else:
                         self._plot_one_trace(
@@ -861,7 +856,7 @@ class SpikePlotter(PlotterBase):
                             color=color,
                             stim=stimulus,
                             show_stim=show_stim,
-                            stim_lines=stim_lines,
+                            stim_lines=current_length,
                         )
             else:
                 avg_response = np.mean(np.mean(response, axis=1), axis=0)
@@ -873,7 +868,7 @@ class SpikePlotter(PlotterBase):
                         color=color,
                         stim=stimulus,
                         show_stim=show_stim,
-                        stim_lines=stim_lines,
+                        stim_lines=current_length,
                     )
                 else:
                     self._plot_one_trace(
@@ -883,18 +878,18 @@ class SpikePlotter(PlotterBase):
                         color=color,
                         stim=stimulus,
                         show_stim=show_stim,
-                        stim_lines=stim_lines,
+                        stim_lines=current_length,
                     )
 
     def _plot_one_trace(
-        self, bins, trace, ebars=None, color="black", stim="", show_stim: bool = True, stim_lines: list = [0, 0]
+        self, bins, trace, ebars=None, color="black", stim="", show_stim: bool = True, stim_lines: list = 0
     ):
         """
         Function for plotting one response trace in 2D. I'm going to try
         to let it autoscale
         """
         fig, ax = plt.subplots(figsize=self.figsize)
-        ax.plot(bins, trace, color=color, linewidth=0.75)
+        ax.plot(bins, trace, color=color, linewidthh=0.75)
         max_pt = np.max(trace)
         if ebars is not None:
             ax.plot(bins, trace + ebars, color=color, linewidth=0.25)
@@ -903,7 +898,7 @@ class SpikePlotter(PlotterBase):
             max_pt = np.max(trace + ebars)
         if show_stim:
             ax.axvline(
-                stim_lines[0],
+                0,
                 0,
                 max_pt,
                 color="black",
@@ -911,7 +906,7 @@ class SpikePlotter(PlotterBase):
                 linewidth=0.5,
             )
             ax.axvline(
-                stim_lines[1],
+                stim_lines,
                 0,
                 max_pt,
                 color="black",
