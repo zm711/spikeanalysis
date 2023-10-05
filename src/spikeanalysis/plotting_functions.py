@@ -1,21 +1,41 @@
 from typing import Optional, Sequence
 import matplotlib.pyplot as plt
+import numpy as np
 
 
-def plot_piechart(self, wedges: Sequence, counts: Sequence, colors: Optional[Sequence] = None):
+def plot_piechart(wedges: Sequence, counts: Sequence, **kwargs):
     """Plots a piechart"""
+
+    for kw, value in kwargs.items():
+        if kw=='dpi':
+            dpi=value
+        else:
+            dpi = 100
+        if kw == 'title':
+            title=value
+        else:
+            title=None
+        if kw == 'figsize':
+            figsize = value
+        else:
+            figsize = (10,8)
+        if kw=='colors':
+            colors = value
+        else:
+            colors = None
+
 
     assert len(wedges) == len(counts), "each wedge needs a corresponding count"
     assert not counts.index(0), "counts with 0 will display incorrectly"
     assert counts[0] != 0, "counts with 0 will display incorrectly"
-    import numpy as np
+    
 
-    if self.figsize[0] <= 10:
+    if figsize[0] <= 10:
         fontsize = 10
     else:
         fontsize = 14
 
-    f, ax = plt.subplots(figsize=self.figsize)
+    f, ax = plt.subplots(figsize=figsize)
 
     if colors is None:
         colors = [
@@ -38,9 +58,9 @@ def plot_piechart(self, wedges: Sequence, counts: Sequence, colors: Optional[Seq
         textprops={"fontsize": fontsize},
     )
     ax.axis("equal")
-    if self.title:
-        plt.title(self.title)
+    if title is not None:
+        plt.title(title)
     plt.tight_layout()
-    plt.figure(dpi=self.dpi)
+    plt.figure(dpi=dpi)
 
     plt.show()
