@@ -868,7 +868,7 @@ class SpikeAnalysis:
 
                 else:
                     raise Exception(
-                        f"Not implmented for window of size {len(current_window)} possible lengths are 2 or 4"
+                        f"Not implemented for window of size {len(current_window)} possible lengths are 2 or 4"
                     )
 
                 current_z_scores_sub = current_z_scores[:, :, window_index]

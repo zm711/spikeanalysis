@@ -798,7 +798,7 @@ class SpikePlotter(PlotterBase):
             current_length = stim_lengths[stimulus]
             current_bins = bins[stimulus]
 
-            response[~np.isfinite(response)]=np.nan
+            response[~np.isfinite(response)] = np.nan
 
             if by_trial and by_neuron:
                 for neuron in range(np.shape(response)[0]):

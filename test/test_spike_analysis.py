@@ -28,6 +28,14 @@ def test_init_sa(sa):
     assert isinstance(sa, SpikeAnalysis), "Failed init"
 
 
+def test_no_stim_exception():
+    dir = Path(__file__).parent.resolve() / "test_data"
+    stimulus = StimulusData(file_path=dir)
+    spiketrain = SpikeAnalysis()
+    with pytest.raises(Exception):
+        spiketrain.set_stimulus_data(stimulus)
+
+
 def test_attributes_sa(sa):
     assert sa.HAVE_DIG_ANALOG
     assert len(sa.raw_spike_times) == 10
@@ -104,6 +112,20 @@ def test_fr_data(sa):
     print(sa.mean_firing_rate)
     assert round(sa.mean_firing_rate["test"][0, 0, 0], 2) == round(0.5, 2)
     assert round(sa.mean_firing_rate["test"][1, 0, 2], 2) == 1.0
+
+
+def test_z_score_exception(sa):
+    sa.events = {
+        "0": {
+            "events": np.array([100, 200]),
+            "lengths": np.array([100, 100]),
+            "trial_groups": np.array([1, 1]),
+            "stim": "test",
+        }
+    }
+    del sa.psths
+    with pytest.raises(Exception):
+        sa.z_score_data(time_bin_ms=1000, bsl_window=[0, 50], z_window=[0, 300])
 
 
 def test_z_score_data(sa):
@@ -265,6 +287,25 @@ def test_failed_responsive_neurons(sa, tmp_path):
 
     with pytest.raises(Exception):
         sa.get_responsive_neurons()
+    os.chdir(sa._file_path)
+
+
+def test_failed_responsive_neurons_bad_z(sa, tmp_path):
+    os.chdir(tmp_path)
+    mocked_z_scores = {"test": np.random.normal(scale=0.5, size=(4, 3, 1000))}
+    mocked_z_scores["test"][0, 0, 100:200] = 10
+    mocked_z_bins = {"test": np.linspace(-10, 90, num=1000)}
+    print(sa._file_path)
+    print(os.getcwd())
+    sa.z_scores = mocked_z_scores
+    sa.z_bins = mocked_z_bins
+
+    print(mocked_z_scores)
+    print(mocked_z_bins)
+
+    with pytest.raises(Exception):
+        sa.get_responsive_neurons(z_parameters={"all": {"onset": {"time": [1, 2, 3, 4, 5], "score": 2, "n_bins": 2}}})
+    os.chdir(sa._file_path)
 
 
 def test_responsive_neurons(sa):

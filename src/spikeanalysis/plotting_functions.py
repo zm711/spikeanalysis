@@ -7,28 +7,26 @@ def plot_piechart(wedges: Sequence, counts: Sequence, **kwargs):
     """Plots a piechart"""
 
     for kw, value in kwargs.items():
-        if kw=='dpi':
-            dpi=value
+        if kw == "dpi":
+            dpi = value
         else:
             dpi = 100
-        if kw == 'title':
-            title=value
+        if kw == "title":
+            title = value
         else:
-            title=None
-        if kw == 'figsize':
+            title = None
+        if kw == "figsize":
             figsize = value
         else:
-            figsize = (10,8)
-        if kw=='colors':
+            figsize = (10, 8)
+        if kw == "colors":
             colors = value
         else:
             colors = None
 
-
     assert len(wedges) == len(counts), "each wedge needs a corresponding count"
     assert not counts.index(0), "counts with 0 will display incorrectly"
     assert counts[0] != 0, "counts with 0 will display incorrectly"
-    
 
     if figsize[0] <= 10:
         fontsize = 10

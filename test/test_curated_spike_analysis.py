@@ -66,3 +66,20 @@ def test_curation_trial_all(csa):
     assert len(csa.cluster_ids) == 1
     csa.revert_curation()
     assert len(csa.cluster_ids) == 2
+
+
+def test_curation_both_trial(csa):
+    csa.curate(criteria={"test": "activated"}, by_stim=True, by_response=True, by_trial="all")
+    assert len(csa.cluster_ids) == 1
+    csa.revert_curation()
+    assert len(csa.cluster_ids) == 2
+
+    csa.curate(criteria={"test": "activated"}, by_stim=True, by_response=True, by_trial=True, trial_index=0)
+    assert len(csa.cluster_ids) == 1
+    csa.revert_curation()
+    assert len(csa.cluster_ids) == 2
+
+
+def test_curation_wrong_value(csa):
+    with pytest.raises(Exception):
+        csa.curate(criteria="test", by_stim=False, by_respone=False, by_trial=False)
