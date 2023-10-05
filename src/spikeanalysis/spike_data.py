@@ -203,7 +203,7 @@ class SpikeData:
             self.spike_clusters = self._spike_templates
 
         self._cids = np.array(list(set(self.spike_clusters)))
-
+        self.QC_RUN = False
         self._return_to_dir(current_dir)
 
     def samples_to_seconds(self):
@@ -601,6 +601,7 @@ class SpikeData:
             )
 
         self._cids = self._cids[threshold]
+        print('qc metrics applied to cluster ids')
         self.QC_RUN = True
         self._return_to_dir(current_dir)
 
