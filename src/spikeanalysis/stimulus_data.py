@@ -304,8 +304,8 @@ class StimulusData:
             raise Exception("There is no digital data present")
 
         values = np.zeros((16, len(self._raw_digital_data)), dtype=np.int16)  # 16 digital-in for intan
-        for value in range(1, 17):
-            values[value - 1, :] = np.not_equal(  # this operation comes from the python Intan code
+        for value in range(16):
+            values[value, :] = np.not_equal(  # this operation comes from the python Intan code
                 np.bitwise_and(
                     self._raw_digital_data,
                     (1 << value),
