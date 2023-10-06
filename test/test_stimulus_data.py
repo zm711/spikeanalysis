@@ -211,7 +211,8 @@ def test_final_digital_data(stim):
     stim.get_raw_digital_data()
     stim.get_final_digital_data()
     assert np.shape(stim.digital_data) == (2, 62080)
-    assert stim.digital_data[0, -1] == 0.0
+    assert stim.digital_data[0, -1] == 1
+    assert stim.digital_data[1, -1] == 0
     assert stim.dig_in_channels[0] == 1
 
 
@@ -230,7 +231,7 @@ def test_generate_digital_events(stim):
     print(stim.digital_events)
     print(stim.digital_channels)
     assert stim.digital_events["DIGITAL-IN-01"]["events"][0] == 1500
-    assert stim.digital_events["DIGITAL-IN-01"]["lengths"][0] == 14999
+    assert stim.digital_events["DIGITAL-IN-01"]["lengths"][0] == 1499
     assert stim.digital_events["DIGITAL-IN-01"]["trial_groups"][0] == 1.0
     assert stim.digital_channels[0] == "DIGITAL-IN-01"
 
