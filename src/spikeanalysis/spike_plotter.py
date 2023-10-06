@@ -458,7 +458,7 @@ class SpikePlotter(PlotterBase):
         from .analysis_utils import histogram_functions as hf
 
         if self.cmap is not None:
-            cmap = mpl.colormap[self.cmap]
+            cmap = mpl.colormaps[self.cmap]
         else:
             cmap = mpl.colormaps["rainbow"]
 
