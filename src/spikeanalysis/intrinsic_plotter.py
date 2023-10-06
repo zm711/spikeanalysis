@@ -148,7 +148,7 @@ class IntrinsicPlotter(PlotterBase):
             current_waves = waveforms[cluster, :, max_channel, :]
             current_mean = mean_waveforms[cluster, max_channel, :]
 
-            if np.shape(current_waves)[0] > 30:
+            if np.shape(current_waves)[0] > 300:
                 WAVES = 300
             else:
                 WAVES = np.shape(current_waves)[0]
@@ -317,7 +317,7 @@ class IntrinsicPlotter(PlotterBase):
         else:
             plt.ylabel("Depth (µm)")
 
-        plt.xlabel("Amplitude (µV)")
+        plt.xlabel("Amplitude (AU)")
 
         plt.figure(dpi=self.dpi)
         plt.show()
