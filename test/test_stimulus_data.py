@@ -210,7 +210,7 @@ def test_get_raw_nan(stim):
 def test_final_digital_data(stim):
     stim.get_raw_digital_data()
     stim.get_final_digital_data()
-    assert np.shape(stim.digital_data) == (1, 62080)
+    assert np.shape(stim.digital_data) == (2, 62080)
     assert stim.digital_data[0, -1] == 0.0
     assert stim.dig_in_channels[0] == 1
 
@@ -229,7 +229,7 @@ def test_generate_digital_events(stim):
 
     print(stim.digital_events)
     print(stim.digital_channels)
-    assert stim.digital_events["DIGITAL-IN-01"]["events"][0] == 15000
+    assert stim.digital_events["DIGITAL-IN-01"]["events"][0] == 1500
     assert stim.digital_events["DIGITAL-IN-01"]["lengths"][0] == 14999
     assert stim.digital_events["DIGITAL-IN-01"]["trial_groups"][0] == 1.0
     assert stim.digital_channels[0] == "DIGITAL-IN-01"
@@ -246,7 +246,7 @@ def test_generate_trains(stim):
     )
 
     print(stim.digital_events)
-    assert stim.digital_events["DIGITAL-IN-01"]["events"][0] == 15000, "should not change start of event"
+    assert stim.digital_events["DIGITAL-IN-01"]["events"][0] == 1500, "should not change start of event"
     assert stim.digital_events["DIGITAL-IN-01"]["lengths"][0] == 3000.0, "length should change"
     assert stim.digital_events["DIGITAL-IN-01"]["stim_frequency"] == 1, "should write the stim frequency"
 
@@ -269,14 +269,10 @@ def test_set_trial_groups(stim):
     stim.get_raw_digital_data()
     stim.get_final_digital_data()
     stim.generate_digital_events()
-    trial_dict = {
-        "DIGITAL-IN-01": np.array(
-            [
-                3.0,
-                4.0,
-            ]
-        )
-    }
+    trial_array = np.ones((21,))
+    trial_array[0] = 3.0
+    trial_array[1] = 4.0
+    trial_dict = {"DIGITAL-IN-01": trial_array}
     stim.set_trial_groups(trial_dict)
 
     assert stim.digital_events["DIGITAL-IN-01"]["trial_groups"][0] == 3.0
@@ -299,7 +295,7 @@ def test_set_stimulus_name(stim):
     stim.get_raw_digital_data()
     stim.get_final_digital_data()
     stim.generate_digital_events()
-    stim_name = {"DIGITAL-IN-01": "TEST"}
+    stim_name = {"DIGITAL-IN-01": "TEST", "DIGITAL-IN-02": "TEST2"}
     stim.set_stimulus_name(stim_name)
 
     assert stim.digital_events["DIGITAL-IN-01"]["stim"] == "TEST"
@@ -310,7 +306,7 @@ def test_delete_events(stim):
     stim.get_final_digital_data()
     stim.generate_digital_events()
     stim.delete_events(del_index=1, channel_name="DIGITAL-IN-01")
-    assert len(stim.digital_events["DIGITAL-IN-01"]["events"]) == 1
+    assert len(stim.digital_events["DIGITAL-IN-01"]["events"]) == 20
 
 
 def test_run_all(stim):
