@@ -1,13 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Union
+
 
 import numpy as np
-
-from .stimulus_data import StimulusData
-
-from .spike_data import SpikeData
 
 from .spike_analysis import SpikeAnalysis
 from .curated_spike_analysis import CuratedSpikeAnalysis
@@ -53,8 +49,6 @@ class MergedSpikeAnalysis:
             events = self.spikeanalysis_list[0].events
 
 
-
-
         for idx, sa in enumerate(self.spikeanalysis_list):
 
             z_score_list = []
@@ -83,6 +77,16 @@ class MergedSpikeAnalysis:
 
         if len(z_score_list) >= 2:
             z_scores = _merge(z_score_list, stim_name=stim_name)
+            self.z_scores = z_scores
+            if stim_name is None:
+                self.z_bins = z_bins
+                self.z_windows = z_windows
+            else:
+                self.z_bins={}
+                self.z_bins[stim_name] = z_bins[stim_name]
+                self.z_windows={}
+                self.z_windows[stim_name] = z_windows[stim_name]
+
         if len(fr_list) >= 2:
             fr_scores = _merge(fr_list, stim_name=stim_name)
 
@@ -93,7 +97,6 @@ class MergedSpikeAnalysis:
         data_merge = {}
         if stim_name is not None:
 
-            
             for stim in dataset_list[0].keys():
                 data_merge[stim] = []
                 for dataset in dataset_list:
@@ -114,6 +117,14 @@ class MergedSpikeAnalysis:
 
         msa = MSA()
         msa.cluster_ids = self.cluster_ids
+        try:
+            msa.z_scores = self.z_scores
+            msa.z_bins = self.z_bins
+            msa.z_windows = self.z_windows
+        except AttributeError:
+            pass
+        
+        return msa
         
 
 
