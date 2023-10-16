@@ -76,10 +76,17 @@ def gaussian_smoothing(array: np.array, bin_size: float, std: float) -> np.array
     return smoothed_array
 
 
-def prevalence_counts(responsive_neurons: dict | str | "Path", stim: list[str] | None = None, trial_index: dict | None=None, all_trials: bool = False, exclusive_list: list | None = None, inclusive_list: list | None = None):
-
+def prevalence_counts(
+    responsive_neurons: dict | str | "Path",
+    stim: list[str] | None = None,
+    trial_index: dict | None = None,
+    all_trials: bool = False,
+    exclusive_list: list | None = None,
+    inclusive_list: list | None = None,
+):
     # prep responsive neurons from file or from argument
     from pathlib import Path
+
     if isinstance(responsive_neurons, (str, Path)):
         responsive_neurons_path = Path(responsive_neurons)
         assert responsive_neurons_path.is_file(), "responsive neuron json must exist"
@@ -89,27 +96,29 @@ def prevalence_counts(responsive_neurons: dict | str | "Path", stim: list[str] |
             for response in responsive_neurons[stim]:
                 responsive_neurons[stim][response] = np.array(responsive_neurons[stim][response], dtype=bool)
     else:
-        assert isinstance(responsive_neurons, dict), f'responsive_neurons must be path or dict it is {type(responsive_neurons)}'
+        assert isinstance(
+            responsive_neurons, dict
+        ), f"responsive_neurons must be path or dict it is {type(responsive_neurons)}"
 
     # prep other arguments
     if stim is None:
         stim = list(responsive_neurons.keys())
     else:
-        assert isinstance(stim, list), 'stim must be a list of the desired keys'
-    
+        assert isinstance(stim, list), "stim must be a list of the desired keys"
+
     if trial_index is None:
         trial_index = {}
         for st in stim:
             if all_trials:
-                trial_index[st] = 'all'
+                trial_index[st] = "all"
             else:
-                trial_index[st] = 'any'
+                trial_index[st] = "any"
     else:
-        assert isinstance(trial_index, dict), 'trial_index must be dict of which trials to use'
+        assert isinstance(trial_index, dict), "trial_index must be dict of which trials to use"
 
     if exclusive_list is None:
         exclusive_list = []
-        
+
     if inclusive_list is None:
         inclusive_list = []
 
@@ -123,16 +132,16 @@ def prevalence_counts(responsive_neurons: dict | str | "Path", stim: list[str] |
         response_labels = []
         for rt_label, rt in response_types.items():
             response_labels.append(rt_label)
-            if trial_indices == 'all':
-                response_list.append(mask = np.all(rt, axis=1))
-            elif trial_indices == 'any':
-                response_list.append(mask = np.any(rt, axis=1))
+            if trial_indices == "all":
+                response_list.append(mask=np.all(rt, axis=1))
+            elif trial_indices == "any":
+                response_list.append(mask=np.any(rt, axis=1))
             else:
-                if len(trial_indices)==2:
+                if len(trial_indices) == 2:
                     start, end = trial_indices[0], trial_indices[1]
-                    response_list.append(mask = np.all(rt[:, start:end]))
+                    response_list.append(mask=np.all(rt[:, start:end]))
                 else:
-                    response_list.append(mask = np.all(rt[:, np.array(trial_indices)]))
+                    response_list.append(mask=np.all(rt[:, np.array(trial_indices)]))
 
         final_responses = np.vstack(response_list)
         for response in exclusive_list:
@@ -143,13 +152,9 @@ def prevalence_counts(responsive_neurons: dict | str | "Path", stim: list[str] |
                 keep_list.append(response_labels.index(keep))
             final_response_idx = np.array(keep_list.append(rt_idx))
             final_responses[pos_neuron_idx, ~final_response_idx] = False
-        
+
         prevalences = np.sum(final_responses, axis=0)
-        prevalence_dict[stim]['labels'] = response_labels
-        prevalence_dict[stim]['counts'] = prevalences
+        prevalence_dict[stim]["labels"] = response_labels
+        prevalence_dict[stim]["counts"] = prevalences
 
     return prevalence_dict
-
-
-
-        

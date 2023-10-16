@@ -601,7 +601,7 @@ class SpikeData:
             )
 
         self._cids = self._cids[threshold]
-        print('qc metrics applied to cluster ids')
+        print("qc metrics applied to cluster ids")
         self.QC_RUN = True
         self._return_to_dir(current_dir)
 
