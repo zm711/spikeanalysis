@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Optional, Union
 
 
 import numpy as np
@@ -11,6 +12,7 @@ from .curated_spike_analysis import CuratedSpikeAnalysis
 
 @dataclass
 class MergedSpikeAnalysis:
+    """class for merging neurons from separate animals for plotting"""
     spikeanalysis_list: list
     name_list: list | None
 
@@ -85,7 +87,7 @@ class MergedSpikeAnalysis:
         if len(fr_list) >= 2:
             fr_scores = _merge(fr_list, stim_name=stim_name)
 
-    def _merge(dataset_list, stim_name):
+    def _merge(dataset_list: list, stim_name: str):
         data_merge = {}
         if stim_name is not None:
             for stim in dataset_list[0].keys():
@@ -116,6 +118,8 @@ class MergedSpikeAnalysis:
 
 
 class MSA(SpikeAnalysis):
+    """class for plotting merged datasets, but not for analysis"""
+    
     def get_raw_psth(self):
         raise NotImplementedError
 
@@ -132,4 +136,10 @@ class MSA(SpikeAnalysis):
         print("data is immutable")
 
     def get_raw_firing_rate(self):
+        raise NotImplementedError
+    
+    def trial_correlation(self):
+        raise NotImplementedError
+    
+    def get_interspike_intervals(self):
         raise NotImplementedError
