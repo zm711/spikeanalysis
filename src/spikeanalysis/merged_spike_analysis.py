@@ -23,12 +23,14 @@ class MergedSpikeAnalysis:
             assert len(self.spikeanalysis_list) == len(self.name_list), "each dataset needs a name value"
 
     def add_analysis(self, analysis: SpikeAnalysis | CuratedSpikeAnalysis, name: str | None):
-        self.spikeanalysis_list.append(analysis)
+        
         if self.name_list is not None:
-            assert len(self.spikeanalysis_list) == len(self.name_list) - 1, "must provide name if other datasets named"
+            assert len(self.spikeanalysis_list) == len(self.name_list), "must provide name if other datasets named"
+            self.spikeanalysis_list.append(analysis)
             self.name_list.append(name)
         else:
             print("other datasets were not given names ignoring naming")
+            self.spikeanalysis_list.append(analysis)
 
     def merge(self, stim_name: str | None):
         # merge the cluster_ids for plotting
