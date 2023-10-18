@@ -23,14 +23,28 @@ class MergedSpikeAnalysis:
         else:
             assert len(self.spikeanalysis_list) == len(self.name_list), "each dataset needs a name value"
 
-    def add_analysis(self, analysis: SpikeAnalysis | CuratedSpikeAnalysis, name: str | None):
+    def add_analysis(
+        self,
+        analysis: SpikeAnalysis | CuratedSpikeAnalysis | list[SpikeAnalysis, CuratedSpikeAnalysis],
+        name: str | None | list[str],
+    ):
         if self.name_list is not None:
             assert len(self.spikeanalysis_list) == len(self.name_list), "must provide name if other datasets named"
-            self.spikeanalysis_list.append(analysis)
-            self.name_list.append(name)
+            if isinstance(analysis, list):
+                assert isinstance(name, list), "if analysis is a list of analysis then name must be a list of names"
+                for idx, sa in enumerate(analysis):
+                    self.spikeanalysis_list.append(sa)
+                    self.name_list.append(name[idx])
+            else:
+                self.spikeanalysis_list.append(analysis)
+                self.name_list.append(name)
         else:
             print("other datasets were not given names ignoring naming")
-            self.spikeanalysis_list.append(analysis)
+            if isinstance(analysis, list):
+                for sa in analysis:
+                    self.spikeanalysis_list.append(sa)
+            else:
+                self.spikeanalysis_list.append(analysis)
 
     def merge(self, stim_name: str | None = None):
         # merge the cluster_ids for plotting
@@ -54,6 +68,8 @@ class MergedSpikeAnalysis:
             events[stim_name] = self.spikeanalysis_list[0].events[stim_name]
         else:
             events = self.spikeanalysis_list[0].events
+
+        self.events = events
 
         for idx, sa in enumerate(self.spikeanalysis_list):
             z_score_list = []
