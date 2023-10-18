@@ -32,6 +32,7 @@ class MergedSpikeAnalysis:
 
     def merge(self, stim_name: str | None):
         # merge the cluster_ids for plotting
+        assert len(self.spikeanalysis_list) >= 2, f"merge should only be run on multiple datasets you currently have {len(self.spikeanalysis_list} datasets"
         cluster_ids = []
         for idx, sa in enumerate(self.spikeanalysis_list):
             if isinstance(self.name_list, list):
