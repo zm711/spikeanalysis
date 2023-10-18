@@ -882,7 +882,6 @@ class SpikeAnalysis:
 
                 self.responsive_neurons[stim][key] = responsive_neurons
 
-
     def save_responsive_neurons(self):
         import json
 

@@ -87,11 +87,11 @@ def prevalence_counts(
 ):
     """
     Function for counting number of neurons with specific response properties for each stimulus
-    
+
     Parameters
     ----------
     responsive_neurons: dict | str | Path
-        Either a dictionary to assess with format of {stim: {response:array[bool]}} or the 
+        Either a dictionary to assess with format of {stim: {response:array[bool]}} or the
         path given as str of Path to the json containing the same structure
     stim: list[str] | None, defualt: None
         If only wanting to analyze a single stim or group of stim give as a list
@@ -107,13 +107,13 @@ def prevalence_counts(
         The list of stimuli which are assessed in order. If given a neuron can only be in one of the categories
     inclusive_list: list | None, deafult: None
         This allows a neuron to be this category even if exclusive_list is provided
-        
+
     Returns
     -------
     prevalence_dict: dict
         Dict of prevalence counts with each key being a stim and the values being
         a 'labels' of response types 'counts' the prevalence counts
-        """
+    """
     # prep responsive neurons from file or from argument
     from pathlib import Path
 
