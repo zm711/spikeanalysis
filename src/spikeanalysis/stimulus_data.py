@@ -147,7 +147,7 @@ class StimulusData:
         if file_name is None:
             reader = neo.rawio.IntanRawIO(filename=self._filename)
         else:
-            neo_class = neo.rawio.get_rawio_class(file_name)
+            neo_class = neo.rawio.get_rawio(file_name)
             return neo_class
 
         reader.parse_header()
