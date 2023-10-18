@@ -13,6 +13,7 @@ from .curated_spike_analysis import CuratedSpikeAnalysis
 @dataclass
 class MergedSpikeAnalysis:
     """class for merging neurons from separate animals for plotting"""
+
     spikeanalysis_list: list
     name_list: list | None
 
@@ -23,7 +24,6 @@ class MergedSpikeAnalysis:
             assert len(self.spikeanalysis_list) == len(self.name_list), "each dataset needs a name value"
 
     def add_analysis(self, analysis: SpikeAnalysis | CuratedSpikeAnalysis, name: str | None):
-        
         if self.name_list is not None:
             assert len(self.spikeanalysis_list) == len(self.name_list), "must provide name if other datasets named"
             self.spikeanalysis_list.append(analysis)
@@ -32,9 +32,11 @@ class MergedSpikeAnalysis:
             print("other datasets were not given names ignoring naming")
             self.spikeanalysis_list.append(analysis)
 
-    def merge(self, stim_name: str | None):
+    def merge(self, stim_name: str | None = None):
         # merge the cluster_ids for plotting
-        assert len(self.spikeanalysis_list) >= 2, f"merge should only be run on multiple datasets you currently have {len(self.spikeanalysis_list} datasets"
+        assert (
+            len(self.spikeanalysis_list) >= 2
+        ), f"merge should only be run on multiple datasets you currently have {len(self.spikeanalysis_list)} datasets"
         cluster_ids = []
         for idx, sa in enumerate(self.spikeanalysis_list):
             if isinstance(self.name_list, list):
@@ -42,7 +44,7 @@ class MergedSpikeAnalysis:
             else:
                 sub_cluster_ids = [str(idx) + str(cid) for cid in sa.cluster_ids]
             cluster_ids.append(sub_cluster_ids)
-        final_cluster_ids = [cid for cid in cluster_ids]
+        final_cluster_ids = [cid for sub_cid in cluster_ids for cid in sub_cid]
 
         self.cluster_ids = final_cluster_ids
 
@@ -122,7 +124,7 @@ class MergedSpikeAnalysis:
 
 class MSA(SpikeAnalysis):
     """class for plotting merged datasets, but not for analysis"""
-    
+
     def get_raw_psth(self):
         raise NotImplementedError
 
@@ -140,9 +142,9 @@ class MSA(SpikeAnalysis):
 
     def get_raw_firing_rate(self):
         raise NotImplementedError
-    
+
     def trial_correlation(self):
         raise NotImplementedError
-    
+
     def get_interspike_intervals(self):
         raise NotImplementedError
