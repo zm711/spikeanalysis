@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Union, Optional
 
 import numpy as np
@@ -880,6 +881,7 @@ class SpikeAnalysis:
                 responsive_neurons = np.where(z_above_threshold > current_n_bins, True, False)
 
                 self.responsive_neurons[stim][key] = responsive_neurons
+
 
     def save_responsive_neurons(self):
         import json
