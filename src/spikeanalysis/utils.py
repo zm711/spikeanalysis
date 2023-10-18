@@ -84,7 +84,7 @@ def prevalence_counts(
     all_trials: bool = False,
     exclusive_list: list | None = None,
     inclusive_list: list | None = None,
-):
+) -> dict:
     """
     Function for counting number of neurons with specific response properties for each stimulus
 
@@ -122,9 +122,9 @@ def prevalence_counts(
         assert responsive_neurons_path.is_file(), "responsive neuron json must exist"
         with open(responsive_neurons_path, "r") as read_file:
             responsive_neurons = json.load(read_file)
-        for stim in responsive_neurons.keys():
-            for response in responsive_neurons[stim]:
-                responsive_neurons[stim][response] = np.array(responsive_neurons[stim][response], dtype=bool)
+        for stimulus in responsive_neurons.keys():
+            for response in responsive_neurons[stimulus]:
+                responsive_neurons[stimulus][response] = np.array(responsive_neurons[stimulus][response], dtype=bool)
     else:
         assert isinstance(
             responsive_neurons, dict
@@ -155,7 +155,7 @@ def prevalence_counts(
     # count final data
     prevalence_dict = {}
     for st in stim:
-        prevalence_dict[stim] = {}
+        prevalence_dict[st] = {}
         response_types = responsive_neurons[st]
         trial_indices = trial_index[st]
         response_list = []
@@ -163,28 +163,28 @@ def prevalence_counts(
         for rt_label, rt in response_types.items():
             response_labels.append(rt_label)
             if trial_indices == "all":
-                response_list.append(mask=np.all(rt, axis=1))
+                response_list.append(np.all(rt, axis=1))
             elif trial_indices == "any":
-                response_list.append(mask=np.any(rt, axis=1))
+                response_list.append(np.any(rt, axis=1))
             else:
                 if len(trial_indices) == 2:
                     start, end = trial_indices[0], trial_indices[1]
-                    response_list.append(mask=np.all(rt[:, start:end]))
+                    response_list.append(np.all(rt[:, start:end], axis=1))
                 else:
-                    response_list.append(mask=np.all(rt[:, np.array(trial_indices)]))
-
+                    response_list.append(np.all(rt[:, np.array(trial_indices)], axis=1))
         final_responses = np.vstack(response_list)
         for response in exclusive_list:
             rt_idx = response_labels.index(response)
-            pos_neuron_idx = np.nonzero(final_responses[rt_idx])[0]
-            keep_list = []
+            pos_neuron_idx = np.array(np.nonzero(final_responses[rt_idx])[0])
+            keep_list = [rt_idx]
             for keep in inclusive_list:
                 keep_list.append(response_labels.index(keep))
-            final_response_idx = np.array(keep_list.append(rt_idx))
-            final_responses[pos_neuron_idx, ~final_response_idx] = False
+            final_response_idx = np.array(keep_list)
+            if len(final_response_idx) < np.shape(final_responses)[0] and len(pos_neuron_idx) > 0:
+                final_responses[~final_response_idx, pos_neuron_idx] = False
 
-        prevalences = np.sum(final_responses, axis=0)
-        prevalence_dict[stim]["labels"] = response_labels
-        prevalence_dict[stim]["counts"] = prevalences
+        prevalences = np.sum(final_responses, axis=1)
+        prevalence_dict[st]["labels"] = response_labels
+        prevalence_dict[st]["counts"] = prevalences
 
     return prevalence_dict

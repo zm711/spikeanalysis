@@ -45,6 +45,23 @@ def test_init_failure(sa):
             ],
         )
 
+def test_add_analysis(sa):
+    test_msa = MergedSpikeAnalysis(spikeanalysis_list=[sa, sa], name_list=["test", "test1"])
+    test_msa.add_analysis(sa, 'test2')
+
+    assert len(test_msa.spikeanalysis_list)==3
+
+    test_msa.add_analysis([sa, sa], ['test3', 'test4'])
+
+    assert len(test_msa.spikeanalysis_list)==5
+    assert 'test4' in test_msa.name_list
+
+    test_msa_no_name = MergedSpikeAnalysis([sa, sa], name_list = None)
+    test_msa_no_name.add_analysis(sa, name=None)
+
+    assert len(test_msa_no_name.spikeanalysis_list) == 3
+    test_msa_no_name.add_analysis([sa, sa], name=None)
+    assert len(test_msa_no_name.spikeanalysis_list) == 5
 
 def test_merge(sa):
     test_msa = MergedSpikeAnalysis([sa, sa], name_list=["test", "test1"])
