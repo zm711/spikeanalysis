@@ -456,8 +456,11 @@ class StimulusData:
 
         os.chdir(self._file_path)
         try:
-            _ = self.digital_events
-
+            digital_events = self.digital_events
+            for dig_channel, event_type in digital_events.items():
+                assert (
+                    "stim" in event_type.keys()
+                ), f"Mst provide name for each stim using the the set_stimulus_name() function. Please do this for {dig_channel}"
             with open("digital_events.json", "w") as write_file:
                 json.dump(self.digital_events, write_file, cls=NumpyEncoder)
         except AttributeError:
