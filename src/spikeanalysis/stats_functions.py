@@ -1,3 +1,4 @@
+from __future__ import annotations
 import numpy as np
 from scipy.stats import ks_2samp
 from typing import Union

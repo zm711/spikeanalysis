@@ -13,3 +13,4 @@ Submodules
    analog_analysis
    curated_spike_analysis
    functions
+   merged_spike_analysis

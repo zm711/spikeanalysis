@@ -167,7 +167,7 @@ class SpikePlotter(PlotterBase):
         sorted_cluster_ids = self._plot_scores(
             data="raw-data", figsize=figsize, sorting_index=sorting_index, bar=bar, indices=indices, show_stim=show_stim
         )
-        
+
         self.cmap = None
 
         if indices:
@@ -813,7 +813,7 @@ class SpikePlotter(PlotterBase):
                             response[neuron, trial, :],
                             ebars=None,
                             color=color,
-                            stim=f'{stimulus}: {self.data.cluster_ids[neuron]}: {trial}',
+                            stim=f"{stimulus}: {self.data.cluster_ids[neuron]}: {trial}",
                             show_stim=show_stim,
                             stim_lines=current_length,
                         )
@@ -827,7 +827,7 @@ class SpikePlotter(PlotterBase):
                             avg_response,
                             ebars=ebars,
                             color=color,
-                            stim=f'{stimulus}: neuron: {self.data.cluster_ids[neuron]}',
+                            stim=f"{stimulus}: neuron: {self.data.cluster_ids[neuron]}",
                             show_stim=show_stim,
                             stim_lines=current_length,
                         )
@@ -837,7 +837,7 @@ class SpikePlotter(PlotterBase):
                             avg_response,
                             ebars=None,
                             color=color,
-                            stim=f'{stimulus}: neuron: {self.data.cluster_ids[neuron]}',
+                            stim=f"{stimulus}: neuron: {self.data.cluster_ids[neuron]}",
                             show_stim=show_stim,
                             stim_lines=current_length,
                         )
@@ -851,7 +851,7 @@ class SpikePlotter(PlotterBase):
                             avg_response,
                             ebars=ebars,
                             color=color,
-                            stim=f'{stimulus} event number {trial}',
+                            stim=f"{stimulus} event number {trial}",
                             show_stim=show_stim,
                             stim_lines=current_length,
                         )
@@ -861,7 +861,7 @@ class SpikePlotter(PlotterBase):
                             avg_response,
                             ebars=None,
                             color=color,
-                            stim=f'{stimulus} event number {trial}',
+                            stim=f"{stimulus} event number {trial}",
                             show_stim=show_stim,
                             stim_lines=current_length,
                         )

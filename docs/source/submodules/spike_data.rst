@@ -190,6 +190,20 @@ as understandable and maintainable a weighted average is used (faster, slightly 
     \frac{1}{\Sigma amplitudes} \sum{amplitudes * depths}
     
 
+Waveform amplitudes
+^^^^^^^^^^^^^^^^^^^
+
+Since neurons should always have the same amplitude we can assess the variation in amplitudes
+as a measure of the quality of a neuron. We expect a rather gaussian distribution of amplitudes
+so using the :code:`get_amplitudes()` function we assess how many spikes fall within a certain
+std of the waveform data.
+
+.. code-block:: python
+
+    spikes.get_amplitudes(std=2) # 2 std devs
+
+
+
 Pipeline Function
 -----------------
 
@@ -204,6 +218,8 @@ parameters to be provided. Example below will all values included.
         idthres=20, # isolation distance 20--need an empiric number from your data
         rpv=0.02, # 2% the amount of spikes violating the 2ms refractory period allowed
         sil=0.45, # silhouette score (-1,1) with values above 0 indicates better and better clustering
+        amp_std=2 # number of std deviations above mean waveform amplitude to look at
+        amp_cutoff=0.98, # percent of neurons which must fall within amp_std deviations of mean waveform
         recurated= False, # I haven't recurated my data
         set_caching = True, # I want to save data for future use
         depth= 500, # probe inserted 500 um deep

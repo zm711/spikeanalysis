@@ -24,4 +24,9 @@ spikeanalysis
     .. autoclass:: AnalogAnalysis
         :members:
 
+    .. autoclass:: MergedSpikeAnalysis
+        :members:
+
     .. autofunction:: kolmo_smir_stats
+
+    .. autofunction:: prevalence_counts

@@ -1,4 +1,10 @@
-from spikeanalysis.utils import verify_window_format, gaussian_smoothing, jsonify_parameters, NumpyEncoder
+from spikeanalysis.utils import (
+    verify_window_format,
+    gaussian_smoothing,
+    jsonify_parameters,
+    NumpyEncoder,
+    prevalence_counts,
+)
 import json
 import os
 import pytest
@@ -93,3 +99,85 @@ def test_updata_jsonify_parameters(tmp_path):
     for key, value in zip(["Test", "Test2"], [[1, 2, 3], [4, 5, 6]]):
         assert key in final_params.keys()
         assert value in final_params.values()
+
+
+def test_prevalence_values(tmp_path):
+    resp_dict = {
+        "stim1": {
+            "sus": np.array([[True, True, True], [True, False, True], [False, False, False]]),
+            "inh": np.array(
+                [
+                    [False, False, False],
+                    [
+                        True,
+                        True,
+                        True,
+                    ],
+                    [False, False, True],
+                ]
+            ),
+        },
+        "stim2": {
+            "sus": np.array([[True, True, False], [True, False, True], [False, True, False]]),
+            "inh": np.array(
+                [
+                    [False, False, False],
+                    [
+                        False,
+                        False,
+                        False,
+                    ],
+                    [False, False, False],
+                ]
+            ),
+        },
+    }
+
+    prev_dict = prevalence_counts(resp_dict)
+
+    for key in ["stim1", "stim2"]:
+        assert key in prev_dict.keys(), f"{key} should be in prev_dict"
+
+    for label in ["sus", "inh"]:
+        assert label in prev_dict["stim1"]["labels"], f"{label} should be a label"
+    print(prev_dict)
+    assert prev_dict["stim1"]["counts"][0] == 2
+
+    prev_dict = prevalence_counts(resp_dict, all_trials=True)
+    print(prev_dict)
+    assert prev_dict["stim1"]["counts"][0] == 1
+
+    prev_dict = prevalence_counts(resp_dict, stim=["stim2"])
+    print(prev_dict)
+    assert "counts" in prev_dict["stim2"].keys()
+    try:
+        fail = prev_dict["stim1"]
+        assert False, "should have only selected stim2"
+    except KeyError:
+        pass
+        print(prev_dict)
+    prev_dict = prevalence_counts(resp_dict, trial_index={"stim1": [1], "stim2": [1]})
+    print(prev_dict)
+    assert prev_dict["stim1"]["counts"][0] == 1
+    prev_dict_slice = prevalence_counts(resp_dict, trial_index={"stim1": [1, 2], "stim2": [1, 2]})
+    assert prev_dict["stim1"]["counts"][0] == prev_dict_slice["stim1"]["counts"][0]
+    print(prev_dict)
+    prev_dict = prevalence_counts(resp_dict, exclusive_list=["sus"])
+    print(prev_dict)
+    assert prev_dict["stim1"]["counts"][1] == 1
+    assert prev_dict["stim1"]["counts"][0] == 2
+
+    prev_dict = prevalence_counts(resp_dict, exclusive_list=["sus"], inclusive_list=["inh"])
+    assert prev_dict["stim1"]["counts"][1] == 2
+    assert prev_dict["stim1"]["counts"][0] == 2
+
+    dir = tmp_path / "test"
+    dir.mkdir()
+    file = dir / "responsive_neurons.json"
+
+    with open(file, "w") as write_file:
+        json.dump(resp_dict, write_file, cls=NumpyEncoder)
+
+    prev_dict_json = prevalence_counts(file, exclusive_list=["sus"], inclusive_list=["inh"])
+
+    assert prev_dict_json["stim1"]["counts"][0] == prev_dict["stim1"]["counts"][0]
