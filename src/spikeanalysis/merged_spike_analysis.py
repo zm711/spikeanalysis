@@ -28,9 +28,17 @@ class MergedSpikeAnalysis:
 
     def add_analysis(
         self,
-        analysis: SpikeAnalysis | CuratedSpikeAnalysis | list[SpikeAnalysis, CuratedSpikeAnalysis],
+        analysis: SpikeAnalysis | CuratedSpikeAnalysis | list[SpikeAnalysis | CuratedSpikeAnalysis],
         name: str | None | list[str],
     ):
+        """Function for adding an additional SpikeAnalysis to be merged
+        Parameters
+        ----------
+        analysis: SpikeAnalysis | CuratedSpikeAnalysis | list[SpikeAnalysis|CuratedSpikeAnalysis]
+            The analysis or analyses to add
+        name: str | None | list[str]
+             The names of the animal/dataset that is being added in analysis
+        """
         if self.name_list is not None:
             assert len(self.spikeanalysis_list) == len(self.name_list), "must provide name if other datasets named"
             if isinstance(analysis, list):
@@ -52,6 +60,13 @@ class MergedSpikeAnalysis:
     def merge(
         self, psth: bool | list[Literal["zscore", "fr", "latencies", "isi"]] = True, stim_name: str | None = None
     ):
+        """Function for merging different types of datasets between SpikeAnalysis objects
+        Parameters
+        ----------
+        psth: bool | list['zscore'|'fr'|'latencies'|'isi'], default: True
+            Indicates whether merging should occur at the raw psth level or other datasets
+        stim_name: str | None, default None
+            Whether to just analyze would stimulus subtype"""
         # merge the cluster_ids for plotting
         assert (
             len(self.spikeanalysis_list) >= 2
@@ -149,7 +164,8 @@ class MergedSpikeAnalysis:
             if len(isi_list) != 0:
                 raise NotImplementedError
 
-    def _merge(self, dataset_list: list, stim_name: str):
+    def _merge(self, dataset_list: list, stim_name: str) -> dict:
+        """Internal funtion for merging datasets"""
         data_merge = {}
         if stim_name is None:
             for stim in dataset_list[0].keys():
@@ -167,9 +183,16 @@ class MergedSpikeAnalysis:
         return data_merge
 
     def get_merged_data(self):
+        """function for returning an
+        instatiation of an MSA class for plotting
+
+        Returns
+        -------
+        msa: spikeanalysis.MSA
+            mergedspikeanalysis data for analysis"""
         msa = MSA()
-        msa.set_cluster_ids(self.cluster_ids)
-        msa.set_events(self.events)
+        msa._set_cluster_ids(self.cluster_ids)
+        msa._set_events(self.events)
 
         if self.use_psth:
             msa.psths = self.data
@@ -201,16 +224,18 @@ class MergedSpikeAnalysis:
 
 
 class MSA(SpikeAnalysis):
-    """class for plotting merged datasets, but not for analysis"""
+    """Class for plotting and some analysis of merged data"""
 
     def __init__(self):
         self.use_psth = False
         super().__init__()
 
-    def set_cluster_ids(self, cluster_ids):
+    def _set_cluster_ids(self, cluster_ids: np.array | list):
+        """used for setting the new cluster ids values"""
         self.cluster_ids = cluster_ids
 
-    def set_events(self, events):
+    def _set_events(self, events: dict):
+        """method for setting new events"""
         self.events = events
 
     def get_raw_psth(self):
