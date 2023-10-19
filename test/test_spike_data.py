@@ -140,6 +140,12 @@ def test_get_waveforms_read_json(spikes, tmp_path):
     assert isinstance(spikes.waveforms, np.ndarray)
 
 
+def test_get_waveforms_binary(spikes):
+    spikes.get_waveforms()
+    print(spikes.waveforms)
+    assert isinstance(spikes.waveforms, np.ndarray)
+
+
 def test_set_qc_error(spikes):
     with pytest.raises(Exception):
         spikes.set_qc()

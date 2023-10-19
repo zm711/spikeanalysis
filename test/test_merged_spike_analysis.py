@@ -121,3 +121,21 @@ def test_merge_z_score(sa):
 
     test_merged_msa.set_stimulus_data()
     test_merged_msa.set_spike_data()
+
+    sa.events = {
+        "0": {
+            "events": np.array([100, 200]),
+            "lengths": np.array([100, 100]),
+            "trial_groups": np.array([1, 1]),
+            "stim": "test",
+        }
+    }
+    sa.get_raw_psth(window=[0, 300], time_bin_ms=50)
+    sa.get_raw_firing_rate(time_bin_ms=1000, bsl_window=None, fr_window=[0, 300], mode="raw")
+    sa.z_score_data(time_bin_ms=1000, bsl_window=[0, 50], z_window=[0, 300])
+
+    test_msa = MergedSpikeAnalysis([sa, sa], name_list=["test", "test1"])
+    test_msa.merge(psth=["zscore", "fr"])
+    test_merged_msa = test_msa.get_merged_data()
+
+    assert isinstance(test_merged_msa.mean_firing_rate, dict)
