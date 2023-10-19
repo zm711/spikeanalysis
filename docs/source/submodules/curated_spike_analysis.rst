@@ -61,3 +61,17 @@ To revert back to the original full set of neurons use :code:`revert_curation()`
     curated_st.revert_curation()
 
 
+Plotting the Data
+-----------------
+
+Since :code:`CuratedSpikeAnalysis` inherits from :code:`SpikeAnalysis` it can be used with 
+the :code:`SpikePlotter` class with no additional work.
+
+.. code-block:: python
+
+    plotter = sa.SpikePlotter()
+
+    plotter.set_analysis(curated_st)
+    plotter.plot_zscores()
+
+

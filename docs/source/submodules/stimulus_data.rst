@@ -96,7 +96,7 @@ they can be returned using :code:`get_stimulus_channels`. Finally stimulus' shou
 
     stim_dict = stim.get_stimulus_channels()
     stim.set_trial_groups(trial_dictionary=trial_dictionary) # dict as explained above
-    sitm.set_stimulus_names(stim_names = name_dictionary) # same keys with str values
+    sitm.set_stimulus_name(stim_names = name_dictionary) # same keys with str values
 
 
 Train-based data
@@ -141,7 +141,6 @@ generated stimulus data. To load it simply requires:
 .. code-block:: python
 
     stim.get_all_files()
-
 
 
 Convenience Pipeline
