@@ -65,22 +65,59 @@ def test_add_analysis(sa):
     assert len(test_msa_no_name.spikeanalysis_list) == 5
 
 
-def test_merge(sa):
+def test_merge_psth(sa):
+    sa.events = {
+        "0": {"events": np.array([100]), "lengths": np.array([200]), "trial_groups": np.array([1]), "stim": "test"}
+    }
+    sa.get_raw_psth(
+        window=[0, 300],
+        time_bin_ms=50,
+    )
+
     test_msa = MergedSpikeAnalysis([sa, sa], name_list=["test", "test1"])
-    test_msa.merge()
 
-    assert isinstance(test_msa.cluster_ids, list)
-    print(test_msa.cluster_ids)
-    assert len(test_msa.cluster_ids) == 4
+    test_msa.merge(psth=True)
+    test_merged_msa = test_msa.get_merged_data()
 
+    assert isinstance(test_merged_msa.cluster_ids, list)
+    print(test_merged_msa.cluster_ids)
+    assert len(test_merged_msa.cluster_ids) == 4
 
-def test_return_msa(sa):
-    test_msa = MergedSpikeAnalysis([sa, sa], name_list=["test", "test1"])
-    test_msa.merge()
-    test_merged_sa = test_msa.get_merged_data()
+    assert isinstance(test_merged_msa.events, dict)
 
-    assert isinstance(test_merged_sa, MSA)
-    assert isinstance(test_merged_sa, SpikeAnalysis)
+    psth = test_merged_msa.psths["test"]["psth"]
+    assert np.shape(psth) == (4, 1, 6000)
+
+    assert isinstance(test_merged_msa, SpikeAnalysis)
+    assert isinstance(test_merged_msa, MSA)
 
     with pytest.raises(NotImplementedError):
-        test_merged_sa.get_raw_psth()
+        test_merged_msa.get_raw_psth()
+    with pytest.raises(NotImplementedError):
+        test_merged_msa.get_interspike_intervals()
+    with pytest.raises(NotImplementedError):
+        test_merged_msa.autocorrelogram()
+
+
+def test_merge_z_score(sa):
+    sa.events = {
+        "0": {"events": np.array([100]), "lengths": np.array([200]), "trial_groups": np.array([1]), "stim": "test"}
+    }
+    sa.get_raw_psth(
+        window=[0, 300],
+        time_bin_ms=50,
+    )
+    sa.z_score_data(time_bin_ms=1000, bsl_window=[0, 50], z_window=[0, 300])
+
+    test_msa = MergedSpikeAnalysis([sa, sa], name_list=["test", "test1"])
+
+    with pytest.raises(AssertionError):
+        test_msa.merge(psth=["zscoresa"])
+
+    test_msa.merge(psth=["zscore"])
+    test_merged_msa = test_msa.get_merged_data()
+
+    assert isinstance(test_merged_msa.z_scores, dict)
+    
+    test_merged_msa.set_stimulus_data()
+    test_merged_msa.set_spike_data()
