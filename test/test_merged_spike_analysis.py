@@ -118,6 +118,6 @@ def test_merge_z_score(sa):
     test_merged_msa = test_msa.get_merged_data()
 
     assert isinstance(test_merged_msa.z_scores, dict)
-    
+
     test_merged_msa.set_stimulus_data()
     test_merged_msa.set_spike_data()
