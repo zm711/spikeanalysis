@@ -17,7 +17,7 @@ class StimulusData:
     def __init__(self, file_path: str):
         """Enter the file_path as a string. For Windows prepend with r to prevent spurious escaping.
         A Path object can also be given, but make sure it was generated with a raw string"""
-        
+
         import glob
         import os
 
@@ -79,7 +79,7 @@ class StimulusData:
         stim_index: int | None = None,
         stim_length_seconds: float | None = None,
         stim_name: list | None = None,
-        time_slice: tuple =(None, None),
+        time_slice: tuple = (None, None),
     ):
         """
         Pipeline function to run through all steps necessary to load intan data
@@ -158,7 +158,7 @@ class StimulusData:
             break
         self.sample_frequency = sample_freq
 
-        self.start_timestamp = reader._raw_data['timestamp'].flatten()[0]
+        self.start_timestamp = reader._raw_data["timestamp"].flatten()[0]
         self.reader = reader
 
     def get_analog_data(self, time_slice: tuple = (None, None)):
@@ -481,7 +481,7 @@ class StimulusData:
         self,
         del_index: int | list[int],
         digital: bool = True,
-        channel_name: str | None= None,
+        channel_name: str | None = None,
         channel_index: str | None = None,
     ):
         """
@@ -520,7 +520,7 @@ class StimulusData:
         else:
             self.dig_analog_events[key] = data_to_clean
 
-    def _intan_neo_read_no_dig(self, reader: neo.rawio.IntanRawIO, time_slice: tuple =(None, None)) -> np.array:
+    def _intan_neo_read_no_dig(self, reader: neo.rawio.IntanRawIO, time_slice: tuple = (None, None)) -> np.array:
         """
         Utility function that hacks the Neo memmap structure to be able to read
         digital events.
@@ -592,12 +592,17 @@ class StimulusData:
         return onset, lengths
 
 
-
 class TimestampReader:
 
     """utility class for helping load non-synced timestamp based data with leading-edge falling-edge."""
 
-    def __init__(self, data: list | np.ndarray, timestamps: list | np.ndarray, start_timestamp: float = 0.0, sample_rate: int | None = None):
+    def __init__(
+        self,
+        data: list | np.ndarray,
+        timestamps: list | np.ndarray,
+        start_timestamp: float = 0.0,
+        sample_rate: int | None = None,
+    ):
         """
         Parameters
         ----------
@@ -609,7 +614,7 @@ class TimestampReader:
              The starting timestamp to sync the data to a sample time scale
         sample_rate int | None, default: None
              The sample rate to convert from time into samples"""
-            
+
         self.data = np.array(data)
         self.timestamps = np.array(timestamps)
         self._start_timestamp = start_timestamp
@@ -628,8 +633,8 @@ class TimestampReader:
         elif isinstance(start_ts, StimulusData):
             self._start_timestamp = start_ts.start_timestamp
         else:
-            raise TypeError(f'`start_ts` must be float or StimulusData. It is of type {type(start_ts)}')
-        
+            raise TypeError(f"`start_ts` must be float or StimulusData. It is of type {type(start_ts)}")
+
     def set_sample_rate(self, sample_rate: int | StimulusData):
         """
         Function to set the sample rate
@@ -643,11 +648,9 @@ class TimestampReader:
         elif isinstance(sample_rate, StimulusData):
             self._sample_rate = sample_rate.sample_frequency
         else:
-            raise TypeError(f'`start_ts` must be int or StimulusData. It is of type {type(sample_rate)}')
+            raise TypeError(f"`start_ts` must be int or StimulusData. It is of type {type(sample_rate)}")
 
-
-    def load_into_stimulus_data(self, stim: StimulusData, new_stim_key: str, in_place:bool=True):
-
+    def load_into_stimulus_data(self, stim: StimulusData, new_stim_key: str, in_place: bool = True):
         """Function which loads a timestamp TTL into StimulusData
         Parameters
         ----------
@@ -661,31 +664,35 @@ class TimestampReader:
         Returns
         -------
         stim1: StimulusData
-            If in_place set to false it returns a deepcopy of the StimulusData with 
+            If in_place set to false it returns a deepcopy of the StimulusData with
             the new events loaded"""
-        
+
         assert isinstance(stim, StimulusData), "function is for loading into StimulusData"
         try:
-             assert new_stim_key in stim.digital_events, f'`new_stim_key` must be new key current keys are {stim.digital_events.keys()}'
+            assert (
+                new_stim_key in stim.digital_events
+            ), f"`new_stim_key` must be new key current keys are {stim.digital_events.keys()}"
         except AttributeError:
-            warnings.warn('This function should be run after all other stimulus data has been processed but before setting trial groups and names')
+            warnings.warn(
+                "This function should be run after all other stimulus data has been processed but before setting trial groups and names"
+            )
 
         onsets, lengths = self._calculate_events()
 
         if in_place:
-            stim.digital_events[new_stim_key]['onsets'] = onsets
-            stim.digital_events[new_stim_key]['lengths'] = lengths
-            stim.digital_events[new_stim_key]['trial_groups'] = np.ones((len(onsets)))
+            stim.digital_events[new_stim_key]["onsets"] = onsets
+            stim.digital_events[new_stim_key]["lengths"] = lengths
+            stim.digital_events[new_stim_key]["trial_groups"] = np.ones((len(onsets)))
         else:
             import copy
-            stim1 = copy.deepcopy(stim)
-            stim1.digital_events[new_stim_key]['onsets'] = onsets
-            stim1.digital_events[new_stim_key]['lengths'] = lengths
-            stim1.digital_events[new_stim_key]['trial_groups'] = np.ones((len(onsets)))
-            return stim1
-        
-    def _calculate_events(self) -> tuple[np.ndarray, np.ndarray]:
 
+            stim1 = copy.deepcopy(stim)
+            stim1.digital_events[new_stim_key]["onsets"] = onsets
+            stim1.digital_events[new_stim_key]["lengths"] = lengths
+            stim1.digital_events[new_stim_key]["trial_groups"] = np.ones((len(onsets)))
+            return stim1
+
+    def _calculate_events(self) -> tuple[np.ndarray, np.ndarray]:
         """Function to convert from timestamps to samples as well as a leading/falling edge detector
         Returns
         -------
@@ -695,22 +702,21 @@ class TimestampReader:
             the lengths of the events in samples"""
 
         assert self._sample_rate, f"`sample_rate` must be set to calculate events, use `set_sample_rate()`"
-        
+
         timestamps = self.timestamps - self._start_timestamp
         onset = np.where(np.diff(self.data) < 0)[0]
         offset = np.where(np.diff(self.data) > 0)[0]
-        if self.data[0] > 0: 
-            onset = np.pad(onset, (1,0), "constant", constant_values=0)
+        if self.data[0] > 0:
+            onset = np.pad(onset, (1, 0), "constant", constant_values=0)
         if self.data[-1] > 0:
-            offset = np.pad(offset, (0,1), "constant", constant_value = self.data[-1])
-        
+            offset = np.pad(offset, (0, 1), "constant", constant_value=self.data[-1])
+
         onset_timestamps = timestamps[onset]
         offset_timestamps = timestamps[offset]
 
         onset_samples = onset_timestamps * self._sample_rate
         offset_samples = offset_timestamps * self._sample_rate
 
-        lengths= onset_samples - offset_samples
+        lengths = onset_samples - offset_samples
 
         return onset_samples, lengths
-    
