@@ -463,7 +463,7 @@ class StimulusData:
             for dig_channel, event_type in digital_events.items():
                 assert (
                     "stim" in event_type.keys()
-                ), f"Mst provide name for each stim using the the set_stimulus_name() function. Please do this for {dig_channel}"
+                ), f"Must provide name for each stim using the the set_stimulus_name() function. Please do this for {dig_channel}"
             with open("digital_events.json", "w") as write_file:
                 json.dump(self.digital_events, write_file, cls=NumpyEncoder)
         except AttributeError:
@@ -670,16 +670,18 @@ class TimestampReader:
         assert isinstance(stim, StimulusData), "function is for loading into StimulusData"
         try:
             assert (
-                new_stim_key in stim.digital_events
+                new_stim_key not in stim.digital_events
             ), f"`new_stim_key` must be new key current keys are {stim.digital_events.keys()}"
         except AttributeError:
             warnings.warn(
                 "This function should be run after all other stimulus data has been processed but before setting trial groups and names"
             )
+            stim.digital_events = {}
 
         onsets, lengths = self._calculate_events()
 
         if in_place:
+            stim.digital_events[new_stim_key] = {}
             stim.digital_events[new_stim_key]["onsets"] = onsets
             stim.digital_events[new_stim_key]["lengths"] = lengths
             stim.digital_events[new_stim_key]["trial_groups"] = np.ones((len(onsets)))
@@ -687,6 +689,7 @@ class TimestampReader:
             import copy
 
             stim1 = copy.deepcopy(stim)
+            stim1.digital_events[new_stim_key] = {}
             stim1.digital_events[new_stim_key]["onsets"] = onsets
             stim1.digital_events[new_stim_key]["lengths"] = lengths
             stim1.digital_events[new_stim_key]["trial_groups"] = np.ones((len(onsets)))
@@ -701,7 +704,7 @@ class TimestampReader:
         lengths: np.ndarray
             the lengths of the events in samples"""
 
-        assert self._sample_rate, f"`sample_rate` must be set to calculate events, use `set_sample_rate()`"
+        assert self._sample_rate, "`sample_rate` must be set to calculate events, use `set_sample_rate()`"
 
         timestamps = self.timestamps - self._start_timestamp
         onset = np.where(np.diff(self.data) < 0)[0]
