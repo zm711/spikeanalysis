@@ -110,7 +110,9 @@ class SpikePlotter(PlotterBase):
             if indices is True, the function will return the cluster ids as displayed in the z bar graph
 
         """
+        reset = False
         if self.cmap is None:
+            reset = True
             self.cmap = "vlag"
 
         sorted_cluster_ids = self._plot_scores(
@@ -121,8 +123,8 @@ class SpikePlotter(PlotterBase):
             indices=indices,
             show_stim=show_stim,
         )
-
-        self.cmap = None
+        if reset:
+            self.cmap = None
 
         if indices:
             return sorted_cluster_ids
@@ -161,14 +163,17 @@ class SpikePlotter(PlotterBase):
             if indices is True, the function will return the cluster ids as displayed in the z bar graph
 
         """
+        reset = False
         if self.cmap is None:
+            reset = True
             self.cmap = "viridis"
 
         sorted_cluster_ids = self._plot_scores(
             data="raw-data", figsize=figsize, sorting_index=sorting_index, bar=bar, indices=indices, show_stim=show_stim
         )
 
-        self.cmap = None
+        if reset:
+            self.cmap = None
 
         if indices:
             return sorted_cluster_ids
