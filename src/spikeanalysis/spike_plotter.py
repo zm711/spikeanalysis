@@ -254,7 +254,7 @@ class SpikePlotter(PlotterBase):
             bins = bins[np.logical_and(bins >= z_window[0], bins <= z_window[1])]
 
             if sorting_index is None:
-                sorting_index = np.shape(sub_zscores)[1] - 1
+                current_sorting_index = np.shape(sub_zscores)[1] - 1
                 RESET_INDEX = True
 
             else:
