@@ -389,7 +389,7 @@ class SpikePlotter(PlotterBase):
         if sorted:
             sorted_indices = []
             for value_id in include_ids:
-                sorted_indices.append(np.nonzero(self.cluster_ids==value_id)[0][0])
+                sorted_indices.append(np.nonzero(self.data.cluster_ids==value_id)[0][0])
             sorted_indices = np.array(sorted_indices)
 
         for idx, stimulus in enumerate(psths.keys()):
@@ -410,7 +410,7 @@ class SpikePlotter(PlotterBase):
 
             for idy in range(np.shape(psth)[0]):
                 if idy not in keep_list:
-                    pass
+                    continue
                 psth_sub = np.squeeze(psth[idy])
 
                 if np.sum(psth_sub) == 0:
@@ -534,7 +534,7 @@ class SpikePlotter(PlotterBase):
         if sorted:
             sorted_indices = []
             for value_id in include_ids:
-                sorted_indices.append(np.nonzero(self.cluster_ids==value_id)[0][0])
+                sorted_indices.append(np.nonzero(self.data.cluster_ids==value_id)[0][0])
             sorted_indices = np.array(sorted_indices)
 
         stim_trial_groups = self._get_trial_groups()
@@ -571,7 +571,7 @@ class SpikePlotter(PlotterBase):
             event_len = np.zeros((len(tg_set)))
             for cluster_number in range(np.shape(psth)[0]):
                 if cluster_number not in keep_list:
-                    pass
+                    continue
                 smoothed_psth = gaussian_smoothing(psth[cluster_number], bin_size, sm_std)
 
                 for trial_number, trial in enumerate(tg_set):
