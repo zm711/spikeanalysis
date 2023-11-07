@@ -356,7 +356,6 @@ class SpikePlotter(PlotterBase):
             Show lines where stim onset and offset are
         include_ids: list | np.ndarray | None, default: None
            sub ids to include
-        sorted: bool, default = False
         """
         from .analysis_utils import histogram_functions as hf
 
@@ -385,13 +384,7 @@ class SpikePlotter(PlotterBase):
             keep_list = np.array(keep_list)
         else:
             keep_list = np.arange(0, len(cluster_indices), 1)
-
-        if sorted:
-            sorted_indices = []
-            for value_id in include_ids:
-                sorted_indices.append(np.nonzero(self.data.cluster_ids==value_id)[0][0])
-            sorted_indices = np.array(sorted_indices)
-
+            
         for idx, stimulus in enumerate(psths.keys()):
             bins = psths[stimulus]["bins"]
             psth = psths[stimulus]["psth"]
@@ -402,10 +395,6 @@ class SpikePlotter(PlotterBase):
             tg_set = np.unique(trial_groups)
 
             psth = psth[:, :, np.logical_and(bins > sub_window[0], bins < sub_window[1])]
-
-            if sorted:
-                psth = psth[sorted_indices,...]
-
             bins = bins[np.logical_and(bins >= sub_window[0], bins <= sub_window[1])]
 
             for idy in range(np.shape(psth)[0]):
@@ -452,10 +441,9 @@ class SpikePlotter(PlotterBase):
                     sns.despine()
                 else:
                     self._despine(ax)
-                if sorted:
-                    plt.title(f"{stimulus}: {self.data.cluster_ids[sorted_indices][idy]}", fontsize=8)
-                else:
-                    plt.title(f"{stimulus}: {self.data.cluster_ids[idy]}", fontsize=8)
+
+
+                plt.title(f"{stimulus}: {self.data.cluster_ids[idy]}", fontsize=8)
                 plt.figure(dpi=self.dpi)
                 plt.show()
 
@@ -485,7 +473,6 @@ class SpikePlotter(PlotterBase):
             Show lines where stim onset and offset are
         include_ids: list | np.ndarray | None
             The ids to include for plotting
-        sorted: bool = False,
             
         """
         import matplotlib as mpl
@@ -531,12 +518,6 @@ class SpikePlotter(PlotterBase):
         else:
             keep_list = np.arange(0, len(cluster_indices), 1)
 
-        if sorted:
-            sorted_indices = []
-            for value_id in include_ids:
-                sorted_indices.append(np.nonzero(self.data.cluster_ids==value_id)[0][0])
-            sorted_indices = np.array(sorted_indices)
-
         stim_trial_groups = self._get_trial_groups()
         event_lengths = self._get_event_lengths_all()
         for idx, stimulus in enumerate(psths.keys()):
@@ -554,8 +535,6 @@ class SpikePlotter(PlotterBase):
             trial_groups = stim_trial_groups[stimulus]
             sub_window = windows[idx]
             psth = psth[:, :, np.logical_and(bins > sub_window[0], bins < sub_window[1])]
-            if sorted:
-                psth = psth[sorted_indices, ...]
             bins = bins[np.logical_and(bins > sub_window[0], bins < sub_window[1])]
             events = event_lengths[stimulus]
             tg_set = np.unique(trial_groups)
@@ -615,10 +594,9 @@ class SpikePlotter(PlotterBase):
                         sns.despine()
                     else:
                         self._despine(ax)
-                if sorted:
-                    plt.title(f"{stimulus}: {self.data.cluster_ids[sorted_indices][cluster_number]}", fontsize=8)
-                else:
-                    plt.title(f"{stimulus}: {self.data.cluster_ids[cluster_number]}", fontsize=8)
+
+
+                plt.title(f"{stimulus}: {self.data.cluster_ids[cluster_number]}", fontsize=8)
                 plt.figure(dpi=self.dpi)
                 plt.show()
 
