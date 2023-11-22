@@ -117,7 +117,7 @@ do the following:
 
 .. code-block:: python
 
-    stim.delete_events(del_index=24, digital=True, digital_channel="DIGITAL-IN-01") #python is 0 based so 25th event is 24 index
+    stim.delete_events(del_index=24, digital=True, channel_name="DIGITAL-IN-01") #python is 0 based so 25th event is 24th index
 
 Saving files for easy loading
 -----------------------------
