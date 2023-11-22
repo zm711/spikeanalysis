@@ -4,6 +4,7 @@ import pytest
 from pathlib import Path
 
 from spikeanalysis.stimulus_data import StimulusData
+from spikeanalysis.stimulus_data import TimestampReader
 
 
 @pytest.fixture
@@ -115,6 +116,10 @@ def test_json_writer(ana_stim, tmp_path):
     stim1 = ana_stim
     stim1.digitize_analog_data(stim_length_seconds=0.1)
     print(stim1.dig_analog_events)
+    stim1.get_raw_digital_data()
+    stim1.get_final_digital_data()
+    stim1.generate_digital_events()
+    stim1.set_stimulus_name({"DIGITAL-IN-01": "testdig", "DIGITAL-IN-02": "testdig2"})
     print(stim1._file_path)
     stim1._file_path = stim1._file_path / tmp_path
     print(stim1._file_path)
@@ -302,12 +307,18 @@ def test_set_stimulus_name(stim):
     assert stim.digital_events["DIGITAL-IN-01"]["stim"] == "TEST"
 
 
-def test_delete_events(stim):
-    stim.get_raw_digital_data()
-    stim.get_final_digital_data()
-    stim.generate_digital_events()
-    stim.delete_events(del_index=1, channel_name="DIGITAL-IN-01")
-    assert len(stim.digital_events["DIGITAL-IN-01"]["events"]) == 20
+def test_delete_events(ana_stim):
+    import copy
+
+    ana_stim.digitize_analog_data(stim_length_seconds=0.1, analog_index=0, stim_name=["test"])
+    stim1 = copy.deepcopy(ana_stim)
+    stim1.get_raw_digital_data()
+    stim1.get_final_digital_data()
+    stim1.generate_digital_events()
+    stim1.delete_events(del_index=1, channel_name="DIGITAL-IN-01")
+    assert len(stim1.digital_events["DIGITAL-IN-01"]["events"]) == 20
+    stim1.delete_events(del_index=1, digital=False, channel_index="0")
+    assert len(stim1.dig_analog_events["0"]["events"]) == 1
 
 
 def test_run_all(stim):
@@ -316,3 +327,41 @@ def test_run_all(stim):
     assert stim.analog_data.any()
     assert isinstance(stim.dig_analog_events, dict)
     assert isinstance(stim.digital_events, dict)
+
+
+def test_timestamp_reader(stim):
+    data = [0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0]
+    timestamps = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+
+    reader = TimestampReader(data=data, timestamps=timestamps, start_timestamp=1, sample_rate=10)
+
+    assert reader._start_timestamp == 1
+    assert reader._sample_rate == 10
+    assert isinstance(reader.data, np.ndarray), "should save as ndarray"
+
+    reader.set_sample_rate(stim)
+    assert reader._sample_rate == 3000.0
+    reader.set_sample_rate(sample_rate=1)
+    assert reader._sample_rate == 1, "sample rate should be reset"
+    reader.set_start_timestamp(stim)
+    assert reader._start_timestamp == 0
+    reader.set_start_timestamp(start_ts=0)
+    assert reader._start_timestamp == 0
+
+    import copy
+
+    stim_no_event = copy.deepcopy(stim)
+    stim.get_raw_digital_data()
+    stim.get_final_digital_data()
+    stim.generate_digital_events()
+    stim1 = copy.deepcopy(stim)
+    reader.load_into_stimulus_data(stim=stim1, new_stim_key="testdata", in_place=True)
+
+    assert "testdata" in stim1.digital_events.keys()
+
+    stim2 = copy.deepcopy(stim)
+    stim3 = reader.load_into_stimulus_data(stim=stim2, new_stim_key="testdata2", in_place=False)
+    assert "testdata2" not in stim2.digital_events.keys()
+    assert "testdata2" in stim3.digital_events.keys()
+
+    reader.load_into_stimulus_data(stim=stim_no_event, new_stim_key="warning_test", in_place=True)

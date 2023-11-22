@@ -1,13 +1,14 @@
 from __future__ import annotations
 import json
 import os
-from .utils import NumpyEncoder
-from typing import Optional, Union
+from pathlib import Path
+import warnings
 
 import neo
 import numpy as np
-
 from tqdm import tqdm
+
+from .utils import NumpyEncoder
 
 
 class StimulusData:
@@ -16,7 +17,7 @@ class StimulusData:
     def __init__(self, file_path: str):
         """Enter the file_path as a string. For Windows prepend with r to prevent spurious escaping.
         A Path object can also be given, but make sure it was generated with a raw string"""
-        from pathlib import Path
+
         import glob
         import os
 
@@ -75,10 +76,10 @@ class StimulusData:
 
     def run_all(
         self,
-        stim_index: Optional[int] = None,
-        stim_length_seconds: Optional[float] = None,
-        stim_name: Optional[list] = None,
-        time_slice=(None, None),
+        stim_index: int | None = None,
+        stim_length_seconds: float | None = None,
+        stim_name: list | None = None,
+        time_slice: tuple = (None, None),
     ):
         """
         Pipeline function to run through all steps necessary to load intan data
@@ -128,7 +129,7 @@ class StimulusData:
 
         del self.reader  # reader and memmap heavy. Delete after this since not needed
 
-    def create_neo_reader(self, file_name: Optional[str] = None):
+    def create_neo_reader(self, file_name: str | Path | None = None):
         """
         Function that creates a Neo IntanRawIO reader and then parses the header
 
@@ -156,6 +157,8 @@ class StimulusData:
             sample_freq = value[2]
             break
         self.sample_frequency = sample_freq
+
+        self.start_timestamp = reader._raw_data["timestamp"].flatten()[0]
         self.reader = reader
 
     def get_analog_data(self, time_slice: tuple = (None, None)):
@@ -200,9 +203,9 @@ class StimulusData:
 
     def digitize_analog_data(
         self,
-        analog_index: Optional[int] = None,
-        stim_length_seconds: Optional[float] = None,
-        stim_name: Optional[list[str]] = None,
+        analog_index: int | None = None,
+        stim_length_seconds: float | None = None,
+        stim_name: list[str] | None = None,
     ):
         """Function to digitize the analog data for stimuli that have "events" rather than assessing
         them as continually changing values"""
@@ -410,9 +413,9 @@ class StimulusData:
 
     def generate_stimulus_trains(
         self,
-        channel_name: Union[str, list[str]],
-        stim_freq: Union[float, list[float]],
-        stim_time_secs: Union[float, list[float]],
+        channel_name: str | list[str],
+        stim_freq: float | list[float],
+        stim_time_secs: float | list[float],
     ):
         """
         Function for converting events into event trains, eg for optogenetic stimulus trains
@@ -460,7 +463,7 @@ class StimulusData:
             for dig_channel, event_type in digital_events.items():
                 assert (
                     "stim" in event_type.keys()
-                ), f"Mst provide name for each stim using the the set_stimulus_name() function. Please do this for {dig_channel}"
+                ), f"Must provide name for each stim using the the set_stimulus_name() function. Please do this for {dig_channel}"
             with open("digital_events.json", "w") as write_file:
                 json.dump(self.digital_events, write_file, cls=NumpyEncoder)
         except AttributeError:
@@ -478,8 +481,8 @@ class StimulusData:
         self,
         del_index: int | list[int],
         digital: bool = True,
-        channel_name: Optional[str] = None,
-        channel_index: Optional[int] = None,
+        channel_name: str | None = None,
+        channel_index: str | None = None,
     ):
         """
         Function for deleting a spurious event, eg, an accident trigger event
@@ -517,7 +520,7 @@ class StimulusData:
         else:
             self.dig_analog_events[key] = data_to_clean
 
-    def _intan_neo_read_no_dig(self, reader: neo.rawio.IntanRawIO, time_slice=(None, None)) -> np.array:
+    def _intan_neo_read_no_dig(self, reader: neo.rawio.IntanRawIO, time_slice: tuple = (None, None)) -> np.array:
         """
         Utility function that hacks the Neo memmap structure to be able to read
         digital events.
@@ -587,3 +590,136 @@ class StimulusData:
         lengths = offset - onset
 
         return onset, lengths
+
+
+class TimestampReader:
+
+    """utility class for helping load non-synced timestamp based data with leading-edge falling-edge."""
+
+    def __init__(
+        self,
+        data: list | np.ndarray,
+        timestamps: list | np.ndarray,
+        start_timestamp: float = 0.0,
+        sample_rate: int | None = None,
+    ):
+        """
+        Parameters
+        ----------
+        data: list | np.ndarray
+            An array containing the TTL style data of 0s and some int
+        timestamps: list | np.ndarray
+            A timestamp for each value given in data
+        start_timestamp: float, default: 0.0
+             The starting timestamp to sync the data to a sample time scale
+        sample_rate int | None, default: None
+             The sample rate to convert from time into samples"""
+
+        self.data = np.array(data)
+        self.timestamps = np.array(timestamps)
+        self._start_timestamp = start_timestamp
+        self._sample_rate = sample_rate
+
+    def set_start_timestamp(self, start_ts: float | StimulusData):
+        """
+        Function to set the timestamp offset
+        Parameters
+        ----------
+        start_ts: float | StimulusData
+            The start timestamp to offset the analysis with"""
+
+        if isinstance(start_ts, (float, int)):
+            self._start_timestamp = float(start_ts)
+        elif isinstance(start_ts, StimulusData):
+            self._start_timestamp = start_ts.start_timestamp
+        else:
+            raise TypeError(f"`start_ts` must be float or StimulusData. It is of type {type(start_ts)}")
+
+    def set_sample_rate(self, sample_rate: int | StimulusData):
+        """
+        Function to set the sample rate
+        Parameters
+        ----------
+        sample_rate: int | StimulusData
+            The sample rate to convert from time to samples"""
+
+        if isinstance(sample_rate, (float, int)):
+            self._sample_rate = sample_rate
+        elif isinstance(sample_rate, StimulusData):
+            self._sample_rate = sample_rate.sample_frequency
+        else:
+            raise TypeError(f"`start_ts` must be int or StimulusData. It is of type {type(sample_rate)}")
+
+    def load_into_stimulus_data(self, stim: StimulusData, new_stim_key: str, in_place: bool = True):
+        """Function which loads a timestamp TTL into StimulusData
+        Parameters
+        ----------
+        stim: StimulusData
+            The StimulusData object to use
+        new_stim_key: str
+            The key value to use in the `digital_events` dictionary
+        in_place: bool, default=True
+            If true loads the new events into the current StimulusData
+            If false returns a deep copy with the new data loaded
+        Returns
+        -------
+        stim1: StimulusData
+            If in_place set to false it returns a deepcopy of the StimulusData with
+            the new events loaded"""
+
+        assert isinstance(stim, StimulusData), "function is for loading into StimulusData"
+        try:
+            assert (
+                new_stim_key not in stim.digital_events
+            ), f"`new_stim_key` must be new key current keys are {stim.digital_events.keys()}"
+        except AttributeError:
+            warnings.warn(
+                "This function should be run after all other stimulus data has been processed but before setting trial groups and names"
+            )
+            stim.digital_events = {}
+
+        onsets, lengths = self._calculate_events()
+
+        if in_place:
+            stim.digital_events[new_stim_key] = {}
+            stim.digital_events[new_stim_key]["onsets"] = onsets
+            stim.digital_events[new_stim_key]["lengths"] = lengths
+            stim.digital_events[new_stim_key]["trial_groups"] = np.ones((len(onsets)))
+        else:
+            import copy
+
+            stim1 = copy.deepcopy(stim)
+            stim1.digital_events[new_stim_key] = {}
+            stim1.digital_events[new_stim_key]["onsets"] = onsets
+            stim1.digital_events[new_stim_key]["lengths"] = lengths
+            stim1.digital_events[new_stim_key]["trial_groups"] = np.ones((len(onsets)))
+            return stim1
+
+    def _calculate_events(self) -> tuple[np.ndarray, np.ndarray]:
+        """Function to convert from timestamps to samples as well as a leading/falling edge detector
+        Returns
+        -------
+        onset_samples: np.ndarray
+            The onset of events in samples
+        lengths: np.ndarray
+            the lengths of the events in samples"""
+
+        assert self._sample_rate, "`sample_rate` must be set to calculate events, use `set_sample_rate()`"
+
+        timestamps = self.timestamps - self._start_timestamp
+        onset = np.where(np.diff(self.data) < 0)[0]
+        offset = np.where(np.diff(self.data) > 0)[0]
+        if self.data[0] > 0:
+            onset = np.pad(onset, (1, 0), "constant", constant_values=0)
+        if self.data[-1] > 0:
+            offset = np.pad(offset, (0, 1), "constant", constant_value=self.data[-1])
+
+        onset_timestamps = timestamps[onset]
+        offset_timestamps = timestamps[offset]
+
+        onset_samples = onset_timestamps * self._sample_rate
+        offset_samples = offset_timestamps * self._sample_rate
+
+        lengths = onset_samples - offset_samples
+
+        return onset_samples, lengths
