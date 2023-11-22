@@ -80,7 +80,7 @@ class SpikePlotter(PlotterBase):
     def plot_zscores(
         self,
         figsize: Optional[tuple] = (24, 10),
-        sorting_index: Optional[int] = None,
+        sorting_index: Optional[int] | list[int] = None,
         z_bar: Optional[list[int]] = None,
         indices: bool = False,
         show_stim: bool = True,
@@ -95,7 +95,7 @@ class SpikePlotter(PlotterBase):
         ----------
         figsize : Optional[tuple], optional
             Matplotlib figsize tuple. For multiple trial groups bigger is better. The default is (24, 10).
-        sorting_index : Optional[int], optional
+        sorting_index : Optional[int] | list[int], optional
             The trial group to sort all values on. The default is None (which uses the largest trial group).
         z_bar: list[int]
             If given a list with min z score for the cbar at index 0 and the max at index 1. Overrides cbar generation
@@ -110,7 +110,9 @@ class SpikePlotter(PlotterBase):
             if indices is True, the function will return the cluster ids as displayed in the z bar graph
 
         """
+        reset = False
         if self.cmap is None:
+            reset = True
             self.cmap = "vlag"
 
         sorted_cluster_ids = self._plot_scores(
@@ -121,8 +123,8 @@ class SpikePlotter(PlotterBase):
             indices=indices,
             show_stim=show_stim,
         )
-
-        self.cmap = None
+        if reset:
+            self.cmap = None
 
         if indices:
             return sorted_cluster_ids
@@ -130,7 +132,7 @@ class SpikePlotter(PlotterBase):
     def plot_raw_firing(
         self,
         figsize: Optional[tuple] = (24, 10),
-        sorting_index: Optional[int] = None,
+        sorting_index: Optional[int] | list[int] = None,
         bar: Optional[list[int]] = None,
         indices: bool = False,
         show_stim: bool = True,
@@ -146,7 +148,7 @@ class SpikePlotter(PlotterBase):
         ----------
         figsize : Optional[tuple], optional
             Matplotlib figsize tuple. For multiple trial groups bigger is better. The default is (24, 10).
-        sorting_index : Optional[int], optional
+        sorting_index : Optional[int] | list[int], optional
             The trial group to sort all values on. The default is None (which uses the largest trial group).
         bar: list[int]
             If given a list with min firing rate for the cbar at index 0 and the max at index 1. Overrides cbar generation
@@ -161,14 +163,17 @@ class SpikePlotter(PlotterBase):
             if indices is True, the function will return the cluster ids as displayed in the z bar graph
 
         """
+        reset = False
         if self.cmap is None:
+            reset = True
             self.cmap = "viridis"
 
         sorted_cluster_ids = self._plot_scores(
             data="raw-data", figsize=figsize, sorting_index=sorting_index, bar=bar, indices=indices, show_stim=show_stim
         )
 
-        self.cmap = None
+        if reset:
+            self.cmap = None
 
         if indices:
             return sorted_cluster_ids
@@ -177,7 +182,7 @@ class SpikePlotter(PlotterBase):
         self,
         data: str = "zscore",
         figsize: Optional[tuple] = (24, 10),
-        sorting_index: Optional[int] = None,
+        sorting_index: Optional[int] | list[int] = None,
         bar: Optional[list[int]] = None,
         indices: bool = False,
         show_stim: bool = True,
@@ -207,7 +212,7 @@ class SpikePlotter(PlotterBase):
             if indices is True, the function will return the cluster ids as displayed in the z bar graph
 
         """
-
+        
         if data == "zscore":
             z_scores = self.data.z_scores
         elif data == "raw-data":
@@ -230,7 +235,7 @@ class SpikePlotter(PlotterBase):
 
         stim_lengths = self._get_event_lengths()
         sorted_cluster_ids = {}
-        for stimulus in z_scores.keys():
+        for stim_idx, stimulus in enumerate(z_scores.keys()):
             if len(np.shape(z_scores)) < 3:
                 sub_zscores = np.expand_dims(z_scores[stimulus], axis=1)
             sub_zscores = z_scores[stimulus]
@@ -250,14 +255,19 @@ class SpikePlotter(PlotterBase):
             bins = bins[np.logical_and(bins >= z_window[0], bins <= z_window[1])]
 
             if sorting_index is None:
-                sorting_index = np.shape(sub_zscores)[1] - 1
+                current_sorting_index = np.shape(sub_zscores)[1] - 1
                 RESET_INDEX = True
 
             else:
                 RESET_INDEX = False
+                assert isinstance(sorting_index, (list,int)), "sorting_index must be list or int"
+                if isinstance(sorting_index, list):
+                    current_sorting_index = sorting_index[stim_idx]
+                else:
+                    current_sorting_index = sorting_index
             event_window = np.logical_and(bins >= 0, bins <= length)
 
-            z_score_sorting_index = np.argsort(-np.sum(sub_zscores[:, sorting_index, event_window], axis=1))
+            z_score_sorting_index = np.argsort(-np.sum(sub_zscores[:, current_sorting_index, event_window], axis=1))
             sorted_cluster_ids[stimulus] = self.data.cluster_ids[z_score_sorting_index]
             sorted_z_scores = sub_zscores[z_score_sorting_index, :, :]
 

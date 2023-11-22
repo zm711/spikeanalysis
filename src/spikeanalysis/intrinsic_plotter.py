@@ -133,15 +133,22 @@ class IntrinsicPlotter(PlotterBase):
             A SpikeData object which has raw waveform values loaded"""
 
         waveforms = sp.waveforms
-
+        sp.reload_data()
         if len(sp._cids) != np.shape(waveforms)[0]:  # if not same need to run set_qc
             sp.set_qc()
         if len(sp._cids) != np.shape(waveforms)[0]:  # still not same need to index waveforms
             waveforms = waveforms[sp._qc_threshold, ...]
 
+        try:
+            noise = sp.noise
+        except AttributeError:
+            noise = np.array([])
+
         mean_waveforms = np.nanmean(waveforms, axis=1)
 
         for cluster in range(np.shape(waveforms)[0]):
+            if self._cids[cluster] in noise:
+                pass
             max_val = np.argwhere(mean_waveforms[cluster] == np.min(mean_waveforms[cluster]))[0]
             max_channel = max_val[0]
 

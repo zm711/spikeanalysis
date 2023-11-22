@@ -187,7 +187,7 @@ class SpikeData:
 
         # if len(cids) > len(self._cids):
         #    cids = self._cids
-        # self._cids = self._cids[np.isin(cids, noise_clusters, invert=True)]
+        self._cids = self._cids[np.isin(self._cids, noise_clusters, invert=True)]
 
         self._return_to_dir(current_dir)
 
