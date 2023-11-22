@@ -186,7 +186,6 @@ class SpikePlotter(PlotterBase):
         bar: Optional[list[int]] = None,
         indices: bool = False,
         show_stim: bool = True,
-
     ) -> Optional[np.array]:
         """
         Function to plot heatmaps of firing rate data
@@ -212,7 +211,7 @@ class SpikePlotter(PlotterBase):
             if indices is True, the function will return the cluster ids as displayed in the z bar graph
 
         """
-        
+
         if data == "zscore":
             z_scores = self.data.z_scores
         elif data == "raw-data":
@@ -260,7 +259,7 @@ class SpikePlotter(PlotterBase):
 
             else:
                 RESET_INDEX = False
-                assert isinstance(sorting_index, (list,int)), "sorting_index must be list or int"
+                assert isinstance(sorting_index, (list, int)), "sorting_index must be list or int"
                 if isinstance(sorting_index, list):
                     current_sorting_index = sorting_index[stim_idx]
                 else:
@@ -353,7 +352,13 @@ class SpikePlotter(PlotterBase):
         if indices:
             return sorted_cluster_ids
 
-    def plot_raster(self, window: Union[list, list[list]], show_stim: bool = True, include_ids: list | np.nadarry | None = None, sorted: bool = False):
+    def plot_raster(
+        self,
+        window: Union[list, list[list]],
+        show_stim: bool = True,
+        include_ids: list | np.nadarry | None = None,
+        sorted: bool = False,
+    ):
         """
         Function to plot rasters
 
@@ -385,16 +390,15 @@ class SpikePlotter(PlotterBase):
 
         event_lengths = self._get_event_lengths()
 
-
         if include_ids is not None:
             cluster_indices = self.data.cluster_ids
             keep_list = []
             for cid in include_ids:
-                keep_list.append(np.where(cluster_indices==cid)[0][0])
+                keep_list.append(np.where(cluster_indices == cid)[0][0])
             keep_list = np.array(keep_list)
         else:
             keep_list = np.arange(0, len(cluster_indices), 1)
-            
+
         for idx, stimulus in enumerate(psths.keys()):
             bins = psths[stimulus]["bins"]
             psth = psths[stimulus]["psth"]
@@ -452,7 +456,6 @@ class SpikePlotter(PlotterBase):
                 else:
                     self._despine(ax)
 
-
                 plt.title(f"{stimulus}: {self.data.cluster_ids[idy]}", fontsize=8)
                 plt.figure(dpi=self.dpi)
                 plt.show()
@@ -483,7 +486,7 @@ class SpikePlotter(PlotterBase):
             Show lines where stim onset and offset are
         include_ids: list | np.ndarray | None
             The ids to include for plotting
-            
+
         """
         import matplotlib as mpl
         from .analysis_utils import histogram_functions as hf
@@ -523,7 +526,7 @@ class SpikePlotter(PlotterBase):
             cluster_indices = self.data.cluster_ids
             keep_list = []
             for cid in include_ids:
-                keep_list.append(np.where(cluster_indices==cid)[0][0])
+                keep_list.append(np.where(cluster_indices == cid)[0][0])
             keep_list = np.array(keep_list)
         else:
             keep_list = np.arange(0, len(cluster_indices), 1)
@@ -604,7 +607,6 @@ class SpikePlotter(PlotterBase):
                         sns.despine()
                     else:
                         self._despine(ax)
-
 
                 plt.title(f"{stimulus}: {self.data.cluster_ids[cluster_number]}", fontsize=8)
                 plt.figure(dpi=self.dpi)
