@@ -830,8 +830,11 @@ class SpikePlotter(PlotterBase):
             Color to plot the traces in
         show_stim: bool, default=True
             Whether to show stimulus lines
-        mode: 'mean'| 'median' | 'max' | 'min', deafult: 'mean'
-            How to calculate values for plotting
+        mode: 'mean'| 'median' | 'max' | 'min' | func default: 'mean'
+            How to calculate values for plotting, can be a string in which case
+            the appropriate nan-based numpy function is used. Otherwise the user
+            can give an appropriate function to use (it needs to be able to handle)
+            data with nans
 
         """
 
@@ -848,15 +851,17 @@ class SpikePlotter(PlotterBase):
 
         assert mode in ('mean', 'median', 'max', 'min'), f"mode must be 'mean' 'median', 'max', 'min you entered {mode}"
 
-        if mode=='mean':
+        if mode == 'mean':
             func = np.nanmean
         elif mode == 'median':
             func = np.nanmedian
         elif mode == 'max':
             func = np.nanmax
-        else: 
+        elif mode == 'min': 
             func = np.nanmin
-            
+        else:
+            func = mode
+
         for stimulus, response in data.items():
             current_length = stim_lengths[stimulus]
             current_bins = bins[stimulus]
