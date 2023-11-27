@@ -528,7 +528,7 @@ class SpikePlotter(PlotterBase):
                 keep_list.append(np.where(cluster_indices == cid)[0][0])
             keep_list = np.array(keep_list)
         else:
-            keep_list = np.arange(0, len(cluster_indices), 1)
+            keep_list = np.arange(0, len(self.data.cluster_ids), 1)
 
         stim_trial_groups = self._get_trial_groups()
         event_lengths = self._get_event_lengths_all()
