@@ -357,7 +357,6 @@ class SpikePlotter(PlotterBase):
         window: Union[list, list[list]],
         show_stim: bool = True,
         include_ids: list | np.nadarry | None = None,
-        sorted: bool = False,
     ):
         """
         Function to plot rasters
@@ -397,7 +396,7 @@ class SpikePlotter(PlotterBase):
                 keep_list.append(np.where(cluster_indices == cid)[0][0])
             keep_list = np.array(keep_list)
         else:
-            keep_list = np.arange(0, len(cluster_indices), 1)
+            keep_list = np.arange(0, len(self.data.cluster_ids), 1)
 
         for idx, stimulus in enumerate(psths.keys()):
             bins = psths[stimulus]["bins"]
