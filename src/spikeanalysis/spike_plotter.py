@@ -723,9 +723,13 @@ class SpikePlotter(PlotterBase):
                 plt.figure(dpi=self.dpi)
                 plt.show()
 
-    def plot_latencies(self):
+    def plot_latencies(self, colors="red"):
         """
         Function for plotting latencies
+        Parameters
+        ----------
+        colors: colormap color | dict[colormap color], default = 'red'
+            Either the color for all stim or a dict of colors for each stim
         """
 
         try:
@@ -736,6 +740,11 @@ class SpikePlotter(PlotterBase):
         bin_size = self.data._latency_time_bin
         bins = np.arange(0, 400 + bin_size, bin_size)
         for stimulus, lats in latency.items():
+            if isinstance(colors, dict):
+                color = colors[stimulus]
+            else:
+                color = colors
+
             stim_lats = lats["latency"]
             shuffled_lats = lats["latency_shuffled"]
 
@@ -745,7 +754,7 @@ class SpikePlotter(PlotterBase):
                 lat_by_neuron = lat_by_neuron[~np.isnan(lat_by_neuron)]
                 shufl_bsl_neuron = shufl_bsl_neuron[~np.isnan(shufl_bsl_neuron)]
                 fig, ax = plt.subplots(figsize=self.figsize)
-                ax.hist(lat_by_neuron, density=True, bins=bins, color="r", alpha=0.8)
+                ax.hist(lat_by_neuron, density=True, bins=bins, color=color, alpha=0.8)
                 ax.hist(shufl_bsl_neuron, density=True, bins=bins, color="k", alpha=0.8)
                 ax.set_xlabel("Time (ms)", fontsize="small")
                 ax.set_ylabel("Counts", fontsize="small")
@@ -809,9 +818,9 @@ class SpikePlotter(PlotterBase):
         by_neuron: bool = False,
         by_trial: bool = False,
         ebar: bool = False,
-        color="black",
+        colors="black",
         show_stim: bool = True,
-        mode: Literal['mean', 'median', 'max', 'min'] = 'mean'
+        mode: Literal["mean", "median", "max", "min"] = "mean",
     ):
         """
         Function for plotting response traces for either z scored or raw firing rates
@@ -826,8 +835,8 @@ class SpikePlotter(PlotterBase):
             Whether to plot each trial separately (True) or average over all neurons (False)
         ebar: bool, default: False
             Whether to include error bars in the traces
-        color: matplotlib color, default: 'black'
-            Color to plot the traces in
+        color: matplotlib color | dict[matplotlib color], default: 'black'
+            Color to plot the traces in, or dict of how to color the stim
         show_stim: bool, default=True
             Whether to show stimulus lines
         mode: 'mean'| 'median' | 'max' | 'min' | func default: 'mean'
@@ -849,15 +858,17 @@ class SpikePlotter(PlotterBase):
 
         stim_lengths = self._get_event_lengths()
 
-        assert mode in ('mean', 'median', 'max', 'min'), f"mode must be 'mean' 'median', 'max', 'min you entered {mode}"
+        assert mode in ("mean", "median", "max", "min") or callable(
+            mode
+        ), f"mode must be 'mean' 'median', 'max', 'min you entered {mode}"
 
-        if mode == 'mean':
+        if mode == "mean":
             func = np.nanmean
-        elif mode == 'median':
+        elif mode == "median":
             func = np.nanmedian
-        elif mode == 'max':
+        elif mode == "max":
             func = np.nanmax
-        elif mode == 'min': 
+        elif mode == "min":
             func = np.nanmin
         else:
             func = mode
@@ -865,6 +876,11 @@ class SpikePlotter(PlotterBase):
         for stimulus, response in data.items():
             current_length = stim_lengths[stimulus]
             current_bins = bins[stimulus]
+
+            if isinstance(colors, dict):
+                color = colors[stimulus]
+            else:
+                color = colors
 
             response[~np.isfinite(response)] = np.nan
 
@@ -960,17 +976,22 @@ class SpikePlotter(PlotterBase):
         to let it autoscale
         """
         fig, ax = plt.subplots(figsize=self.figsize)
-        ax.plot(bins, trace, color=color, linewidth=0.75)
+        ax.plot(bins, trace, color=color, linewidth=1.5)
         max_pt = np.max(trace)
+        if max_pt < 0:
+            min_pt = np.min(trace)
+        else:
+            min_pt = 0
         if ebars is not None:
             ax.plot(bins, trace + ebars, color=color, linewidth=0.25)
             ax.plot(bins, trace - ebars, color=color, linewidth=0.25)
-            ax.fill_between(bins, trace - ebars, trace + ebars, color=color, alpha=0.4)
+            ax.fill_between(bins, trace - ebars, trace + ebars, color=color, alpha=0.15)
             max_pt = np.max(trace + ebars)
+            min_pt = np.min(trace - ebars)
         if show_stim:
             ax.axvline(
                 0,
-                0,
+                min_pt,
                 max_pt,
                 color="black",
                 linestyle=":",
@@ -978,7 +999,7 @@ class SpikePlotter(PlotterBase):
             )
             ax.axvline(
                 stim_lines,
-                0,
+                min_pt,
                 max_pt,
                 color="black",
                 linestyle=":",
@@ -992,6 +1013,85 @@ class SpikePlotter(PlotterBase):
         plt.tight_layout()
         plt.figure(dpi=self.dpi)
         plt.show()
+
+    def plot_correlations(self, plot_type="whisker", mode="mean", colors="r", sem=True, plot_kwargs=None):
+        """
+        Function for plotting correlations in different formats
+        
+        Parameters
+        ----------
+        plot_type: 'whisker' | 'violin' | 'bar', default: 'whisker'
+            Type of plot for plotting
+        mode: 'mean' | 'mode', default: 'mean'
+            Whether to calculate and show the mean or median
+            this is plot dependent
+        colors: matplotlib color | dict[matplotlib colors]:
+            for plot_type = 'bar' the color for the different stimuli
+            can be one color for all bars or a dict with keys of stim and values of colors
+        sem: bool, default: True
+            If plot_type = 'bar' whether to use sem or std
+        plot_kwargs: dict() | None, default: None
+            To directly provide kwargs to the underlying matlplotlib functions
+            """
+
+        try:
+            corrs = self.data.correlations
+        except AttributeError:
+            raise Exception("must run correlations to plot correlations")
+        corr_list = []
+        stim_names = []
+
+        if plot_kwargs is None:
+            if mode == "mean":
+                plot_kwargs = {"showmeans": True, "meanline": True}
+            elif mode == "median":
+                plot_kwargs = {"showmedians": True}
+
+        for stimulus, corr in corrs.items():
+            corr_corrected = np.squeeze(corr[~np.isnan(corr)])
+
+            corr_list.append(corr_corrected)
+            stim_names.append(stimulus)
+
+        fig, ax = plt.subplots(figsize=self.figsize)
+
+        if plot_type == "whisker":
+            _ = plot_kwargs.pop("showmedians", None)
+            ax.boxplot(
+                corr_list,
+                notch=True,
+                **plot_kwargs,
+            )
+
+        elif plot_type == "violin":
+            _ = plot_kwargs.pop("meanline", None)
+            ax.violinplot(
+                corr_list,
+                **plot_kwargs,
+            )
+
+        elif plot_type == "bar":
+            if mode == "mean":
+                heights = [np.nanmean(a_corr) for a_corr in corr_list]
+            elif mode == "median":
+                heights = [np.nanmedian(a_corr) for a_corr in corr_list]
+
+            stds = [np.nanstd(a_corr) for a_corr in corr_list]
+            if sem:
+                root_list = [np.sqrt(len(a_corr)) for a_corr in corr_list]
+                stds = [stds[i] / root_list[i] for i in range(len(corr_list))]
+
+            ax.bar(x=range(1, len(corr_list) + 1), height=heights, yerr=stds, capsize=25, color=colors)
+
+        else:
+            raise ValueError("must be whisker, violin, or bar")
+
+        ax.set_xticks([y + 1 for y in range(len(corr_list))], labels=stim_names)
+
+        self._despine(ax)
+        plt.tight_layout()
+
+        plt.figure(dpi=self.dpi)
 
     def _get_event_lengths(self) -> dict:
         """
