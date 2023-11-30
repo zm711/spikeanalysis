@@ -36,8 +36,6 @@ def test_convert_plot_kwargs():
     plot_kwargs = dict(figsize=(10, 10), dpi=300, x_axis="a", y_axis="b", cmap="blue", title="test")
     new_kwargs = test_plotter.convert_plot_kwargs(plot_kwargs)
 
-    assert isinstance(new_kwargs, namedtuple)
-
     assert new_kwargs.figsize == (10, 10)
     assert new_kwargs.cmap == "blue"
     assert new_kwargs.dpi == 300
