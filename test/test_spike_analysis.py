@@ -37,7 +37,7 @@ def test_no_stim_exception():
 
 
 def test_attributes_sa(sa):
-    assert sa.HAVE_DIG_ANALOG
+    assert sa._HAVE_DIG_ANALOG
     assert len(sa.raw_spike_times) == 10
 
 

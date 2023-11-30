@@ -20,10 +20,11 @@ _possible_qc = ("generate_pcs", "refractory_violation", "generate_qcmetrics", "q
 class SpikeAnalysis:
     """Class for spike train analysis utilizing a SpikeData object and a StimulusData object"""
 
-    def __init__(self, save_parameters: bool = False):
+    def __init__(self, save_parameters: bool = False, verbose: bool = False):
         self._file_path = None
         self.events = {}
         self._save_params = save_parameters
+        self._verbose = verbose
 
     def __repr__(self):
         var_methods = dir(self)
@@ -31,7 +32,7 @@ class SpikeAnalysis:
         methods = list(set(var_methods) - set(var))
         final_methods = [method for method in methods if "__" not in method and method[0] != "_"]
         final_vars = [current_var for current_var in var if "_" not in current_var[:2]]
-        return f"The methods are: {final_methods} Variables are: {final_vars}"
+        return f"The methods are: {final_methods} \n\n Variables are: {final_vars}"
 
     def set_spike_data(self, sp: SpikeData):
         """
@@ -62,13 +63,14 @@ class SpikeAnalysis:
 
         self._cids = sp._cids
         try:
-            self.qc_threshold = sp._qc_threshold
+            self._qc_threshold = sp._qc_threshold
             QC_DATA = True
         except AttributeError:
-            print(
-                f"There is no qc run_threshold. Run {_possible_qc} to only\
-                  include acceptable values"
-            )
+            if self._verbose:
+                print(
+                    f"There is no qc run_threshold. Run {_possible_qc} to only\
+                    include acceptable values"
+                )
             self.qc_threshold = np.array([True for _ in self._cids])
             QC_DATA = False
 
@@ -81,7 +83,8 @@ class SpikeAnalysis:
             try:
                 sp.denoise_data()
             except TypeError:
-                print("no qc run")
+                if self._verbose:
+                    print("no qc run")
 
         self.raw_spike_times = sp.raw_spike_times
         self.cluster_ids = sp._cids
@@ -111,35 +114,38 @@ class SpikeAnalysis:
                 {event_times._file_path}, Spike: {self._file_path}"
 
         try:
-            self.digital_events = event_times.digital_events
-            self.HAVE_DIGITAL = True
+            self._digital_events = event_times.digital_events
+            self._HAVE_DIGITAL = True
         except AttributeError as err:
-            self.HAVE_DIGITAL = False
-            print(f"{err}. If it should be present. Run the digital_data processing {_possible_digital}")
+            self._HAVE_DIGITAL = False
+            if self._verbose:
+                print(f"{err}. If it should be present. Run the digital_data processing {_possible_digital}")
 
         try:
-            self.dig_analog_events = event_times.dig_analog_events
-            self.HAVE_DIG_ANALOG = True
+            self._dig_analog_events = event_times.dig_analog_events
+            self._HAVE_DIG_ANALOG = True
         except AttributeError as err:
-            self.HAVE_DIG_ANALOG = False
-            print(
-                f"{err}. If should be present. Run possible analog functions {_possible_analog} if should be present."
-            )
+            self._HAVE_DIG_ANALOG = False
+            if self._verbose:
+                print(
+                    f"{err}. If should be present. Run possible analog functions {_possible_analog} if should be present."
+                )
         try:
-            self.analog_data = event_times.analog_data
-            self.HAVE_ANALOG = True
+            self._analog_data = event_times.analog_data
+            self._HAVE_ANALOG = True
         except AttributeError:
-            self.HAVE_ANALOG = False
-            print("There is no raw analog data provided. Run get_analog_data if needed.")
+            self._HAVE_ANALOG = False
+            if self._verbose:
+                print("There is no raw analog data provided. Run get_analog_data if needed.")
 
-        if self.HAVE_DIGITAL and self.HAVE_DIG_ANALOG:
-            self.events = self._merge_events(self.digital_events, self.dig_analog_events)
-        elif self.HAVE_DIGITAL:
-            self.events = self.digital_events
-        elif self.HAVE_DIG_ANALOG:
-            self.events = self.dig_analog_events
+        if self._HAVE_DIGITAL and self._HAVE_DIG_ANALOG:
+            self.events = self._merge_events(self._digital_events, self._dig_analog_events)
+        elif self._HAVE_DIGITAL:
+            self.events = self._digital_events
+        elif self._HAVE_DIG_ANALOG:
+            self.events = self._dig_analog_events
         else:
-            raise Exception("Code requires some stimulus data")
+            raise ValueError("Code requires some stimulus data")
 
     def get_raw_psth(
         self,
@@ -225,7 +231,7 @@ class SpikeAnalysis:
             psths[stim_name]["psth"] = psth
             psths[stim_name]["bins"] = bins_sub / self._sampling_rate
 
-        self.NUM_STIM = TOTAL_STIM
+        self._NUM_STIM = TOTAL_STIM
         self.psths = psths
 
     def get_raw_firing_rate(
@@ -278,7 +284,7 @@ class SpikeAnalysis:
             jsonify_parameters(parameters, self._file_path)
 
         stim_dict = self._get_key_for_stim()
-        NUM_STIM = self.NUM_STIM
+        NUM_STIM = self._NUM_STIM
 
         if isinstance(time_bin_ms, float) or isinstance(time_bin_ms, int):
             time_bin_size = [time_bin_ms / 1000] * NUM_STIM
@@ -415,7 +421,7 @@ class SpikeAnalysis:
             jsonify_parameters(parameters, self._file_path)
 
         stim_dict = self._get_key_for_stim()
-        NUM_STIM = self.NUM_STIM
+        NUM_STIM = self._NUM_STIM
 
         if isinstance(time_bin_ms, float) or isinstance(time_bin_ms, int):
             time_bin_size = [time_bin_ms / 1000] * NUM_STIM
@@ -501,7 +507,7 @@ class SpikeAnalysis:
             parameters = {"latencies": dict(bsl_window=bsl_window, time_bin_ms=time_bin_ms, num_shuffles=num_shuffles)}
             jsonify_parameters(parameters, self._file_path)
 
-        NUM_STIM = self.NUM_STIM
+        NUM_STIM = self._NUM_STIM
         self._latency_time_bin = time_bin_ms
         bsl_windows = verify_window_format(window=bsl_window, num_stim=NUM_STIM)
 
@@ -739,15 +745,15 @@ class SpikeAnalysis:
         else:
             raise Exception(f"You have entered {dataset} and only ('psth', 'z_scores', or 'raw') are possible options")
 
-        windows = verify_window_format(window=window, num_stim=self.NUM_STIM)
+        windows = verify_window_format(window=window, num_stim=self._NUM_STIM)
         if time_bin_ms is not None:
             if isinstance(time_bin_ms, (float, int)):
-                time_bin_size = [time_bin_ms / 1000] * self.NUM_STIM
+                time_bin_size = [time_bin_ms / 1000] * self._NUM_STIM
             else:
                 assert (
-                    len(time_bin_ms) == self.NUM_STIM
+                    len(time_bin_ms) == self._NUM_STIM
                 ), f"Please enter the correct number of time bins\
-                    number of bins is{len(time_bin_ms)} and should be {self.NUM_STIM}"
+                    number of bins is{len(time_bin_ms)} and should be {self._NUM_STIM}"
                 time_bin_size = np.array(time_bin_ms) / 1000
 
             try:
@@ -755,7 +761,7 @@ class SpikeAnalysis:
             except AttributeError:
                 pass
         else:
-            time_bin_size = [None] * self.NUM_STIM
+            time_bin_size = [None] * self._NUM_STIM
 
         correlations = {}
         for idx, stimulus in enumerate(data.keys()):
@@ -824,10 +830,15 @@ class SpikeAnalysis:
 
         self.acg = acg
 
-    def _generate_sample_z_parameter(self) -> dict:
+    def _generate_sample_z_parameter(self, save=True) -> dict:
         """
         Function for providing example z score parameters. Then saves as json
         for easy editing in the future.
+
+        Parameters
+        ----------
+        save: bool, default: True
+            Whether to save the example dict as a json file
 
         Returns
         -------
@@ -847,8 +858,9 @@ class SpikeAnalysis:
             }
         }
 
-        with open("z_parameters.json", "w") as write_file:
-            json.dump(example_z_parameter, write_file)
+        if save:
+            with open("z_parameters.json", "w") as write_file:
+                json.dump(example_z_parameter, write_file)
 
         return example_z_parameter
 
@@ -880,8 +892,6 @@ class SpikeAnalysis:
         None.
 
         """
-
-        import json
         import glob
 
         parameter_file = glob.glob("z_parameters.json")
@@ -893,6 +903,8 @@ class SpikeAnalysis:
             )
 
         if z_parameters is None:
+            import json
+
             with open("z_parameters.json") as read_file:
                 z_parameters = json.load(read_file)
         else:
