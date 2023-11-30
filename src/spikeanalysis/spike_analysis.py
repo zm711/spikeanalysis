@@ -669,7 +669,11 @@ class SpikeAnalysis:
         self.isi_values = raw_data
 
     def trial_correlation(
-        self, window: Union[list, list[list]], time_bin_ms: Optional[float] = None, dataset: str = "psth"
+        self,
+        window: Union[list, list[list]],
+        time_bin_ms: Optional[float] = None,
+        dataset: "psth" | "raw" | "z_scores" = "psth",
+        method: "pearson" | "kendall" | "spearman" = "pearson",
     ):
         """
         Function to calculate pairwise pearson correlation coefficents of z scored or raw firing rate data/time bin.
@@ -683,9 +687,10 @@ class SpikeAnalysis:
         time_bin_ms : float, optional
                Size of time bins to use given in milliseconds. Bigger time bins smooths the data which can remove some
                artificial differences in trials.
-        dataset : str, (psth, z_scores)
-            Whether to use the psth (raw spike counts) or z_scored data. The default is 'z_scores'.
-
+        dataset : "psth" | "raw" | "z_scores", default: "psth"
+            Whether to use the psth (raw spike counts) raw (the firing rates) or z_scored data.
+        method: "pearson", "kendall", "spearman", default: "pearson"
+            the correlation method to be used in the pandas.DataFrame.corr() function
         Raises
         ------
         Exception
@@ -698,7 +703,7 @@ class SpikeAnalysis:
         """
 
         if self._save_params:
-            parameters = {"trial_correlation": dict(time_bin_ms=time_bin_ms, dataset=dataset)}
+            parameters = {"trial_correlation": dict(time_bin_ms=time_bin_ms, dataset=dataset, method=method)}
             jsonify_parameters(parameters, self._file_path)
 
         try:
@@ -714,6 +719,15 @@ class SpikeAnalysis:
             except AttributeError:
                 raise Exception("To run dataset=='psth', ensure 'get_raw_psth' has been run")
 
+        elif dataset == "raw":
+            try:
+                raw_firing = self.raw_firing_rate
+                data = raw_firing
+            except AttributeError:
+                raise AttributeError(
+                    'To run dataset="raw" ensure "get_raw_psth" and "get_raw_firing_rate" have been run'
+                )
+
         elif dataset == "z_scores":
             try:
                 z_scores = self.raw_zscores
@@ -723,7 +737,7 @@ class SpikeAnalysis:
                 raise Exception("To run dataset=='z_scores', ensure ('get_raw_psth', 'z_score_data')")
 
         else:
-            raise Exception(f"You have entered {dataset} and only ('psth', or 'z_scores') are possible options")
+            raise Exception(f"You have entered {dataset} and only ('psth', 'z_scores', or 'raw') are possible options")
 
         windows = verify_window_format(window=window, num_stim=self.NUM_STIM)
         if time_bin_ms is not None:
@@ -782,7 +796,7 @@ class SpikeAnalysis:
                     final_sub_data = np.squeeze(current_data_windowed_by_trial[cluster_number])
                     data_dataframe = pd.DataFrame(np.squeeze(final_sub_data.T))
 
-                    sub_correlations = data_dataframe.corr()
+                    sub_correlations = data_dataframe.corr(method=method)
                     masked_correlations = sub_correlations[sub_correlations != 1]
                     for row in range(np.shape(masked_correlations)[0]):
                         final_correlations = np.nanmean(masked_correlations.iloc[row, :])
@@ -838,7 +852,8 @@ class SpikeAnalysis:
 
         return example_z_parameter
 
-    def save_z_sample_parameters(self, z_parameters: dict):
+    def save_z_parameters(self, z_parameters: dict):
+        """saves the z parameters to be used in the future"""
         import json
 
         with open("z_parameters.json", "w") as write_file:
@@ -881,7 +896,8 @@ class SpikeAnalysis:
             with open("z_parameters.json") as read_file:
                 z_parameters = json.load(read_file)
         else:
-            z_parameters = z_parameters
+            if not isinstance(z_parameters, dict):
+                raise TypeError(f"z_parameters must be of type dict, but is of type: {type(z_parameters)}")
 
         if "all" in z_parameters.keys():
             SAME_PARAMS = True
@@ -896,7 +912,6 @@ class SpikeAnalysis:
 
             if SAME_PARAMS:
                 current_z_params = z_parameters["all"]
-
             else:
                 current_z_params = z_parameters[stim]
 
@@ -923,7 +938,6 @@ class SpikeAnalysis:
                     z_above_threshold = np.sum(np.where(current_z_scores_sub < current_score, 1, 0), axis=2)
 
                 responsive_neurons = np.where(z_above_threshold > current_n_bins, True, False)
-
                 self.responsive_neurons[stim][key] = responsive_neurons
 
     def save_responsive_neurons(self):
@@ -934,7 +948,7 @@ class SpikeAnalysis:
         with open(file_path / "response_profile.json", "w") as write_file:
             json.dump(self.responsive_neurons, write_file, cls=NumpyEncoder)
 
-    def _merge_events(self, event_0: dict, event_1: dict):
+    def _merge_events(self, event_0: dict, event_1: dict) -> dict:
         """Utility function for merging digital and analog events into one dictionary"""
         events = {**event_0, **event_1}
         return events

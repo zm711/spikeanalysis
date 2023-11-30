@@ -19,7 +19,7 @@ class SpikePlotter(PlotterBase):
     """SpikePlotter is a plotting class which allows for plotting of PSTHs, z score heatmaps
     in the future it will plot other values"""
 
-    def __init__(self, analysis: Optional[SpikeAnalysis | CuratedSpikeAnalysis] = None, **kwargs):
+    def __init__(self, analysis: Optional[SpikeAnalysis | CuratedSpikeAnalysis | MergedSpikeAnalysis] = None, **kwargs):
         """
         SpikePlotter requires a SpikeAnalysis object, which can be set during init
         or in the set_analysis function. Not including the SpikeAnalysis object
