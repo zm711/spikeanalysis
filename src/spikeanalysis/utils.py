@@ -2,6 +2,7 @@ from __future__ import annotations
 import json
 from typing import Union
 import numpy as np
+from pathlib import Path
 
 
 class NumpyEncoder(json.JSONEncoder):
@@ -11,9 +12,13 @@ class NumpyEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def jsonify_parameters(parameters: dict):
+def jsonify_parameters(parameters: dict, file_path: Path | None = None):
+    if file_path is not None:
+        assert file_path.exists()
+    else:
+        file_path = Path("")
     try:
-        with open("analysis_parameters.json", "r") as read_file:
+        with open(file_path / "analysis_parameters.json", "r") as read_file:
             old_params = json.load(read_file)
         old_params.update(parameters)
         new_parameters = old_params
@@ -21,7 +26,7 @@ def jsonify_parameters(parameters: dict):
     except FileNotFoundError:
         new_parameters = parameters
 
-    with open("analysis_parameters.json", "w") as write_file:
+    with open(file_path / "analysis_parameters.json", "w") as write_file:
         json.dump(new_parameters, write_file)
 
 
