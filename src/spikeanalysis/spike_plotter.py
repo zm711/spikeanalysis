@@ -843,9 +843,9 @@ class SpikePlotter(PlotterBase):
             plt.show()
 
     def plot_event_isi(self, colors: str | dict, include_ids: list | np.array | None = None, plot_kwargs: dict = {}):
-        """ 
+        """
         Function for plotting changes in isi during events/trials
-        
+
         Parameters
         ----------
         colors: str | dict[str]
@@ -854,7 +854,7 @@ class SpikePlotter(PlotterBase):
             A sequence of cluster ids to plot
         plot_kwargs: dict, default: {}
             plotting kwargs
-            
+
         """
 
         try:
