@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections import namedtuple
 from typing import Optional
 import matplotlib.pyplot as plt
 
@@ -43,3 +44,38 @@ class PlotterBase:
             self.title = kwargs["title"]
         if "figsize" in kwargs:
             self.figsize = kwargs["figsize"]
+
+    def convert_plot_kwargs(self, plot_kwargs: dict) -> namedtuple:
+        """If given a dict of kwargs converts to namedtuple otherwise
+        uses the global kwargs set for plotting
+
+        Parameters
+        ----------
+        plot_kwargs: dict
+            the matplotlib style kwargs to use
+
+        """
+
+        figsize = plot_kwargs.pop("figsize", self.figsize)
+        dpi = plot_kwargs.pop("dpi", self.dpi)
+        x_lim = plot_kwargs.pop("xlim", None)
+        y_lim = plot_kwargs.pop("ylim", None)
+
+        title = plot_kwargs.pop("title", self.title)
+        cmap = plot_kwargs.pop("cmap", self.cmap)
+
+        x_axis = plot_kwargs.pop("x_axis", self.x_axis)
+        y_axis = plot_kwargs.pop("y_axis", self.y_axis)
+
+        PlotKwargs = namedtuple("PlotKwargs", ["figsize", "dpi", "x_lim", "y_lim", "title", "cmap", "x_axis", "y_axis"])
+
+        plot_kwargs = PlotKwargs(figsize, dpi, x_lim, y_lim, title, cmap, x_axis, y_axis)
+
+        return plot_kwargs
+
+    def set_plot_kwargs(self, ax: plt.axes, plot_kwargs: namedtuple):
+        if plot_kwargs.x_lim is not None:
+            ax.set_xlim(plot_kwargs.x_lim)
+
+        if plot_kwargs.y_lim is not None:
+            ax.set_ylim(plot_kwargs.y_lim)

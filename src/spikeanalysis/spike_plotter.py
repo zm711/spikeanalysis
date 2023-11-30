@@ -6,17 +6,10 @@ import matplotlib.pyplot as plt
 
 from .utils import verify_window_format, gaussian_smoothing
 
-try:
-    import seaborn as sns
-
-    HAVE_SNS = True
-except ImportError:
-    HAVE_SNS = False
-
-
 from .plotbase import PlotterBase
 from .spike_analysis import SpikeAnalysis
 from .curated_spike_analysis import CuratedSpikeAnalysis
+from .merged_spike_analysis import MergedSpikeAnalysis
 
 
 _z_scores_code = ("get_raw_psths", "z_score_data")
@@ -64,7 +57,7 @@ class SpikePlotter(PlotterBase):
         final_methods = [method for method in methods if "plot" in method]
         return f"The methods are {final_methods}"
 
-    def set_analysis(self, analysis: SpikeAnalysis):
+    def set_analysis(self, analysis: SpikeAnalysis | CuratedSpikeAnalysis | MergedSpikeAnalysis):
         """
         Set the SpikeAnalysis object for plotting
 
@@ -74,7 +67,9 @@ class SpikePlotter(PlotterBase):
             The SpikeAnalysis object for plotting
 
         """
-        assert isinstance(analysis, (SpikeAnalysis, CuratedSpikeAnalysis)), "analysis must be a SpikeAnalysis dataset"
+        assert isinstance(
+            analysis, (SpikeAnalysis, CuratedSpikeAnalysis, MergedSpikeAnalysis)
+        ), "analysis must be a SpikeAnalysis dataset"
         self.data = analysis
 
     def plot_zscores(
@@ -84,6 +79,7 @@ class SpikePlotter(PlotterBase):
         z_bar: Optional[list[int]] = None,
         indices: bool = False,
         show_stim: bool = True,
+        plot_kwargs: dict = {},
     ) -> Optional[np.array]:
         """
         Function to plot heatmaps of z scored firing rate. All trial groups are plotted on the same axes.
@@ -103,6 +99,8 @@ class SpikePlotter(PlotterBase):
             If true will return the cluster ids sorted in the order they appear in the graph
         show_stim: bool, default True
             Show lines where stim onset and offset are
+        plot_kwargs: dict default: {}
+            matplot lib kwargs to overide the global kwargs for just the function
 
         Returns
         -------
@@ -122,6 +120,7 @@ class SpikePlotter(PlotterBase):
             bar=z_bar,
             indices=indices,
             show_stim=show_stim,
+            plot_kwargs=plot_kwargs,
         )
         if reset:
             self.cmap = None
@@ -136,6 +135,7 @@ class SpikePlotter(PlotterBase):
         bar: Optional[list[int]] = None,
         indices: bool = False,
         show_stim: bool = True,
+        plot_kwargs: dict = {},
     ) -> Optional[np.array]:
         """
         Function to plot heatmaps of raw firing rate data. Can be baseline subtracted, raw or smoothed
@@ -156,6 +156,9 @@ class SpikePlotter(PlotterBase):
             If true will return the cluster ids sorted in the order they appear in the graph
         show_stim: bool, default True
             Show lines where stim onset and offset are
+        plot_kwargs: dict default: {}
+            matplot lib kwargs to overide the global kwargs for just the function
+
 
         Returns
         -------
@@ -169,7 +172,13 @@ class SpikePlotter(PlotterBase):
             self.cmap = "viridis"
 
         sorted_cluster_ids = self._plot_scores(
-            data="raw-data", figsize=figsize, sorting_index=sorting_index, bar=bar, indices=indices, show_stim=show_stim
+            data="raw-data",
+            figsize=figsize,
+            sorting_index=sorting_index,
+            bar=bar,
+            indices=indices,
+            show_stim=show_stim,
+            plot_kwargs=plot_kwargs,
         )
 
         if reset:
@@ -186,6 +195,7 @@ class SpikePlotter(PlotterBase):
         bar: Optional[list[int]] = None,
         indices: bool = False,
         show_stim: bool = True,
+        plot_kwargs: dict = {},
     ) -> Optional[np.array]:
         """
         Function to plot heatmaps of firing rate data
@@ -204,6 +214,9 @@ class SpikePlotter(PlotterBase):
             If true will return the cluster ids sorted in the order they appear in the graph as a dict of stimuli
         show_stim: bool, default True
             Show lines where stim onset and offset are
+        plot_kwargs: dict default: {}
+            matplot lib kwargs to overide the global kwargs for just the function
+
 
         Returns
         -------
@@ -219,15 +232,17 @@ class SpikePlotter(PlotterBase):
         else:
             raise Exception(f"plotting not initialized for data of {data}")
 
+        plot_kwargs = self.convert_plot_kwargs(plot_kwargs)
+
         if figsize is None:
-            figsize = self.figsize
+            figsize = plot_kwargs.figsize
 
-        cmap = self.cmap
+        cmap = plot_kwargs.cmap
 
-        if self.y_axis is None:
+        if plot_kwargs.y_axis is None:
             y_axis = "Units"
         else:
-            y_axis = self.y_axis
+            y_axis = plot_kwargs.y_axis
 
         if bar is not None:
             assert len(bar) == 2, f"Please give z_bar as [min, max], you entered {bar}"
@@ -295,7 +310,7 @@ class SpikePlotter(PlotterBase):
             ]  # aim for nearest bin at end of stim
             bins_length = int(len(bins) / 7)
 
-            fig, axes = plt.subplots(1, columns, sharey=True, figsize=(24, 10))
+            fig, axes = plt.subplots(1, columns, sharey=True, figsize=figsize)
 
             if columns == 1:
                 axes = np.array(axes)
@@ -342,8 +357,11 @@ class SpikePlotter(PlotterBase):
             else:
                 cbar_label = "Raw Firing"
             plt.colorbar(im, cax=cax, label=cbar_label)  # Similar to fig.colorbar(im, cax = cax)
-            plt.title(f"{stimulus}")
-            plt.figure(dpi=self.dpi)
+            if plot_kwargs.title is None:
+                plt.title(f"{stimulus}")
+            else:
+                plt.title(plot_kwargs.title)
+            plt.figure(dpi=plot_kwargs.dpi)
             plt.show()
 
             if RESET_INDEX:
@@ -357,6 +375,7 @@ class SpikePlotter(PlotterBase):
         window: Union[list, list[list]],
         show_stim: bool = True,
         include_ids: list | np.nadarry | None = None,
+        plot_kwargs: dict = {},
     ):
         """
         Function to plot rasters
@@ -370,6 +389,9 @@ class SpikePlotter(PlotterBase):
             Show lines where stim onset and offset are
         include_ids: list | np.ndarray | None, default: None
            sub ids to include
+        plot_kwargs: dict default: {}
+            matplot lib kwargs to overide the global kwargs for just the function
+
         """
         from .analysis_utils import histogram_functions as hf
 
@@ -378,15 +400,14 @@ class SpikePlotter(PlotterBase):
         except AttributeError:
             raise Exception("must have psths to make a raster. please run get_raw_psths()")
 
-        if self.y_axis is None:
+        plot_kwargs = self.convert_plot_kwargs(plot_kwargs)
+        if plot_kwargs.y_axis is None:
             ylabel = "Events"
         else:
-            ylabel = self.y_axis
+            ylabel = plot_kwargs.y_axis
 
         windows = verify_window_format(window=window, num_stim=len(psths.keys()))
-
         stim_trial_groups = self._get_trial_groups()
-
         event_lengths = self._get_event_lengths()
 
         if include_ids is not None:
@@ -439,24 +460,23 @@ class SpikePlotter(PlotterBase):
                 raster_y = np.squeeze(raster_y)
                 raster_y[1:-1:3] = raster_y[1:-1:3] + raster_scale
 
-                fig, ax = plt.subplots(figsize=self.figsize)
+                fig, ax = plt.subplots(figsize=plot_kwargs.figsize)
                 ax.plot(raster_x, raster_y, color="black")
                 if show_stim:
                     ax.plot([0, 0], [0, np.nanmax(raster_y) + 1], color="red", linestyle=":")
                     ax.plot([events, events], [0, np.nanmax(raster_y) + 1], color="red", linestyle=":")
 
-                ax.set(xlabel=self.x_axis, ylabel=ylabel)
-
+                ax.set(xlabel=plot_kwargs.x_axis, ylabel=ylabel)
+                self.set_plot_kwargs(ax, plot_kwargs)
                 plt.grid(False)
                 plt.tight_layout()
 
-                if HAVE_SNS:
-                    sns.despine()
+                self._despine(ax)
+                if plot_kwargs.title is None:
+                    plt.title(f"{stimulus}: {self.data.cluster_ids[idy]}", fontsize=8)
                 else:
-                    self._despine(ax)
-
-                plt.title(f"{stimulus}: {self.data.cluster_ids[idy]}", fontsize=8)
-                plt.figure(dpi=self.dpi)
+                    plt.title(plot_kwargs.title)
+                plt.figure(dpi=plot_kwargs.dpi)
                 plt.show()
 
     def plot_sm_fr(
@@ -466,7 +486,7 @@ class SpikePlotter(PlotterBase):
         sm_time_ms: Union[float, list[float]],
         show_stim: bool = True,
         include_ids: list | np.ndarray | None = None,
-        sorted: bool = False,
+        plot_kwargs: dict = {},
     ):
         """
         Function to plot smoothed firing rates
@@ -485,13 +505,18 @@ class SpikePlotter(PlotterBase):
             Show lines where stim onset and offset are
         include_ids: list | np.ndarray | None
             The ids to include for plotting
+        plot_kwargs: dict default: {}
+            matplot lib kwargs to overide the global kwargs for just the function
+
 
         """
         import matplotlib as mpl
         from .analysis_utils import histogram_functions as hf
 
-        if self.cmap is not None:
-            cmap = mpl.colormaps[self.cmap]
+        plot_kwargs = self.convert_plot_kwargs(plot_kwargs)
+
+        if plot_kwargs.cmap is not None:
+            cmap = mpl.colormaps[plot_kwargs.cmap]
         else:
             cmap = mpl.colormaps["rainbow"]
 
@@ -500,10 +525,10 @@ class SpikePlotter(PlotterBase):
         except AttributeError:
             raise Exception("must have psths to make a raster. please run get_raw_psths()")
 
-        if self.y_axis is None:
+        if plot_kwargs.y_axis is None:
             ylabel = "Smoothed Raw Firing Rate (Spikes/Second)"
         else:
-            ylabel = self.y_axis
+            ylabel = plot_kwargs.y_axis
 
         windows = verify_window_format(window=window, num_stim=len(psths.keys()))
         if isinstance(sm_time_ms, (int, float)):
@@ -576,7 +601,7 @@ class SpikePlotter(PlotterBase):
 
                 min_value = 0
 
-                fig, ax = plt.subplots(figsize=self.figsize)
+                fig, ax = plt.subplots(figsize=plot_kwargs.figsize)
                 for value in range(np.shape(mean_smoothed_psth)[0]):
                     err_minus = mean_smoothed_psth[value] - stderr[value]
                     err_plus = mean_smoothed_psth[value] + stderr[value]
@@ -599,16 +624,18 @@ class SpikePlotter(PlotterBase):
                         )
 
                     ax.set(ylim=(0, np.max(mean_smoothed_psth) + np.max(stderr) + 1))
+                    self.set_plot_kwargs(ax, plot_kwargs)
                     ax.set_ylabel(ylabel)
-                    ax.set_xlabel(self.x_axis)
+                    ax.set_xlabel(plot_kwargs.x_label)
                     plt.tight_layout()
-                    if HAVE_SNS:
-                        sns.despine()
-                    else:
-                        self._despine(ax)
 
-                plt.title(f"{stimulus}: {self.data.cluster_ids[cluster_number]}", fontsize=8)
-                plt.figure(dpi=self.dpi)
+                    self._despine(ax)
+
+                if plot_kwargs.title is not None:
+                    plt.title(plot_kwargs.title)
+                else:
+                    plt.title(f"{stimulus}: {self.data.cluster_ids[cluster_number]}", fontsize=8)
+                plt.figure(dpi=plot_kwargs.dpi)
                 plt.show()
 
     def plot_zscores_ind(self, z_bar: Optional[list[int]] = None, show_stim: bool = True):
@@ -723,19 +750,24 @@ class SpikePlotter(PlotterBase):
                 plt.figure(dpi=self.dpi)
                 plt.show()
 
-    def plot_latencies(self, colors="red"):
+    def plot_latencies(self, colors="red", plot_kwargs={}):
         """
         Function for plotting latencies
         Parameters
         ----------
         colors: colormap color | dict[colormap color], default = 'red'
             Either the color for all stim or a dict of colors for each stim
+        plot_kwargs: dict default: {}
+            matplot lib kwargs to overide the global kwargs for just the function
+
         """
 
         try:
             latency = self.data.latency
         except AttributeError:
             raise Exception("must run `latencies()` function")
+
+        plot_kwargs = self.convert_plot_kwargs(plot_kwargs)
 
         bin_size = self.data._latency_time_bin
         bins = np.arange(0, 400 + bin_size, bin_size)
@@ -753,15 +785,16 @@ class SpikePlotter(PlotterBase):
                 shufl_bsl_neuron = shuffled_lats[neuron].flatten()
                 lat_by_neuron = lat_by_neuron[~np.isnan(lat_by_neuron)]
                 shufl_bsl_neuron = shufl_bsl_neuron[~np.isnan(shufl_bsl_neuron)]
-                fig, ax = plt.subplots(figsize=self.figsize)
+                fig, ax = plt.subplots(figsize=plot_kwargs.figsize)
                 ax.hist(lat_by_neuron, density=True, bins=bins, color=color, alpha=0.8)
                 ax.hist(shufl_bsl_neuron, density=True, bins=bins, color="k", alpha=0.8)
                 ax.set_xlabel("Time (ms)", fontsize="small")
                 ax.set_ylabel("Counts", fontsize="small")
+                self.set_plot_kwargs(ax, plot_kwargs)
                 plt.title(f"{stimulus.title()}: {self.data.cluster_ids[neuron]}")
                 self._despine(ax)
                 plt.tight_layout()
-                plt.figure(dpi=self.dpi)
+                plt.figure(dpi=plot_kwargs.dpi)
                 plt.show()
 
     def plot_isi(self):
@@ -787,29 +820,47 @@ class SpikePlotter(PlotterBase):
             plt.figure(dpi=self.dpi)
             plt.show()
 
-    def plot_event_isi(self):
+    def plot_event_isi(self, colors: str | dict, include_ids=None, plot_kwargs: dict = {}):
         try:
             final_isi = self.data.isi
         except AttributeError:
             raise Exception("must run `compute_event_interspike_interval()")
 
+        if include_ids is not None:
+            cluster_indices = self.data.cluster_ids
+            keep_list = []
+            for cid in include_ids:
+                keep_list.append(np.where(cluster_indices == cid)[0][0])
+            keep_list = np.array(keep_list)
+        else:
+            keep_list = np.arange(0, len(self.data.cluster_ids), 1)
+
+        plot_kwargs = self.convert_plot_kwargs(plot_kwargs)
+
         for stimulus, isis in final_isi.items():
             baseline = isis["bsl_isi"].sum(axis=1)
             stimulus_isi = isis["isi"].sum(axis=1)
             bins = isis["bins"]
+            if isinstance(colors, dict):
+                color = colors[stimulus]
+            else:
+                color = colors
             for row in range(stimulus_isi.shape[0]):
+                if row not in keep_list:
+                    continue
                 sub_bsl = baseline[row] / baseline[row].sum()
                 sub_stim_isi = stimulus_isi[row] / stimulus_isi[row].sum()
 
-                fig, ax = plt.subplots(figsize=self.figsize)
+                fig, ax = plt.subplots(figsize=plot_kwargs.figsize)
                 ax.stairs(sub_bsl, edges=bins, fill=True, color="k", alpha=0.7)
-                ax.stairs(sub_stim_isi, edges=bins, fill=True, color="r", alpha=0.7)
+                ax.stairs(sub_stim_isi, edges=bins, fill=True, color=color, alpha=0.7)
+                self.set_plot_kwargs(ax, plot_kwargs)
                 ax.set_xlabel("Time (ms)")
                 ax.set_ylabel("Counts (Normalized)")
                 self._despine(ax)
                 plt.title(f"isi vs bsl {stimulus}: {self.data.cluster_ids[row]}")
                 plt.tight_layout()
-                plt.figure(dpi=self.dpi)
+                plt.figure(dpi=plot_kwargs.dpi)
                 plt.show()
 
     def plot_response_trace(
@@ -817,10 +868,13 @@ class SpikePlotter(PlotterBase):
         fr_type: Literal["zscore", "raw"] = "zscore",
         by_neuron: bool = False,
         by_trial: bool = False,
+        by_trialgroup: bool = False,
         ebar: bool = False,
         colors="black",
         show_stim: bool = True,
+        sem: bool = False,
         mode: Literal["mean", "median", "max", "min"] = "mean",
+        plot_kwargs: dict = {},
     ):
         """
         Function for plotting response traces for either z scored or raw firing rates
@@ -844,16 +898,24 @@ class SpikePlotter(PlotterBase):
             the appropriate nan-based numpy function is used. Otherwise the user
             can give an appropriate function to use (it needs to be able to handle)
             data with nans
+         plot_kwargs: dict default: {}
+            matplot lib kwargs to overide the global kwargs for just the function
 
         """
 
         assert fr_type in ["zscore", "raw"], f"fr_type of data must be zscore or raw, you entered {fr_type}"
 
         if fr_type == "zscore":
-            data = self.data.z_scores
+            if by_trialgroup:
+                data = self.data.z_scores
+            else:
+                data = self.data.raw_zscores
             bins = self.data.z_bins
         elif fr_type == "raw":
-            data = self.data.mean_firing_rate
+            if by_trialgroup:
+                data = self.data.mean_firing_rate
+            else:
+                data = self.data.raw_firing_rate
             bins = self.data.fr_bins
 
         stim_lengths = self._get_event_lengths()
@@ -895,12 +957,15 @@ class SpikePlotter(PlotterBase):
                             stim=f"{stimulus}: {self.data.cluster_ids[neuron]}: {trial}",
                             show_stim=show_stim,
                             stim_lines=current_length,
+                            plot_kwargs=plot_kwargs,
                         )
             elif by_neuron:
                 for neuron in range(np.shape(response)[0]):
                     avg_response = func(response[neuron], axis=0)
                     ebars = np.nanstd(response[neuron], axis=0)
-                    if ebar:
+                    if sem:
+                        ebars /= np.sqrt(response.shape[1])
+                    if ebar or sem:
                         self._plot_one_trace(
                             current_bins,
                             avg_response,
@@ -909,6 +974,7 @@ class SpikePlotter(PlotterBase):
                             stim=f"{stimulus}: neuron: {self.data.cluster_ids[neuron]}",
                             show_stim=show_stim,
                             stim_lines=current_length,
+                            plot_kwargs=plot_kwargs,
                         )
                     else:
                         self._plot_one_trace(
@@ -919,12 +985,15 @@ class SpikePlotter(PlotterBase):
                             stim=f"{stimulus}: neuron: {self.data.cluster_ids[neuron]}",
                             show_stim=show_stim,
                             stim_lines=current_length,
+                            plot_kwargs=plot_kwargs,
                         )
             elif by_trial:
                 for trial in range(np.shape(response)[1]):
                     avg_response = func(response[:, trial, :], axis=0)
                     ebars = np.nanstd(response[:, trial, :], axis=0)
-                    if ebar:
+                    if sem:
+                        ebars /= np.sqrt(response.shape[0])
+                    if ebar or sem:
                         self._plot_one_trace(
                             current_bins,
                             avg_response,
@@ -933,6 +1002,7 @@ class SpikePlotter(PlotterBase):
                             stim=f"{stimulus} event number {trial}",
                             show_stim=show_stim,
                             stim_lines=current_length,
+                            plot_kwargs=plot_kwargs,
                         )
                     else:
                         self._plot_one_trace(
@@ -943,11 +1013,42 @@ class SpikePlotter(PlotterBase):
                             stim=f"{stimulus} event number {trial}",
                             show_stim=show_stim,
                             stim_lines=current_length,
+                            plot_kwargs=plot_kwargs,
+                        )
+            elif by_trialgroup:
+                for trial in range(np.shape(response)[1]):
+                    avg_response = func(response[:, trial, :], axis=0)
+                    ebars = np.nanstd(response[:, trial, :], axis=0)
+                    if sem:
+                        ebars /= np.sqrt(response.shape[0])
+                    if ebar or sem:
+                        self._plot_one_trace(
+                            current_bins,
+                            avg_response,
+                            ebars=ebars,
+                            color=color,
+                            stim=f"{stimulus} trial group number {trial}",
+                            show_stim=show_stim,
+                            stim_lines=current_length,
+                            plot_kwargs=plot_kwargs,
+                        )
+                    else:
+                        self._plot_one_trace(
+                            current_bins,
+                            avg_response,
+                            ebars=None,
+                            color=color,
+                            stim=f"{stimulus} trial group number {trial}",
+                            show_stim=show_stim,
+                            stim_lines=current_length,
+                            plot_kwargs=plot_kwargs,
                         )
             else:
                 avg_response = np.mean(func(response, axis=1), axis=0)
                 ebars = np.nanstd(func(response, axis=1), axis=0)
-                if ebar:
+                if sem:
+                    ebars /= np.sqrt(response.shape[0])
+                if ebar or sem:
                     self._plot_one_trace(
                         current_bins,
                         avg_response,
@@ -956,6 +1057,7 @@ class SpikePlotter(PlotterBase):
                         stim=stimulus,
                         show_stim=show_stim,
                         stim_lines=current_length,
+                        plot_kwargs=plot_kwargs,
                     )
                 else:
                     self._plot_one_trace(
@@ -966,16 +1068,28 @@ class SpikePlotter(PlotterBase):
                         stim=stimulus,
                         show_stim=show_stim,
                         stim_lines=current_length,
+                        plot_kwargs=plot_kwargs,
                     )
 
     def _plot_one_trace(
-        self, bins, trace, ebars=None, color="black", stim="", show_stim: bool = True, stim_lines: list = 0
+        self,
+        bins,
+        trace,
+        ebars=None,
+        color="black",
+        stim="",
+        show_stim: bool = True,
+        stim_lines: list = 0,
+        plot_kwargs={},
     ):
         """
         Function for plotting one response trace in 2D. I'm going to try
         to let it autoscale
         """
-        fig, ax = plt.subplots(figsize=self.figsize)
+
+        plot_kwargs = self.convert_plot_kwargs(plot_kwargs)
+
+        fig, ax = plt.subplots(figsize=plot_kwargs.figsize)
         ax.plot(bins, trace, color=color, linewidth=1.5)
         max_pt = np.max(trace)
         if max_pt < 0:
@@ -1006,18 +1120,19 @@ class SpikePlotter(PlotterBase):
                 linewidth=0.5,
             )
 
+        self.set_plot_kwargs(ax, plot_kwargs)
         ax.set_xlabel("Time (s)")
-        ax.set_ylabel(self.y_axis)
+        ax.set_ylabel(plot_kwargs.y_axis)
         self._despine(ax)
         plt.title(f"trace {stim}")
         plt.tight_layout()
-        plt.figure(dpi=self.dpi)
+        plt.figure(dpi=plot_kwargs.dpi)
         plt.show()
 
     def plot_correlations(self, plot_type="whisker", mode="mean", colors="r", sem=True, plot_kwargs=None):
         """
         Function for plotting correlations in different formats
-        
+
         Parameters
         ----------
         plot_type: 'whisker' | 'violin' | 'bar', default: 'whisker'
@@ -1032,7 +1147,7 @@ class SpikePlotter(PlotterBase):
             If plot_type = 'bar' whether to use sem or std
         plot_kwargs: dict() | None, default: None
             To directly provide kwargs to the underlying matlplotlib functions
-            """
+        """
 
         try:
             corrs = self.data.correlations
@@ -1040,24 +1155,28 @@ class SpikePlotter(PlotterBase):
             raise Exception("must run correlations to plot correlations")
         corr_list = []
         stim_names = []
+        color_list = []
 
         if plot_kwargs is None:
             if mode == "mean":
                 plot_kwargs = {"showmeans": True, "meanline": True}
             elif mode == "median":
                 plot_kwargs = {"showmedians": True}
+            else:
+                plot_kwargs = {}
 
         for stimulus, corr in corrs.items():
             corr_corrected = np.squeeze(corr[~np.isnan(corr)])
 
-            corr_list.append(corr_corrected)
+            corr_list.append(sorted(corr_corrected))
             stim_names.append(stimulus)
+            color_list.append(colors[stimulus])
 
         fig, ax = plt.subplots(figsize=self.figsize)
 
         if plot_type == "whisker":
             _ = plot_kwargs.pop("showmedians", None)
-            ax.boxplot(
+            parts = ax.boxplot(
                 corr_list,
                 notch=True,
                 **plot_kwargs,
@@ -1065,9 +1184,9 @@ class SpikePlotter(PlotterBase):
 
         elif plot_type == "violin":
             _ = plot_kwargs.pop("meanline", None)
-            ax.violinplot(
+            parts = ax.violinplot(
                 corr_list,
-                **plot_kwargs,
+                showextrema=False,
             )
 
         elif plot_type == "bar":
@@ -1081,11 +1200,47 @@ class SpikePlotter(PlotterBase):
                 root_list = [np.sqrt(len(a_corr)) for a_corr in corr_list]
                 stds = [stds[i] / root_list[i] for i in range(len(corr_list))]
 
-            ax.bar(x=range(1, len(corr_list) + 1), height=heights, yerr=stds, capsize=25, color=colors)
+            ax.bar(x=range(1, len(corr_list) + 1), height=heights, yerr=stds, capsize=25, color=color_list)
 
         else:
-            raise ValueError("must be whisker, violin, or bar")
+            raise ValueError("plot_type must be whisker, violin, or bar")
 
+        if plot_type == "violin":
+            # matplotlib example violin
+            def adjacent_values(vals, q1, q3):
+                upper_adjacent_value = q3 + (q3 - q1) * 1.5
+                upper_adjacent_value = np.clip(upper_adjacent_value, q3, vals[-1])
+
+                lower_adjacent_value = q1 - (q3 - q1) * 1.5
+                lower_adjacent_value = np.clip(lower_adjacent_value, vals[0], q1)
+                return lower_adjacent_value, upper_adjacent_value
+
+            for idx, pc in enumerate(parts["bodies"]):
+                pc.set_facecolor(color_list[idx])
+                pc.set_edgecolor(color_list[idx])
+            quartile1_list = []
+            quartile3_list = []
+            medians_list = []
+            for corr in corr_list:
+                quartile1, medians, quartile3 = np.nanpercentile(corr, [25, 50, 75])
+                quartile1_list.append(quartile1)
+                if mode == "mean":
+                    medians_list.append(np.nanmean(corr))
+                else:
+                    medians_list.append(medians)
+                quartile3_list.append(quartile3)
+            quartile1 = np.array(quartile1_list)
+            quartile3 = np.array(quartile3_list)
+            medians = np.array(medians_list)
+
+            whiskers = np.array(
+                [adjacent_values(sorted_array, q1, q3) for sorted_array, q1, q3 in zip(corr_list, quartile1, quartile3)]
+            )
+            whiskers_min, whiskers_max = whiskers[:, 0], whiskers[:, 1]
+            inds = np.arange(1, len(medians) + 1)
+            ax.scatter(inds, medians, marker="o", color="white", s=30, zorder=3)
+            ax.vlines(inds, quartile1, quartile3, color="k", linestyle="-", lw=5)
+            ax.vlines(inds, whiskers_min, whiskers_max, color="k", linestyle="-", lw=1)
         ax.set_xticks([y + 1 for y in range(len(corr_list))], labels=stim_names)
 
         self._despine(ax)
