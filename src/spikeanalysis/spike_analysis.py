@@ -1,5 +1,4 @@
 from __future__ import annotations
-import json
 from typing import Union, Optional
 
 import numpy as np
@@ -21,6 +20,19 @@ class SpikeAnalysis:
     """Class for spike train analysis utilizing a SpikeData object and a StimulusData object"""
 
     def __init__(self, save_parameters: bool = False, verbose: bool = False):
+        """
+        SpikeAnalysis is a class for anlayzing spike trains of information.
+        It can optionally be initialized with a couple features.
+
+        Parameters
+        ----------
+        save_parameters: bool, default: False
+            Whether to save all parameters fed into each function in a running json file
+            called analysis_parameters.json
+        verbose: bool, default: False
+            Whether to print statement when provided
+
+        """
         self._file_path = None
         self.events = {}
         self._save_params = save_parameters
@@ -28,7 +40,7 @@ class SpikeAnalysis:
 
     def __repr__(self):
         var_methods = dir(self)
-        var = list(vars(self).keys())  # get our currents variables
+        var = list(vars(self).keys())  # get our current variables
         methods = list(set(var_methods) - set(var))
         final_methods = [method for method in methods if "__" not in method and method[0] != "_"]
         final_vars = [current_var for current_var in var if "_" not in current_var[:2]]
@@ -41,11 +53,8 @@ class SpikeAnalysis:
         Parameters
         ----------
         sp : SpikeData
-            A SpikeData object to analysis spike trains
+            A SpikeData object to analyze spike trains
 
-        Returns
-        -------
-        None.
 
         """
         if self._file_path is None:
@@ -99,10 +108,6 @@ class SpikeAnalysis:
         ----------
         event_times : StimulusData
             The StimulusData object which suplies the stimulus data
-
-        Returns
-        -------
-        None.
 
         """
         if self._file_path is None:
@@ -164,10 +169,6 @@ class SpikeAnalysis:
             time bin size given in milliseconds. Small enough to have 1 or less spikes in each bin
             The default is 1.0 (ms).
 
-        Returns
-        -------
-        None.
-
         """
 
         if self._save_params:
@@ -224,10 +225,11 @@ class SpikeAnalysis:
                 if len(np.where(spikes_array > 1)[0]) != 0 or len(np.where(spikes_array > 1)[1]) != 0:
                     multispike_bin += 1
             if multispike_bin:
-                print(f"Minimum time_bin size in ms is {1000/self._sampling_rate}")
-                print(
-                    f"There are {multispike_bin} bins with more than 1 spike. For best psth results bins should only be 0 or 1"
-                )
+                if self._verbose:
+                    print(f"Minimum time_bin size in ms is {1000/self._sampling_rate}")
+                    print(
+                        f"There are {multispike_bin} bins with more than 1 spike. For best psth results bins should only be 0 or 1"
+                    )
             psths[stim_name]["psth"] = psth
             psths[stim_name]["bins"] = bins_sub / self._sampling_rate
 
@@ -318,7 +320,8 @@ class SpikeAnalysis:
         self.fr_bins = {}
         self.raw_firing_rate = {}
         for idx, stim in enumerate(self.psths.keys()):
-            print(stim)
+            if self._verbose:
+                print(stim)
 
             trials = self.events[stim_dict[stim]]["trial_groups"]
 
@@ -400,16 +403,6 @@ class SpikeAnalysis:
             of lists where each stimulus has its own (start, end)
         eps: float, default: 0
             Value to prevent nans from occurring during z-scoring
-
-        Raises
-        ------
-        Exception
-            if get_raw_psth has not been run since calculations are done this value
-
-        Returns
-        -------
-        None.
-
         """
         try:
             psths = self.psths
@@ -442,7 +435,8 @@ class SpikeAnalysis:
         self.z_bins = {}
         self.raw_zscores = {}
         for idx, stim in enumerate(self.psths.keys()):
-            print(stim)
+            if self._verbose:
+                print(stim)
 
             trials = self.events[stim_dict[stim]]["trial_groups"]
 
@@ -492,14 +486,10 @@ class SpikeAnalysis:
         bsl_window : Union[list, list[float]]
             The baseline window for determining baseline firing rate given as sequence of (start, end)
             for all stim or a list of lists with each stimulus having (start, end)
-        time_bin_ms: float
+        time_bin_ms: float, default:50
             Size of new time bins to use.
-        num_shuffles : int
-            The number of shuffles to perform for finding the shuffled distribution, default 300
-
-        Returns
-        -------
-        None.
+        num_shuffles : int, default: 300
+            The number of shuffles to perform for finding the shuffled distribution
 
         """
 
@@ -516,7 +506,8 @@ class SpikeAnalysis:
         self.latency = {}
         for idx, stim in enumerate(self.psths.keys()):
             trials = self.events[stim_dict[stim]]["trial_groups"]
-            print(stim)
+            if self._verbose:
+                print(stim)
             trial_set = np.unique(np.array(trials))
             current_bsl = bsl_windows[idx]
             psth = psths[stim]["psth"]
@@ -591,12 +582,8 @@ class SpikeAnalysis:
     def get_interspike_intervals(self):
         """
         Function for obtaining the raw interspike intervals in samples. Organized by unit.
-
-        Returns
-        -------
-        None, stored as raw_isi
-
         """
+
         spike_times = self.raw_spike_times
         spike_clusters = self.spike_clusters
         cluster_ids = self.cluster_ids
@@ -622,9 +609,6 @@ class SpikeAnalysis:
         time_ms : float,
             Time in which to assess interspike intervals given in milliseconds. The default is 200 (ms)
 
-        Returns
-        -------
-        None.
 
         """
 
@@ -697,31 +681,23 @@ class SpikeAnalysis:
             Whether to use the psth (raw spike counts) raw (the firing rates) or z_scored data.
         method: "pearson", "kendall", "spearman", default: "pearson"
             the correlation method to be used in the pandas.DataFrame.corr() function
-        Raises
-        ------
-        Exception
-            For not having pandas, incorrect dataset type
 
-        Returns
-        -------
-        None.
 
         """
-
-        if self._save_params:
-            parameters = {"trial_correlation": dict(time_bin_ms=time_bin_ms, dataset=dataset, method=method)}
-            jsonify_parameters(parameters, self._file_path)
 
         try:
             import pandas as pd
         except ImportError:
             raise Exception("pandas is required for correlation function, install with pip or conda")
 
+        if self._save_params:
+            parameters = {"trial_correlation": dict(time_bin_ms=time_bin_ms, dataset=dataset, method=method)}
+            jsonify_parameters(parameters, self._file_path)
+
         if dataset == "psth":
             try:
                 psths = self.psths
                 data = psths
-
             except AttributeError:
                 raise Exception("To run dataset=='psth', ensure 'get_raw_psth' has been run")
 
@@ -743,7 +719,7 @@ class SpikeAnalysis:
                 raise Exception("To run dataset=='z_scores', ensure ('get_raw_psth', 'z_score_data')")
 
         else:
-            raise Exception(f"You have entered {dataset} and only ('psth', 'z_scores', or 'raw') are possible options")
+            raise ValueError(f"You have entered {dataset} and only ('psth', 'z_scores', or 'raw') are possible options")
 
         windows = verify_window_format(window=window, num_stim=self._NUM_STIM)
         if time_bin_ms is not None:
@@ -812,25 +788,30 @@ class SpikeAnalysis:
 
         self.correlations = correlations
 
-    def autocorrelogram(self):
-        """function for calculating the autocorrelogram of the spikes"""
+    def autocorrelogram(self, time_ms: float = 500):
+        """function for calculating the autocorrelogram of the spikes
+
+        Parameters
+        ----------
+        time_ms: float, default:500
+            The number of millseconds to look after each spike"""
         cluster_ids = self.cluster_ids
         spike_times = self.raw_spike_times
         spike_clusters = self.spike_clusters
         sample_rate = self._sampling_rate
-        bin_end = 0.5 * sample_rate  # 500 ms around spike
+        bin_end = time_ms / 1000 * sample_rate  # 500 ms around spike
         acg_bins = np.linspace(1, bin_end, num=int(bin_end / 2), dtype=np.int32)
 
         acg = np.zeros((len(cluster_ids), len(acg_bins) - 1))
 
         for idx, cluster in enumerate(tqdm(cluster_ids)):
             these_spikes = spike_times[spike_clusters == cluster]
-            spike_counts, bin_centers = hf.histdiff(these_spikes, these_spikes, acg_bins)
+            spike_counts, _ = hf.histdiff(these_spikes, these_spikes, acg_bins)
             acg[idx] = spike_counts
 
         self.acg = acg
 
-    def _generate_sample_z_parameter(self, save=True) -> dict:
+    def _generate_sample_z_parameter(self, save: bool = True) -> dict:
         """
         Function for providing example z score parameters. Then saves as json
         for easy editing in the future.
@@ -953,6 +934,7 @@ class SpikeAnalysis:
                 self.responsive_neurons[stim][key] = responsive_neurons
 
     def save_responsive_neurons(self):
+        """Saves responsive neurons as a json file"""
         import json
 
         file_path = self._file_path
@@ -961,7 +943,23 @@ class SpikeAnalysis:
             json.dump(self.responsive_neurons, write_file, cls=NumpyEncoder)
 
     def _merge_events(self, event_0: dict, event_1: dict) -> dict:
-        """Utility function for merging digital and analog events into one dictionary"""
+        """
+
+        Utility function for merging digital and analog events into one dictionary
+
+        Parameters
+        ----------
+        event_0: dict
+            dict of event times
+        event_1: dict
+            dict of event times
+
+        Returns
+        -------
+        events: dict
+            The merged dictionary of all events
+        """
+
         events = {**event_0, **event_1}
         return events
 

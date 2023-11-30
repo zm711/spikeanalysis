@@ -4,6 +4,24 @@ SpikeAnalysis
 The :code:`SpikeAnalysis` is the major analysis class. It uses :code:`events` and the :code:`spike_times` in order to calculate common spike train metrics,
 e.g., PSTH (peristimulus histograms), z-scored data, latency to first spike, trial-trial correlations.
 
+Optionally Initialization values
+--------------------------------
+
+:code:`SpikeAnalysis` can be initialized with two global settings: :code:`save_parameters` and :code:`verbose`. :code:`save_parameters` will keep a running
+json file of all arguments entered into the analysis functions saved in the directory of analysis. :code:`verbose` turns on print statement which occur
+during the running of the analyses. They are both default :code:`False`. Note that each time the dataset is renalyzed if :code:`save_parameters=True`, the 
+values in the json will be overwritten
+
+.. code-block:: python
+
+    import spikeanalysis as sa
+
+    spiketrain = sa.SpikeAnalysis() # non-verbose, no parameter json
+    spiketrain = sa.SpikeAnalysis(save_parameters=True) # same but with the running analysis json.
+    spiketrain = sa.SpikeAnalysis(verbose=True) # additional info will be displayed in the console/terminal
+
+
+
 Setting Stimulus and Spike Data
 -------------------------------
 
@@ -57,13 +75,14 @@ corrected by either subtracting the baseline firing rate during non-stimulus dir
 convolution to reduce variation between bins. In :code:`spikeanalysis` this is accomplished by using the :code:`get_raw_firing_rate`
 function. This function takes a a :code:`bsl_window` as well as the :code:`fr_window` which is relative to stimulus onsets. It also
 takes the :code:`mode` argument which can be :code:`raw` indicates just spikes/sec, :code:`smooth` which will be smoothed with the 
-option :code:`sm_time_ms` argument, or :code:`bsl_subtracted`, which will subtract the mean spikes/sec from the given :code:`bsl_window`
+option :code:`sm_time_ms` argument, or :code:`bsl-subtracted`, which will subtract the mean spikes/sec from the given :code:`bsl_window`
 before each stimulus event.
 
 .. code-block:: python
 
-    spiketrain.get_raw_firing_rate(time_bin_ms = 50, bsl_window = [-10, 0], fr_window = [-10,20], mode = "raw") # only does raw
-    spiketrainget_raw_firing_rate(time_bin_ms = 50, bsl_window = [-10, 0], fr_window = [-10,20], mode = "smooth", sm_time_ms=10) # smoothes data
+    spiketrain.get_raw_firing_rate(time_bin_ms = 50, fr_window = [-10,20], mode = "raw") # only does raw
+    spiketrainget_raw_firing_rate(time_bin_ms = 50, fr_window = [-10,20], mode = "smooth", sm_time_ms=10) # smooths data
+    spiketrain.get_raw_firing_rate(time_bin_ms =50, bsl_window=[-10,0], fr_window=[-10,20], mode='bsl-subtracted') # baseline subtraction
 
 Z-scoring Data
 --------------
@@ -73,7 +92,7 @@ It is often beneficial to change the :code:`time_bin` for Z scoring to smoothing
 Increasing bin size will allow the large time bins to have a more continuous distribution of spike counts. In order to use this 
 function a :code:`bsl_window` should be given. This should be the pre-stimulus baseline of the neuron/unit. The window is then the window
 over which to Z score. It is beneficial to still include the before and after stimulus windows to better see how the z score has
-changed. Simimlarly each stimulus can have its own window by doing nested lists. The math is relatively standard:
+changed. Similarly each stimulus can have its own window by doing nested lists. The math is relatively standard:
 
 .. math::
 
@@ -84,11 +103,16 @@ changed. Simimlarly each stimulus can have its own window by doing nested lists.
     Z_{avg} = \frac{1}{N_{trials}} \Sigma^{N_{trials}} Z
 
 In our example below we determine both our :math:`\mu` and our :math:`\sigma` with the :code:`bsl_window` and 
-then z score each time bin given by :code:`time_bin_ms` over the :code:`z_window`
+then z score each time bin given by :code:`time_bin_ms` over the :code:`z_window`.
 
 .. code-block:: python
     
     spiketrain.z_score_data(time_bin_ms = 50, bsl_window=[-10,0], z_window=[-10,20])
+
+
+Because this can lead to values of :code:`np.nan`, there is an optional :code:`eps` value that will by added to the 
+:math:`\sigma` to prevent divide by 0 to prevent errors (ie, :math:`\sigma`` + :math:`\epsilon`). This can be used to 
+use the responsive neuron code cutoffs if desired.
 
 
 Latency to first spike
@@ -133,7 +157,7 @@ Below 2Hz Taking the first-spike
 
 If the mean firing rate is below 2Hz for a neuron, the first spike is taken to be the true first spike as related to the stimulus. This relies on the fact that
 neurons which fire at lower rates typically do not follow a Poisson distribution. For papers that use first spike time see Emmanuel et al. 2021
-for use of this technique in DRG neurons and Mornmann et al. 2008 for use in human cortex.
+for use of this technique in DRG neurons and Mormann et al. 2008 for use in human cortex.
 
 
 
@@ -163,6 +187,20 @@ become user specifiable agruments.
 .. code-block:: python
 
     spiketrain.autocorrelogram()
+
+
+Trial correlations
+------------------
+
+One property of neurons that can be assessed is how similar their firing patterns are in relationship to a repeated simulation. This can be done by taking
+a bin by bin analysis among each trial of a stimulus presentation (either by counts :code:`psth`, firing rate :code:`raw`, or z-scored data :code:`zscore`).
+This function relies on :code:`pandas` under the hood to generated the correlations using the :code:`pd.DataFrame.corr()`. This function can accept any of the
+three common correlations that can be passed to :code:`corr`: :code:`pearson`, :code:`spearman`, or :code:`kendall`.
+
+
+.. code-block:: python
+
+    spiketrain.trial_correlation(window=[-1, 2], time_bin_ms=50, dataset = 'zscore', method='pearson')
 
 
 

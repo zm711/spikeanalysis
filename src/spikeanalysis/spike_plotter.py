@@ -842,7 +842,21 @@ class SpikePlotter(PlotterBase):
             plt.figure(dpi=self.dpi)
             plt.show()
 
-    def plot_event_isi(self, colors: str | dict, include_ids=None, plot_kwargs: dict = {}):
+    def plot_event_isi(self, colors: str | dict, include_ids: list | np.array | None = None, plot_kwargs: dict = {}):
+        """ 
+        Function for plotting changes in isi during events/trials
+        
+        Parameters
+        ----------
+        colors: str | dict[str]
+            matplotlib color or dict of colors with key:stim value:color
+        include_ids: list | np.array | None, default: None
+            A sequence of cluster ids to plot
+        plot_kwargs: dict, default: {}
+            plotting kwargs
+            
+        """
+
         try:
             final_isi = self.data.isi
         except AttributeError:
@@ -1159,7 +1173,7 @@ class SpikePlotter(PlotterBase):
         ----------
         plot_type: 'whisker' | 'violin' | 'bar', default: 'whisker'
             Type of plot for plotting
-        mode: 'mean' | 'mode', default: 'mean'
+        mode: 'mean' | 'median', default: 'mean'
             Whether to calculate and show the mean or median
             this is plot dependent
         colors: matplotlib color | dict[matplotlib colors]:
