@@ -375,6 +375,7 @@ class SpikePlotter(PlotterBase):
         window: Union[list, list[list]],
         show_stim: bool = True,
         include_ids: list | np.nadarry | None = None,
+        color_raster: bool = False,
         plot_kwargs: dict = {},
     ):
         """
@@ -399,8 +400,17 @@ class SpikePlotter(PlotterBase):
             psths = self.data.psths
         except AttributeError:
             raise Exception("must have psths to make a raster. please run get_raw_psths()")
-
+        
         plot_kwargs = self.convert_plot_kwargs(plot_kwargs)
+
+
+        if color_raster:
+            import matplotlib as mpl
+            if plot_kwargs.cmap is not None:
+                cmap = mpl.colormaps[plot_kwargs.cmap]
+            else:
+                cmap = mpl.colormaps["rainbow"]
+        
         if plot_kwargs.y_axis is None:
             ylabel = "Events"
         else:
@@ -426,7 +436,7 @@ class SpikePlotter(PlotterBase):
 
             sub_window = windows[idx]
             events = event_lengths[stimulus]
-            tg_set = np.unique(trial_groups)
+            tg_set, tg_counts = np.unique(trial_groups, return_counts=True)
 
             psth = psth[:, :, np.logical_and(bins > sub_window[0], bins < sub_window[1])]
             bins = bins[np.logical_and(bins >= sub_window[0], bins <= sub_window[1])]
@@ -459,8 +469,16 @@ class SpikePlotter(PlotterBase):
 
                 raster_y = np.squeeze(raster_y)
                 raster_y[1:-1:3] = raster_y[1:-1:3] + raster_scale
-
                 fig, ax = plt.subplots(figsize=plot_kwargs.figsize)
+                if color_raster:
+                    norm = mpl.colors.Normalize(vmin=0, vmax=len(tg_set))
+                    index_pt = 0
+                    for tg_id in range(len(tg_set)):
+
+                        ax.axvspan(xmin=max(sub_window)+(0.02*(sub_window[1]-sub_window[0])), xmax =max(sub_window)+(0.04*(sub_window[1]-sub_window[0])),  ymin=index_pt/np.sum(tg_counts), ymax=(index_pt + tg_counts[tg_id])/np.sum(tg_counts), color=cmap(norm(tg_id)),)
+                        index_pt += tg_counts[tg_id]
+
+
                 ax.plot(raster_x, raster_y, color="black")
                 if show_stim:
                     ax.plot([0, 0], [0, np.nanmax(raster_y) + 1], color="red", linestyle=":")
@@ -626,7 +644,7 @@ class SpikePlotter(PlotterBase):
                     ax.set(ylim=(0, np.max(mean_smoothed_psth) + np.max(stderr) + 1))
                     self.set_plot_kwargs(ax, plot_kwargs)
                     ax.set_ylabel(ylabel)
-                    ax.set_xlabel(plot_kwargs.x_label)
+                    ax.set_xlabel(plot_kwargs.x_axis)
                     plt.tight_layout()
 
                     self._despine(ax)
