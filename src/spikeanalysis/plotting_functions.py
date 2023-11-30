@@ -4,48 +4,54 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_piechart(wedges: Sequence, counts: Sequence, **kwargs):
+def plot_piechart(wedges: Sequence, counts: Sequence, kwargs={}):
     """Plots a piechart"""
+
+    dpi = 100
+    title = None
+    figsize = (10, 8)
+    colors = None
+    colorblind_safe = False
 
     for kw, value in kwargs.items():
         if kw == "dpi":
             dpi = value
-        else:
-            dpi = 100
         if kw == "title":
             title = value
-        else:
-            title = None
         if kw == "figsize":
             figsize = value
-        else:
-            figsize = (10, 8)
         if kw == "colors":
             colors = value
-        else:
-            colors = None
+        if kw == "colorblind_safe":
+            colorblind_safe = value
 
     assert len(wedges) == len(counts), "each wedge needs a corresponding count"
-    assert not counts.index(0), "counts with 0 will display incorrectly"
-    assert counts[0] != 0, "counts with 0 will display incorrectly"
+    try:
+        _ = counts.index(0)
+        raise ValueError("counts with 0 will not display correctly")
+    except ValueError:
+        pass
 
     if figsize[0] <= 10:
         fontsize = 10
     else:
-        fontsize = 14
+        fontsize = 30
 
     f, ax = plt.subplots(figsize=figsize)
 
     if colors is None:
-        colors = [
-            "#ff9999",
-            "#66b3ff",
-            "#99ff99",
-            "#FEC8D8",
-            "#ffcc99",
-            "#F6BF85",
-            "#B7ADED",
-        ]
+        if colorblind_safe:
+            colors = ["#FFC20A", "#0C7BDC", "#E66100", "#5D3A9B", "#1AFF1A"]
+        else:
+            colors = [
+                "#ff9999",
+                "#66b3ff",
+                "#99ff99",
+                "#FEC8D8",
+                "#ffcc99",
+                "#F6BF85",
+                "#B7ADED",
+            ]
 
     ax.pie(
         counts,
