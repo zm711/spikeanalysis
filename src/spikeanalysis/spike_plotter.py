@@ -400,17 +400,17 @@ class SpikePlotter(PlotterBase):
             psths = self.data.psths
         except AttributeError:
             raise Exception("must have psths to make a raster. please run get_raw_psths()")
-        
-        plot_kwargs = self.convert_plot_kwargs(plot_kwargs)
 
+        plot_kwargs = self.convert_plot_kwargs(plot_kwargs)
 
         if color_raster:
             import matplotlib as mpl
+
             if plot_kwargs.cmap is not None:
                 cmap = mpl.colormaps[plot_kwargs.cmap]
             else:
                 cmap = mpl.colormaps["rainbow"]
-        
+
         if plot_kwargs.y_axis is None:
             ylabel = "Events"
         else:
@@ -474,10 +474,14 @@ class SpikePlotter(PlotterBase):
                     norm = mpl.colors.Normalize(vmin=0, vmax=len(tg_set))
                     index_pt = 0
                     for tg_id in range(len(tg_set)):
-
-                        ax.axvspan(xmin=max(sub_window)+(0.02*(sub_window[1]-sub_window[0])), xmax =max(sub_window)+(0.04*(sub_window[1]-sub_window[0])),  ymin=index_pt/np.sum(tg_counts), ymax=(index_pt + tg_counts[tg_id])/np.sum(tg_counts), color=cmap(norm(tg_id)),)
+                        ax.axvspan(
+                            xmin=max(sub_window) + (0.02 * (sub_window[1] - sub_window[0])),
+                            xmax=max(sub_window) + (0.04 * (sub_window[1] - sub_window[0])),
+                            ymin=index_pt / np.sum(tg_counts),
+                            ymax=(index_pt + tg_counts[tg_id]) / np.sum(tg_counts),
+                            color=cmap(norm(tg_id)),
+                        )
                         index_pt += tg_counts[tg_id]
-
 
                 ax.plot(raster_x, raster_y, color="black")
                 if show_stim:
