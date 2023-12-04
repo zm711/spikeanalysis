@@ -9,7 +9,7 @@ from .utils import verify_window_format, gaussian_smoothing
 from .plotbase import PlotterBase
 from .spike_analysis import SpikeAnalysis
 from .curated_spike_analysis import CuratedSpikeAnalysis
-from .merged_spike_analysis import MergedSpikeAnalysis
+from .merged_spike_analysis import MSA
 
 
 _z_scores_code = ("get_raw_psths", "z_score_data")
@@ -19,7 +19,7 @@ class SpikePlotter(PlotterBase):
     """SpikePlotter is a plotting class which allows for plotting of PSTHs, z score heatmaps
     in the future it will plot other values"""
 
-    def __init__(self, analysis: Optional[SpikeAnalysis | CuratedSpikeAnalysis | MergedSpikeAnalysis] = None, **kwargs):
+    def __init__(self, analysis: Optional[SpikeAnalysis | CuratedSpikeAnalysis | MSA] = None, **kwargs):
         """
         SpikePlotter requires a SpikeAnalysis object, which can be set during init
         or in the set_analysis function. Not including the SpikeAnalysis object
@@ -57,7 +57,7 @@ class SpikePlotter(PlotterBase):
         final_methods = [method for method in methods if "plot" in method]
         return f"The methods are {final_methods}"
 
-    def set_analysis(self, analysis: SpikeAnalysis | CuratedSpikeAnalysis | MergedSpikeAnalysis):
+    def set_analysis(self, analysis: SpikeAnalysis | CuratedSpikeAnalysis | MSA):
         """
         Set the SpikeAnalysis object for plotting
 
@@ -68,7 +68,7 @@ class SpikePlotter(PlotterBase):
 
         """
         assert isinstance(
-            analysis, (SpikeAnalysis, CuratedSpikeAnalysis, MergedSpikeAnalysis)
+            analysis, (SpikeAnalysis, CuratedSpikeAnalysis, MSA)
         ), "analysis must be a SpikeAnalysis dataset"
         self.data = analysis
 
