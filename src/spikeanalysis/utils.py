@@ -3,6 +3,7 @@ import json
 from typing import Union
 import numpy as np
 from pathlib import Path
+from collections import namedtuple
 
 
 class NumpyEncoder(json.JSONEncoder):
@@ -28,6 +29,42 @@ def jsonify_parameters(parameters: dict, file_path: Path | None = None):
 
     with open(file_path / "analysis_parameters.json", "w") as write_file:
         json.dump(new_parameters, write_file)
+
+
+def get_parameters(file_path: str | Path) -> namedtuple[dict]:
+    """
+    function to read in the analysis_parameter.json.
+
+    Parameters
+    ----------
+    file_path: str | Path
+        the path to the folder containing the json
+
+    Returns
+    -------
+    function_kwargs: namedtuple[dict]
+        A namedtuple of the analysis parameters
+    """
+
+    file_path = Path(file_path)
+    assert file_path.is_dir(), "file_path must be the dir containing the analysis_parameters"
+
+    with open(file_path / "analysis_parameters.json", "r") as read_file:
+        parameters = json.load(read_file)
+
+    z_score = parameters.pop("z_score_data", None)
+    raw_firing = parameters.pop("get_raw_firing_rate", None)
+    psth = parameters.pop("get_raw_psth", None)
+    lats = parameters.pop("latencies", None)
+    isi = parameters.pop("compute_event_interspike_interval", None)
+    trial_corr = parameters.pop("trial_correlation", None)
+
+    Functionkwargs = namedtuple(
+        "Functionkwargs", ["psth", "zscore", "latencies", "isi", "trial_correlations", "firing_rate"]
+    )
+    function_kwargs = Functionkwargs(psth, z_score, lats, isi, trial_corr, raw_firing)
+
+    return function_kwargs
 
 
 def verify_window_format(window: Union[list, list[list]], num_stim: int) -> list[list]:

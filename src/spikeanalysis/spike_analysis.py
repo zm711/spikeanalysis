@@ -46,7 +46,7 @@ class SpikeAnalysis:
         final_vars = [current_var for current_var in var if "_" not in current_var[:2]]
         return f"The methods are: {final_methods} \n\n Variables are: {final_vars}"
 
-    def set_spike_data(self, sp: SpikeData):
+    def set_spike_data(self, sp: SpikeData, cluster_ids: np.array | list | None = None):
         """
         loads in spike data from phy for analysis
 
@@ -54,7 +54,8 @@ class SpikeAnalysis:
         ----------
         sp : SpikeData
             A SpikeData object to analyze spike trains
-
+        cluster_ids: np.array | list | None, default: None
+            If one decides to run a subset of clusters of their own choice enter here
 
         """
         if self._file_path is None:
@@ -71,32 +72,39 @@ class SpikeAnalysis:
             self.spike_times = sp.raw_spike_times / sp._sampling_rate
 
         self._cids = sp._cids
-        try:
-            self._qc_threshold = sp._qc_threshold
-            QC_DATA = True
-        except AttributeError:
-            if self._verbose:
-                print(
-                    f"There is no qc run_threshold. Run {_possible_qc} to only\
-                    include acceptable values"
-                )
-            self.qc_threshold = np.array([True for _ in self._cids])
-            QC_DATA = False
 
-        if sp.QC_RUN and QC_DATA:
-            sp.denoise_data()
-        elif QC_DATA:
-            sp.set_qc()
-            sp.denoise_data()
-        else:
+        if cluster_ids is None:
             try:
-                sp.denoise_data()
-            except TypeError:
+                self._qc_threshold = sp._qc_threshold
+                QC_DATA = True
+            except AttributeError:
                 if self._verbose:
-                    print("no qc run")
+                    print(
+                        f"There is no qc run_threshold. Run {_possible_qc} to only\
+                        include acceptable values"
+                    )
+                self.qc_threshold = np.array([True for _ in self._cids])
+                QC_DATA = False
+
+            if sp.QC_RUN and QC_DATA:
+                sp.denoise_data()
+            elif QC_DATA:
+                sp.set_qc()
+                sp.denoise_data()
+            else:
+                try:
+                    sp.denoise_data()
+                except TypeError:
+                    if self._verbose:
+                        print("no qc run")
 
         self.raw_spike_times = sp.raw_spike_times
-        self.cluster_ids = sp._cids
+
+        if cluster_ids is None:
+            self.cluster_ids = sp._cids
+        else:
+            self.cluster_ids = np.array(cluster_ids)
+
         self.spike_clusters = sp.spike_clusters
         self._sampling_rate = sp._sampling_rate
 

@@ -60,6 +60,9 @@ class PlotterBase:
         dpi = plot_kwargs.pop("dpi", self.dpi)
         x_lim = plot_kwargs.pop("xlim", None)
         y_lim = plot_kwargs.pop("ylim", None)
+        fontname = plot_kwargs.pop("fontname", "DejaVu Sans")
+        fontstyle = plot_kwargs.pop("fontstyle", "normal")
+        fontsize = plot_kwargs.pop("fontsize", "smaller")
 
         title = plot_kwargs.pop("title", self.title)
         cmap = plot_kwargs.pop("cmap", self.cmap)
@@ -67,9 +70,24 @@ class PlotterBase:
         x_axis = plot_kwargs.pop("x_axis", self.x_axis)
         y_axis = plot_kwargs.pop("y_axis", self.y_axis)
 
-        PlotKwargs = namedtuple("PlotKwargs", ["figsize", "dpi", "x_lim", "y_lim", "title", "cmap", "x_axis", "y_axis"])
+        PlotKwargs = namedtuple(
+            "PlotKwargs",
+            [
+                "figsize",
+                "dpi",
+                "x_lim",
+                "y_lim",
+                "title",
+                "cmap",
+                "x_axis",
+                "y_axis",
+                "fontname",
+                "fontstyle",
+                "fontsize",
+            ],
+        )
 
-        plot_kwargs = PlotKwargs(figsize, dpi, x_lim, y_lim, title, cmap, x_axis, y_axis)
+        plot_kwargs = PlotKwargs(figsize, dpi, x_lim, y_lim, title, cmap, x_axis, y_axis, fontname, fontstyle, fontsize)
 
         return plot_kwargs
 
