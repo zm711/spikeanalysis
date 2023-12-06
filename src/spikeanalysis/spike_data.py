@@ -779,6 +779,8 @@ class SpikeData:
             md_other = np.sort(cdist(pc_other_clusters, mean_this_cluster, "mahalanobis", VI=cov_matrix))
 
             # md_self = cdist(pc_this_cluster,mean_this_cluster,"mahalanobis", VI=cov_matrix)
+            if len(md_other.shape) > 1:
+                md_other = np.squeeze(md_other)
 
             isolation_dist = (md_other[n_spikes - 1]) ** 2
         else:

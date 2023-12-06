@@ -327,7 +327,6 @@ def test_generate_qcmetrics(spikes, tmp_path):
     spikes.pc_feat = pc_feat
     spikes.CACHING = True
     spikes.generate_qcmetrics()
-
     assert isinstance(spikes.isolation_distances, np.ndarray)
     assert len(spikes.isolation_distances) == 2
     assert isinstance(spikes.silhouette_scores, np.ndarray)
