@@ -4,6 +4,7 @@ from spikeanalysis.utils import (
     jsonify_parameters,
     NumpyEncoder,
     prevalence_counts,
+    get_parameters,
 )
 import json
 import os
@@ -99,6 +100,15 @@ def test_updata_jsonify_parameters(tmp_path):
     for key, value in zip(["Test", "Test2"], [[1, 2, 3], [4, 5, 6]]):
         assert key in final_params.keys()
         assert value in final_params.values()
+
+    test_params = {"get_raw_psth": {"a": [1, 2]}}
+    jsonify_parameters(test_params)
+    params = get_parameters(file_path=tmp_path)
+    print(params)
+    assert params.psth is not None
+
+    for key, value in zip(["a"], [[1, 2]]):
+        assert params.psth[key] == value
 
 
 def test_prevalence_values(tmp_path):

@@ -20,6 +20,8 @@ def sa():
 
     spiketrain = SpikeAnalysis()
     spiketrain.set_stimulus_data(stimulus)
+    spiketrain.set_spike_data(spikes, cluster_ids=[0])
+    assert spiketrain.cluster_ids == [0]
     spiketrain.set_spike_data(spikes)
     return spiketrain
 
