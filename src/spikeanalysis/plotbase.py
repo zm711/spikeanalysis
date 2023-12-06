@@ -60,9 +60,9 @@ class PlotterBase:
         dpi = plot_kwargs.pop("dpi", self.dpi)
         x_lim = plot_kwargs.pop("xlim", None)
         y_lim = plot_kwargs.pop("ylim", None)
-        fontname = plot_kwargs.pop("fontname", None)
+        fontname = plot_kwargs.pop("fontname", "DejaVu Sans")
         fontstyle = plot_kwargs.pop("fontstyle", "normal")
-        fontsize = plot_kwargs.fontsize("fontsize", None)
+        fontsize = plot_kwargs.pop("fontsize", "smaller")
 
         title = plot_kwargs.pop("title", self.title)
         cmap = plot_kwargs.pop("cmap", self.cmap)
