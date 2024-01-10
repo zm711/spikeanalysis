@@ -282,7 +282,8 @@ class SpikePlotter(PlotterBase):
             event_window = np.logical_and(bins >= 0, bins <= length)
 
             z_score_sorting_index = np.argsort(-np.sum(sub_zscores[:, current_sorting_index, event_window], axis=1))
-            sorted_cluster_ids[stimulus] = self.data.cluster_ids[z_score_sorting_index]
+            if indices:
+                sorted_cluster_ids[stimulus] = self.data.cluster_ids[z_score_sorting_index]
             sorted_z_scores = sub_zscores[z_score_sorting_index, :, :]
 
             if len(np.shape(sorted_z_scores)) == 2:
