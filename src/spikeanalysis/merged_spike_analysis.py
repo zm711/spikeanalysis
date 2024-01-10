@@ -193,6 +193,7 @@ class MergedSpikeAnalysis:
         msa = MSA()
         msa._set_cluster_ids(self.cluster_ids)
         msa._set_events(self.events)
+        msa._sampling_rate = self.spikeanalysis_list[0]._sampling_rate
 
         if self.use_psth:
             msa.psths = self.data
