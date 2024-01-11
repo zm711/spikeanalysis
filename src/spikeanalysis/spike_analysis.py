@@ -820,7 +820,6 @@ class SpikeAnalysis:
         self.acg = acg
 
     def return_value(self, value: str):
-
         _values = ("zscores", "raw_zscores", "mean_firing_rate", "raw_firing_rate", "correlations", "latency", "psths")
 
         if hasattr(self, value):
