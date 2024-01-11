@@ -819,6 +819,16 @@ class SpikeAnalysis:
 
         self.acg = acg
 
+    def return_value(self, value: str):
+
+        _values = ("zscores", "raw_zscores", "mean_firing_rate", "raw_firing_rate", "correlations", "latency", "psths")
+
+        if hasattr(self, value):
+            return getattr(self, value)
+        else:
+            print(f"possible values are {_values}")
+            raise AttributeError(f"{value} does not exist run appropriate function")
+
     def _generate_sample_z_parameter(self, save: bool = True) -> dict:
         """
         Function for providing example z score parameters. Then saves as json

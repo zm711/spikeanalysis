@@ -164,6 +164,24 @@ def test_z_score_data(sa):
     assert np.sum(z_data[0, 0, :15]) < np.sum(z_data[0, 0, 150:200]), "Should be high z score"
 
 
+def test_return_value(sa):
+    sa.events = {
+        "0": {
+            "events": np.array([100, 200]),
+            "lengths": np.array([100, 100]),
+            "trial_groups": np.array([1, 1]),
+            "stim": "test",
+        }
+    }
+    sa.get_raw_psth(window=[0, 300], time_bin_ms=50)
+
+    psths = sa.return_value("psths")
+    assert "test" in psths.keys()
+
+    with pytest.raises(AttributeError):
+        _ = sa.return_value("lats")
+
+
 def test_get_interspike_intervals(sa):
     sa.get_interspike_intervals()
 
