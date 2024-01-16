@@ -110,11 +110,11 @@ def test_count_unique(spikes):
 
 
 def test_set_cache(spikes):
-    assert spikes.CACHING == False
+    assert spikes._caching == False
     spikes.set_caching()
-    assert spikes.CACHING
+    assert spikes._caching
     spikes.set_caching(cache=False)
-    assert spikes.CACHING == False
+    assert spikes._caching == False
 
 
 def test_generate_qc_metrics_error(spikes):

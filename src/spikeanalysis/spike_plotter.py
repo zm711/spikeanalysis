@@ -507,10 +507,11 @@ class SpikePlotter(PlotterBase):
                 ax.set(
                     xlabel=plot_kwargs.x_axis,
                     ylabel=ylabel,
-                    fontsize=plot_kwargs.fontsize,
-                    fontstyle=plot_kwargs.fontstyle,
-                    fontname=plot_kwargs.fontname,
+                    # fontsize=plot_kwargs.fontsize,
+                    # fontstyle=plot_kwargs.fontstyle,
+                    # fontname=plot_kwargs.fontname,
                 )
+
                 self.set_plot_kwargs(ax, plot_kwargs)
                 plt.grid(False)
                 plt.tight_layout()
@@ -590,7 +591,7 @@ class SpikePlotter(PlotterBase):
         else:
             assert len(sm_time_ms) == len(windows), "Enter one smoothing value per stim or one global smoothing value"
 
-        NUM_STIM = self.data.NUM_STIM
+        NUM_STIM = self.data._NUM_STIM
         if isinstance(time_bin_ms, float) or isinstance(time_bin_ms, int):
             time_bin_size = [time_bin_ms / 1000] * NUM_STIM
         else:

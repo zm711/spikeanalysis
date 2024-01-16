@@ -106,24 +106,24 @@ class StimulusData:
         self.create_neo_reader()
         try:
             self.get_analog_data(time_slice=time_slice)
-            HAVE_ANALOG = True
+            have_analog = True
         except AssertionError:
-            HAVE_ANALOG = False
+            have_analog = False
 
         self.get_raw_digital_data(time_slice=time_slice)
         try:
             len(np.isnan(self._raw_digital_data))
-            HAVE_DIGITAL = True
+            have_digital = True
         except TypeError:
-            HAVE_DIGITAL = False
+            have_digital = False
 
-        if HAVE_ANALOG:
+        if have_analog:
             self.digitize_analog_data(
                 analog_index=stim_index,
                 stim_length_seconds=stim_length_seconds,
                 stim_name=stim_name,
             )
-        if HAVE_DIGITAL:
+        if have_digital:
             self.get_final_digital_data()
             self.generate_digital_events()
 

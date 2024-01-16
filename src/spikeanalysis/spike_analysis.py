@@ -76,7 +76,7 @@ class SpikeAnalysis:
         if cluster_ids is None:
             try:
                 self._qc_threshold = sp._qc_threshold
-                QC_DATA = True
+                qc_data = True
             except AttributeError:
                 if self._verbose:
                     print(
@@ -84,11 +84,11 @@ class SpikeAnalysis:
                         include acceptable values"
                     )
                 self.qc_threshold = np.array([True for _ in self._cids])
-                QC_DATA = False
+                qc_data = False
 
-            if sp.QC_RUN and QC_DATA:
+            if sp._qc_run and qc_data:
                 sp.denoise_data()
-            elif QC_DATA:
+            elif qc_data:
                 sp.set_qc()
                 sp.denoise_data()
             else:
@@ -128,34 +128,34 @@ class SpikeAnalysis:
 
         try:
             self._digital_events = event_times.digital_events
-            self._HAVE_DIGITAL = True
+            self._have_digital = True
         except AttributeError as err:
-            self._HAVE_DIGITAL = False
+            self._have_digital = False
             if self._verbose:
                 print(f"{err}. If it should be present. Run the digital_data processing {_possible_digital}")
 
         try:
             self._dig_analog_events = event_times.dig_analog_events
-            self._HAVE_DIG_ANALOG = True
+            self._have_dig_analog = True
         except AttributeError as err:
-            self._HAVE_DIG_ANALOG = False
+            self._have_dig_analog = False
             if self._verbose:
                 print(
                     f"{err}. If should be present. Run possible analog functions {_possible_analog} if should be present."
                 )
         try:
             self._analog_data = event_times.analog_data
-            self._HAVE_ANALOG = True
+            self._have_analog = True
         except AttributeError:
-            self._HAVE_ANALOG = False
+            self._have_analog = False
             if self._verbose:
                 print("There is no raw analog data provided. Run get_analog_data if needed.")
 
-        if self._HAVE_DIGITAL and self._HAVE_DIG_ANALOG:
+        if self._have_digital and self._have_dig_analog:
             self.events = self._merge_events(self._digital_events, self._dig_analog_events)
-        elif self._HAVE_DIGITAL:
+        elif self._have_digital:
             self.events = self._digital_events
-        elif self._HAVE_DIG_ANALOG:
+        elif self._have_dig_analog:
             self.events = self._dig_analog_events
         else:
             raise ValueError("Code requires some stimulus data")
@@ -193,8 +193,8 @@ class SpikeAnalysis:
             minumum bin size in ms is {1000/self._sampling_rate}"
 
         time_bin_size = np.int64((time_bin_ms / 1000) * self._sampling_rate)
-        TOTAL_STIM = len(self.events.keys())
-        windows = verify_window_format(window=window, num_stim=TOTAL_STIM)
+        total_stim = len(self.events.keys())
+        windows = verify_window_format(window=window, num_stim=total_stim)
         psths = {}
 
         for idx, stimulus in enumerate(self.events.keys()):
@@ -241,7 +241,7 @@ class SpikeAnalysis:
             psths[stim_name]["psth"] = psth
             psths[stim_name]["bins"] = bins_sub / self._sampling_rate
 
-        self._NUM_STIM = TOTAL_STIM
+        self._total_stim = total_stim
         self.psths = psths
 
     def get_raw_firing_rate(
@@ -294,24 +294,24 @@ class SpikeAnalysis:
             jsonify_parameters(parameters, self._file_path)
 
         stim_dict = self._get_key_for_stim()
-        NUM_STIM = self._NUM_STIM
+        num_stim = self._total_stim
 
         if isinstance(time_bin_ms, float) or isinstance(time_bin_ms, int):
-            time_bin_size = [time_bin_ms / 1000] * NUM_STIM
+            time_bin_size = [time_bin_ms / 1000] * num_stim
         else:
             assert (
-                len(time_bin_ms) == NUM_STIM
+                len(time_bin_ms) == num_stim
             ), f"Please enter the correct number of time bins\
-                number of bins is{len(time_bin_ms)} and should be {NUM_STIM}"
+                number of bins is{len(time_bin_ms)} and should be {num_stim}"
             time_bin_size = np.array(time_bin_ms) / 1000
 
         if bsl_window is not None:
-            bsl_windows = verify_window_format(window=bsl_window, num_stim=NUM_STIM)
+            bsl_windows = verify_window_format(window=bsl_window, num_stim=num_stim)
             baseline = True
             assert mode == "bsl-subtracted", "only give baseline for baseline subtracted"
         else:
             baseline = False
-        fr_windows = verify_window_format(window=fr_window, num_stim=NUM_STIM)
+        fr_windows = verify_window_format(window=fr_window, num_stim=num_stim)
 
         if mode == "smooth":
             assert sm_time_ms is not None, "to smooth data please give the sm_time_ms"
@@ -422,20 +422,20 @@ class SpikeAnalysis:
             jsonify_parameters(parameters, self._file_path)
 
         stim_dict = self._get_key_for_stim()
-        NUM_STIM = self._NUM_STIM
+        num_stim = self._total_stim
 
         if isinstance(time_bin_ms, float) or isinstance(time_bin_ms, int):
-            time_bin_size = [time_bin_ms / 1000] * NUM_STIM
+            time_bin_size = [time_bin_ms / 1000] * num_stim
         else:
             assert (
-                len(time_bin_ms) == NUM_STIM
+                len(time_bin_ms) == num_stim
             ), f"Please enter the correct number of time bins\
-                number of bins is{len(time_bin_ms)} and should be {NUM_STIM}"
+                number of bins is{len(time_bin_ms)} and should be {num_stim}"
             time_bin_size = np.array(time_bin_ms) / 1000
 
-        bsl_windows = verify_window_format(window=bsl_window, num_stim=NUM_STIM)
+        bsl_windows = verify_window_format(window=bsl_window, num_stim=num_stim)
 
-        z_windows = verify_window_format(window=z_window, num_stim=NUM_STIM)
+        z_windows = verify_window_format(window=z_window, num_stim=num_stim)
 
         z_scores = {}
         final_z_scores = {}
@@ -505,9 +505,9 @@ class SpikeAnalysis:
             parameters = {"latencies": dict(bsl_window=bsl_window, time_bin_ms=time_bin_ms, num_shuffles=num_shuffles)}
             jsonify_parameters(parameters, self._file_path)
 
-        NUM_STIM = self._NUM_STIM
+        num_stim = self._total_stim
         self._latency_time_bin = time_bin_ms
-        bsl_windows = verify_window_format(window=bsl_window, num_stim=NUM_STIM)
+        bsl_windows = verify_window_format(window=bsl_window, num_stim=num_stim)
 
         stim_dict = self._get_key_for_stim()
         psths = self.psths
@@ -729,15 +729,15 @@ class SpikeAnalysis:
         else:
             raise ValueError(f"You have entered {dataset} and only ('psth', 'z_scores', or 'raw') are possible options")
 
-        windows = verify_window_format(window=window, num_stim=self._NUM_STIM)
+        windows = verify_window_format(window=window, num_stim=self._total_stim)
         if time_bin_ms is not None:
             if isinstance(time_bin_ms, (float, int)):
-                time_bin_size = [time_bin_ms / 1000] * self._NUM_STIM
+                time_bin_size = [time_bin_ms / 1000] * self._total_stim
             else:
                 assert (
-                    len(time_bin_ms) == self._NUM_STIM
+                    len(time_bin_ms) == self._total_stim
                 ), f"Please enter the correct number of time bins\
-                    number of bins is{len(time_bin_ms)} and should be {self._NUM_STIM}"
+                    number of bins is{len(time_bin_ms)} and should be {self._total_stim}"
                 time_bin_size = np.array(time_bin_ms) / 1000
 
             try:
@@ -745,7 +745,7 @@ class SpikeAnalysis:
             except AttributeError:
                 pass
         else:
-            time_bin_size = [None] * self._NUM_STIM
+            time_bin_size = [None] * self._total_stim
 
         correlations = {}
         for idx, stimulus in enumerate(data.keys()):
@@ -910,9 +910,9 @@ class SpikeAnalysis:
                 raise TypeError(f"z_parameters must be of type dict, but is of type: {type(z_parameters)}")
 
         if "all" in z_parameters.keys():
-            SAME_PARAMS = True
+            same_params = True
         else:
-            SAME_PARAMS = False
+            same_params = False
 
         self.responsive_neurons = {}
         for stim in self.z_scores.keys():
@@ -920,7 +920,7 @@ class SpikeAnalysis:
             bins = self.z_bins[stim]
             current_z_scores = self.z_scores[stim]
 
-            if SAME_PARAMS:
+            if same_params:
                 current_z_params = z_parameters["all"]
             else:
                 current_z_params = z_parameters[stim]
