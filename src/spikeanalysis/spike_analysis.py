@@ -150,7 +150,6 @@ class SpikeAnalysis:
 
         self._analog_data = getattr(event_times, "analog_data", None)
         self._have_analog = hasattr(event_times, "analog_data")
-        self._have_analog = False
         if not self._have_analog and self._verbose:
             print("There is no raw analog data provided. Run get_analog_data if needed.")
 
