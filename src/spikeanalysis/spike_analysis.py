@@ -46,7 +46,7 @@ class SpikeAnalysis:
         final_vars = [current_var for current_var in var if "_" not in current_var[:2]]
         return f"The methods are: {final_methods} \n\n Variables are: {final_vars}"
 
-    def set_spike_data(self, sp: SpikeData, cluster_ids: np.array | list | None = None):
+    def set_spike_data(self, sp: SpikeData, cluster_ids: np.array | list | None = None, same_folder: bool = True):
         """
         loads in spike data from phy for analysis
 
@@ -56,19 +56,22 @@ class SpikeAnalysis:
             A SpikeData object to analyze spike trains
         cluster_ids: np.array | list | None, default: None
             If one decides to run a subset of clusters of their own choice enter here
+        same_folder: bool, default: True
+            whether stim and spike data are in the same folder
 
         """
         if self._file_path is None:
             self._file_path = sp._file_path
         else:
-            assert (
-                self._file_path == sp._file_path
-            ), f"Stim data and Spike data must have same root Stim: {self._file_path}, spike:\
-                {sp._file_path}"
+            if same_folder:
+                assert (
+                    self._file_path == sp._file_path
+                ), f"Stim data and Spike data must have same root Stim: {self._file_path}, spike:\
+                    {sp._file_path}"
 
-        try:
-            self.spike_times = sp.spike_times
-        except AttributeError:
+        self.spike_times = getattr(sp, "spike_times", None)
+
+        if self.spike_times is None:
             self.spike_times = sp.raw_spike_times / sp._sampling_rate
 
         self._cids = sp._cids
@@ -83,7 +86,7 @@ class SpikeAnalysis:
                         f"There is no qc run_threshold. Run {_possible_qc} to only\
                         include acceptable values"
                     )
-                self.qc_threshold = np.array([True for _ in self._cids])
+                self._qc_threshold = np.array([True for _ in self._cids])
                 qc_data = False
 
             if sp._qc_run and qc_data:
@@ -108,7 +111,7 @@ class SpikeAnalysis:
         self.spike_clusters = sp.spike_clusters
         self._sampling_rate = sp._sampling_rate
 
-    def set_stimulus_data(self, event_times: StimulusData):
+    def set_stimulus_data(self, event_times: StimulusData, same_folder: bool = True):
         """
         loads in the stimulus data for anayzing spike trains
 
@@ -116,40 +119,40 @@ class SpikeAnalysis:
         ----------
         event_times : StimulusData
             The StimulusData object which suplies the stimulus data
+        same_folder : bool, default: True
+            whether stim and spike data are in same folder
 
         """
         if self._file_path is None:
             self._file_path = event_times._file_path
         else:
-            assert (
-                self._file_path == event_times._file_path
-            ), f"Stim data and Spike data must have same root Stim: \
-                {event_times._file_path}, Spike: {self._file_path}"
+            if same_folder:
+                assert (
+                    self._file_path == event_times._file_path
+                ), f"Stim data and Spike data must have same root Stim: \
+                    {event_times._file_path}, Spike: {self._file_path}"
 
-        try:
-            self._digital_events = event_times.digital_events
-            self._have_digital = True
-        except AttributeError as err:
-            self._have_digital = False
-            if self._verbose:
-                print(f"{err}. If it should be present. Run the digital_data processing {_possible_digital}")
+        self._digital_events = getattr(event_times, "digital_events", None)
+        self._have_digital = hasattr(event_times, "digital_events")
 
-        try:
-            self._dig_analog_events = event_times.dig_analog_events
-            self._have_dig_analog = True
-        except AttributeError as err:
-            self._have_dig_analog = False
-            if self._verbose:
-                print(
-                    f"{err}. If should be present. Run possible analog functions {_possible_analog} if should be present."
-                )
-        try:
-            self._analog_data = event_times.analog_data
-            self._have_analog = True
-        except AttributeError:
-            self._have_analog = False
-            if self._verbose:
-                print("There is no raw analog data provided. Run get_analog_data if needed.")
+        if not self._have_digital and self._verbose:
+            print(
+                f"No digital events detected. If it should be present. Run the digital_data processing {_possible_digital}"
+            )
+
+        self._dig_analog_events = getattr(event_times, "dig_analog_events", None)
+        self._have_dig_analog = hasattr(event_times, "dig_analog_events")
+
+        if not self._have_dig_analog and self._verbose:
+            print(
+                f"No digitized analog events. If should be present. Run possible analog functions {_possible_analog} if should be present."
+            )
+
+        self._analog_data = getattr(event_times, "analog_data", None)
+        self._have_analog = hasattr(event_times, "analog_data")
+        self._have_analog = False
+        if not self._have_analog and self._verbose:
+            print("There is no raw analog data provided. Run get_analog_data if needed.")
 
         if self._have_digital and self._have_dig_analog:
             self.events = self._merge_events(self._digital_events, self._dig_analog_events)
@@ -276,10 +279,8 @@ class SpikeAnalysis:
             The smoothing standard deviation to use for the gaussian smoothing. Default is None, but this
             value must be given if mode is set to 'smooth'
         """
-        try:
-            psths = self.psths
-        except AttributeError:
-            raise Exception("Run get_raw_psth before running z_score_data")
+
+        psths = getattr(self, "psths")
 
         if self._save_params:
             parameters = {
@@ -412,10 +413,8 @@ class SpikeAnalysis:
         eps: float, default: 0
             Value to prevent nans from occurring during z-scoring
         """
-        try:
-            psths = self.psths
-        except AttributeError:
-            raise Exception("Run get_raw_psth before running z_score_data")
+
+        psths = getattr(self, "psths")
 
         if self._save_params:
             parameters = {"z_score_data": dict(time_bin_ms=time_bin_ms, bsl_window=bsl_window, z_window=z_window)}
@@ -703,29 +702,12 @@ class SpikeAnalysis:
             jsonify_parameters(parameters, self._file_path)
 
         if dataset == "psth":
-            try:
-                psths = self.psths
-                data = psths
-            except AttributeError:
-                raise Exception("To run dataset=='psth', ensure 'get_raw_psth' has been run")
-
+            data = getattr(self, "psths")
         elif dataset == "raw":
-            try:
-                raw_firing = self.raw_firing_rate
-                data = raw_firing
-            except AttributeError:
-                raise AttributeError(
-                    'To run dataset="raw" ensure "get_raw_psth" and "get_raw_firing_rate" have been run'
-                )
-
+            data = getattr(self, "raw_firing_rate")
         elif dataset == "z_scores":
-            try:
-                z_scores = self.raw_zscores
-                data = z_scores
-                bins = self.z_bins
-            except AttributeError:
-                raise Exception("To run dataset=='z_scores', ensure ('get_raw_psth', 'z_score_data')")
-
+            data = getattr(self, "raw_zscores")
+            bins = self.z_bins
         else:
             raise ValueError(f"You have entered {dataset} and only ('psth', 'z_scores', or 'raw') are possible options")
 

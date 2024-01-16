@@ -270,10 +270,10 @@ class SpikePlotter(PlotterBase):
 
             if sorting_index is None:
                 current_sorting_index = np.shape(sub_zscores)[1] - 1
-                RESET_INDEX = True
+                reset_index = True
 
             else:
-                RESET_INDEX = False
+                reset_index = False
                 assert isinstance(sorting_index, (list, int)), "sorting_index must be list or int"
                 if isinstance(sorting_index, list):
                     current_sorting_index = sorting_index[stim_idx]
@@ -380,7 +380,7 @@ class SpikePlotter(PlotterBase):
             plt.figure(dpi=plot_kwargs.dpi)
             plt.show()
 
-            if RESET_INDEX:
+            if reset_index:
                 sorting_index = None
 
         if indices:
@@ -412,10 +412,7 @@ class SpikePlotter(PlotterBase):
         """
         from .analysis_utils import histogram_functions as hf
 
-        try:
-            psths = self.data.psths
-        except AttributeError:
-            raise Exception("must have psths to make a raster. please run get_raw_psths()")
+        psths = getattr(self.data, "psths")
 
         plot_kwargs = self.convert_plot_kwargs(plot_kwargs)
 
@@ -575,10 +572,7 @@ class SpikePlotter(PlotterBase):
         else:
             cmap = mpl.colormaps["rainbow"]
 
-        try:
-            psths = self.data.psths
-        except AttributeError:
-            raise Exception("must have psths to make a raster. please run get_raw_psths()")
+        psths = getattr(self.data, "psths")
 
         if plot_kwargs.y_axis is None:
             ylabel = "Smoothed Raw Firing Rate (Spikes/Second)"
@@ -591,14 +585,14 @@ class SpikePlotter(PlotterBase):
         else:
             assert len(sm_time_ms) == len(windows), "Enter one smoothing value per stim or one global smoothing value"
 
-        NUM_STIM = self.data._NUM_STIM
+        total_stim = self.data._total_stim
         if isinstance(time_bin_ms, float) or isinstance(time_bin_ms, int):
-            time_bin_size = [time_bin_ms / 1000] * NUM_STIM
+            time_bin_size = [time_bin_ms / 1000] * total_stim
         else:
             assert (
-                len(time_bin_ms) == NUM_STIM
+                len(time_bin_ms) == total_stim
             ), f"Please enter the correct number of time bins\
-                number of bins is{len(time_bin_ms)} and should be {NUM_STIM}"
+                number of bins is{len(time_bin_ms)} and should be {total_stim}"
             time_bin_size = np.array(time_bin_ms) / 1000
 
         if include_ids is not None:
@@ -727,10 +721,8 @@ class SpikePlotter(PlotterBase):
         show_stim: bool, default: True
             Whether to mark at the stim onset and offset
         """
-        try:
-            z_scores = self.data.z_scores
-        except AttributeError:
-            raise Exception(f"SpikeAnalysis is missing zscores object, run {_z_scores_code}")
+
+        z_scores = getattr(self.data, "z_scores")
 
         if self.cmap is None:
             cmap = "vlag"
@@ -1043,7 +1035,7 @@ class SpikePlotter(PlotterBase):
 
         assert mode in ("mean", "median", "max", "min") or callable(
             mode
-        ), f"mode must be 'mean' 'median', 'max', 'min you entered {mode}"
+        ), f"mode must be 'mean' 'median', 'max', 'min' you entered {mode}"
 
         if mode == "mean":
             func = np.nanmean
