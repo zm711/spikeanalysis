@@ -12,7 +12,7 @@ class SpikeData:
     """Class for loading "phy" type data files including generating some qc metrics and raw
     waveforms. To be used by SpikeAnalysis"""
 
-    def __init__(self, file_path: Union[str, Path]):
+    def __init__(self, file_path: Union[str, Path], cache: bool = False):
         """
         class for loading spiking data and performing quality metrics
 
@@ -31,8 +31,8 @@ class SpikeData:
         windows prepend r in front of the str."
 
         self._file_path = file_path
-        self.CACHING = False
-        self.QC_RUN = False
+        self._caching = cache
+        self._qc_run = False
         import glob
 
         current_dir = os.getcwd()
@@ -40,7 +40,10 @@ class SpikeData:
         os.chdir(file_path)
 
         assert len(glob.glob("spike_times.npy")) != 0, "This folder doesn't contain Phy files"
-        self._filename = glob.glob("*bin")[0]
+        try:
+            self._filename = glob.glob("*bin")[0]
+        except IndexError:
+            self._filename = glob.glob("*dat")[0]
 
         with open("params.py", "r") as p:
             params = p.readlines()
@@ -69,7 +72,10 @@ class SpikeData:
 
         self._templates = np.load("templates.npy")
 
-        self.whitening_matrix_inverse = np.load("whitening_mat_inv.npy")
+        try:
+            self.whitening_matrix_inverse = np.load("whitening_mat_inv.npy")
+        except FileNotFoundError:
+            self.whitening_matrix_inverse = None
 
         self._return_to_dir(current_dir)
 
@@ -88,7 +94,7 @@ class SpikeData:
         cache: bool
             Whether to save all data generated during this session, default True"""
 
-        self.CACHING = cache
+        self._caching = cache
 
     def run_all(
         self,
@@ -204,7 +210,7 @@ class SpikeData:
             self.spike_clusters = self._spike_templates
 
         self._cids = np.array(list(set(self.spike_clusters)))
-        self.QC_RUN = False
+        self._qc_run = False
         self._return_to_dir(current_dir)
 
     def samples_to_seconds(self):
@@ -251,7 +257,7 @@ class SpikeData:
                 violations[idx] = num_violations / total_spikes
 
         self.refractory_period_violations = violations
-        if self.CACHING:
+        if self._caching:
             np.save("refractory_period_violations.npy", violations)
 
     def generate_pcs(self):
@@ -354,7 +360,7 @@ class SpikeData:
 
         self.isolation_distances = isolation_distances
         self.silhouette_scores = silhouette_scores
-        if self.CACHING:
+        if self._caching:
             np.save("silhouette_scores.npy", silhouette_scores)
             np.save("isolation_distances.npy", isolation_distances)
 
@@ -436,7 +442,7 @@ class SpikeData:
 
         self.waveform_spike_times = spike_time_keeps / sample_rate
         self.waveforms = waveforms
-        if self.CACHING:
+        if self._caching:
             with open("waveforms.json", "w") as write_file:
                 json.dump(self.waveforms, write_file, cls=NumpyEncoder)
 
@@ -509,11 +515,11 @@ class SpikeData:
         self._goto_file_path()
         try:
             threshold = np.load("qc_threshold.npy")
-            MUST_CALCULATE = False
+            must_calculate = False
         except FileNotFoundError:
-            MUST_CALCULATE = True
+            must_calculate = True
 
-        if not recurated and not MUST_CALCULATE:
+        if not recurated and not must_calculate:
             self._qc_threshold = threshold
         else:
             try:
@@ -575,7 +581,7 @@ class SpikeData:
             self._rpv = rpv
             self._amp_cutoff = amp_cutoff
 
-            if self.CACHING:
+            if self._caching:
                 np.save("qc_threshold.npy", threshold)
 
             if np.sum(threshold) == 0:
@@ -603,7 +609,7 @@ class SpikeData:
 
         self._cids = self._cids[threshold]
         print("qc metrics applied to cluster ids")
-        self.QC_RUN = True
+        self._qc_run = True
         self._return_to_dir(current_dir)
 
     def get_waveform_values(self, depth: float = 0):
@@ -693,6 +699,9 @@ class SpikeData:
         templates = self._templates
         template_scaling_amplitudes = np.squeeze(self.template_scaling_amplitudes)
         inverse_whitening = self.whitening_matrix_inverse
+        if inverse_whitening is None:
+            print("data from SpikeInterface use SI machinery for templates")
+            return
         y_coords = self.y_coords
         spike_templates = self._spike_templates
 
