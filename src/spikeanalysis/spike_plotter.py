@@ -67,9 +67,9 @@ class SpikePlotter(PlotterBase):
             The SpikeAnalysis object for plotting
 
         """
-        assert isinstance(
-            analysis, (SpikeAnalysis, CuratedSpikeAnalysis, MSA)
-        ), "analysis must be a SpikeAnalysis dataset"
+        # assert isinstance(
+        #    analysis, (SpikeAnalysis, CuratedSpikeAnalysis, MSA)
+        # ), "analysis must be a SpikeAnalysis dataset"
         self.data = analysis
 
     def plot_zscores(
@@ -508,7 +508,7 @@ class SpikePlotter(PlotterBase):
                     # fontstyle=plot_kwargs.fontstyle,
                     # fontname=plot_kwargs.fontname,
                 )
-
+                ax.set_xlim(sub_window)
                 self.set_plot_kwargs(ax, plot_kwargs)
                 plt.grid(False)
                 plt.tight_layout()
