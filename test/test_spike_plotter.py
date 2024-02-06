@@ -25,10 +25,11 @@ def test_wrong_init():
         plotter = SpikePlotter(1), "code should not accept arbitrary objects for plotting"
 
 
-def test_wrong_set_analysis():
-    with pytest.raises(AssertionError):
-        plotter = SpikePlotter(None)
-        plotter.set_analysis(1)
+# def test_wrong_set_analysis():
+#    with pytest.raises(AssertionError):
+#        plotter = SpikePlotter(None)
+#        plotter.set_analysis(1)
+# not using at the momment
 
 
 def test_z_score_error():

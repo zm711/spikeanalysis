@@ -111,6 +111,25 @@ class SpikeAnalysis:
         self.spike_clusters = sp.spike_clusters
         self._sampling_rate = sp._sampling_rate
 
+    def set_spike_data_si(self, sorting: "Sorting"):
+        """loads in a spikeinterface sorting object to serve as spike data
+
+        Parameters
+        ----------
+        sorting: Sorting
+            spikeinterface sorting"""
+
+        spike_vector = sorting.to_spike_vector(concatenated=True)
+        spike_times = spike_vector["sample_index"]
+        unit_ids = spike_vector["unit_index"]
+        cids = np.array(np.unique((unit_ids)))
+        self._sampling_rate = sorting.get_sampling_frequency()
+        self.raw_spike_times = spike_times
+        self.spike_times = spike_times / self._sampling_rate
+        self.spike_clusters = unit_ids
+        self._cids = cids
+        self.cluster_ids = cids
+
     def set_stimulus_data(self, event_times: StimulusData, same_folder: bool = True):
         """
         loads in the stimulus data for anayzing spike trains

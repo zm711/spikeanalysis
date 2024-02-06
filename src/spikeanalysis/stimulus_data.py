@@ -68,11 +68,16 @@ class StimulusData:
             raw_analog = glob.glob("raw_analog*")[0]
             self.analog_data = np.load(raw_analog)
 
-        with open("params.py", "r") as p:
-            params = p.readlines()
+        try:
+            with open("sampling_rate.json") as read_file:
+                sr = json.load(read_file)
+                self.sample_frequency = sr["sampling_rate"]
+        except FileNotFoundError:
+            with open("params.py", "r") as p:
+                params = p.readlines()
 
-        sampling_rate = float(params[4].split()[-1])
-        self.sample_frequency = sampling_rate
+            sampling_rate = float(params[4].split()[-1])
+            self.sample_frequency = sampling_rate
 
     def run_all(
         self,
@@ -476,6 +481,11 @@ class StimulusData:
             np.save("raw_analog_data.npy", self.analog_data)
         except AttributeError:
             print("No analog events to save")
+
+        sr = {"sampling_rate": self.sample_frequency}
+
+        with open("sampling_rate.json", "w") as write_file:
+            json.dump(sr, write_file)
 
     def delete_events(
         self,
