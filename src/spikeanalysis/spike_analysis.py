@@ -44,7 +44,7 @@ class SpikeAnalysis:
         methods = list(set(var_methods) - set(var))
         final_methods = [method for method in methods if "__" not in method and method[0] != "_"]
         final_vars = [current_var for current_var in var if "_" not in current_var[:2]]
-        return f"The methods are: {final_methods} \n\n Variables are: {final_vars}"
+        return f"File: {self._file_path} \n\n The methods: {final_methods} \n\n Variables: {final_vars}"
 
     def set_spike_data(self, sp: SpikeData, cluster_ids: np.array | list | None = None, same_folder: bool = True):
         """
@@ -820,7 +820,7 @@ class SpikeAnalysis:
         self.acg = acg
 
     def return_value(self, value: str):
-        _values = ("zscores", "raw_zscores", "mean_firing_rate", "raw_firing_rate", "correlations", "latency", "psths")
+        _values = ("z_scores", "raw_zscores", "mean_firing_rate", "raw_firing_rate", "correlations", "latency", "psths")
 
         if hasattr(self, value):
             return getattr(self, value)
@@ -857,16 +857,25 @@ class SpikeAnalysis:
         }
 
         if save:
-            with open("z_parameters.json", "w") as write_file:
+            with open(self._file_path / "z_parameters.json", "w") as write_file:
                 json.dump(example_z_parameter, write_file)
 
         return example_z_parameter
 
-    def save_z_parameters(self, z_parameters: dict):
-        """saves the z parameters to be used in the future"""
+    def save_z_parameters(self, z_parameters: dict, overwrite:bool = False):
+        """saves the z parameters to be used in the future
+        
+        Parameters
+        ----------
+        overwrite: bool, default: False
+            Whether to overwirte the z parameters file"""
         import json
 
-        with open("z_parameters.json", "w") as write_file:
+        if (self._file_path / "z_parameters.json").exists():
+            if not overwrite:
+                raise FileExistsError("File already exists to overwrite run with overwrite = True")
+
+        with open(self._file_path / "z_parameters.json", "w") as write_file:
             json.dump(z_parameters, write_file)
 
     def get_responsive_neurons(self, z_parameters: Optional[dict] = None):
@@ -950,11 +959,21 @@ class SpikeAnalysis:
                 responsive_neurons = np.where(z_above_threshold > current_n_bins, True, False)
                 self.responsive_neurons[stim][key] = responsive_neurons
 
-    def save_responsive_neurons(self):
-        """Saves responsive neurons as a json file"""
+    def save_responsive_neurons(self, overwrite: bool= False):
+        """Saves responsive neurons as a json file
+        
+        Parameters
+        ----------
+        overwrite: bool, default: False
+            Whether to overwrite the json caching
+        """
         import json
 
         file_path = self._file_path
+
+        if (file_path / "responsive_profile.json").exists():
+            if not overwrite:
+                raise FileExistsError('This file already exists set overwrite to True to overwrite')
 
         with open(file_path / "response_profile.json", "w") as write_file:
             json.dump(self.responsive_neurons, write_file, cls=NumpyEncoder)

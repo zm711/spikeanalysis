@@ -44,11 +44,11 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
     """Class for analyzing curated spiketrain data
     based on a curation dictionary"""
 
-    def __init__(self, curation: dict):
+    def __init__(self, curation: dict | None = None):
         """
         Parameters
         ----------
-        curation: dict
+        curation: dict | None
             The curation dictionary to be used for curated data
 
         """
@@ -56,11 +56,17 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
         self.curation = curation
         super().__init__()
 
+    def set_curation(self, curation: dict):
+        self.curation = curation
+
     def set_spike_data(self, sp: "SpikeData"):
         from copy import deepcopy
-
         super().set_spike_data(sp=sp)
+        self._original_cluster_ids = deepcopy(self.cluster_ids)
 
+    def set_spike_data_si(self, sp: "Sorting"):
+        from copy import deepcopy
+        super().set_spike_data_si(sp=sp)
         self._original_cluster_ids = deepcopy(self.cluster_ids)
 
     def curate(
