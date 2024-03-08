@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 
 from .spike_analysis import SpikeAnalysis
+from .spike_data import SpikeData
 
 
 def read_responsive_neurons(folder_path) -> dict:
@@ -53,13 +54,17 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
 
         """
 
-        self.curation = curation
+        self.curation = curation or {}
         super().__init__()
 
     def set_curation(self, curation: dict):
+        if not isinstance(curation, dict):
+            raise TypeError(f'curation must be dict not a {type(curation)}')
         self.curation = curation
 
-    def set_spike_data(self, sp: "SpikeData"):
+    def set_spike_data(self, sp: SpikeData):
+        if not isinstance(sp, SpikeData):
+            raise TypeError('Set with spike data')
         from copy import deepcopy
         super().set_spike_data(sp=sp)
         self._original_cluster_ids = deepcopy(self.cluster_ids)
@@ -68,6 +73,16 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
         from copy import deepcopy
         super().set_spike_data_si(sp=sp)
         self._original_cluster_ids = deepcopy(self.cluster_ids)
+
+    def set_spike_analysis(self, st: SpikeAnalysis):
+        from copy import deepcopy
+        self.events = st.events
+        self._sampling_rate = st._sampling_rate
+        self._original_cluster_ids = deepcopy(st.cluster_ids)
+        self.raw_spike_times = st.spike_times
+        self.spike_clusters = st.spike_clusters
+        self._cids = st._cids
+        self.cluster_ids = self.cluster_ids
 
     def curate(
         self,
@@ -93,6 +108,8 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
 
         """
         curation = self.curation
+        if len(curation) == 0:
+            raise RuntimeError('Must set curation first. Run `set_curation`')
 
         if by_stim and by_response:
             assert isinstance(criteria, dict), "must give both stim and response as a dict to run"
