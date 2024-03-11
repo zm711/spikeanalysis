@@ -146,6 +146,7 @@ class MergedSpikeAnalysis(SpikeAnalysis):
         self.fr_bins = self.spikeanalysis_list[0].fr_bins
         self.fr_windows = self.spikeanalysis_list[0].fr_windows
 
+
     def z_score_data(self, time_bin_ms, bsl_window, z_window, eps=0, fill=np.nan):
 
         z_score_list = []
@@ -165,6 +166,7 @@ class MergedSpikeAnalysis(SpikeAnalysis):
         self.z_scores = merged_z_scores
         self.z_bins = self.spikeanalysis_list[0].z_bins
         self.z_windows=self.spikeanalysis_list[0].z_windows
+
 
     def latencies(self):
         print("To do")

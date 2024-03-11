@@ -48,6 +48,7 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
     def __init__(
         self, curation: dict | None = None, st: SpikeAnalysis | None = None, save_parameters=False, verbose=False
     ):
+
         """
         Parameters
         ----------
@@ -92,6 +93,7 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
         super().set_spike_data(sp=sp)
         self._original_cluster_ids = deepcopy(self.cluster_ids)
 
+
     def set_spike_data_si(self, sp: "Sorting"):
         """
         Function for setting a spikeinterface sorting
@@ -101,6 +103,7 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
         sp: spikeinterface.BaseSorting
             The spikeinterface Sorting object to load
         """
+
         from copy import deepcopy
 
         super().set_spike_data_si(sp=sp)
