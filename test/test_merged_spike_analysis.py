@@ -33,9 +33,9 @@ def test_ma_init(sa):
 
 
 def test_add_analysis(sa):
-
+    sa2 = deepcopy(sa)
     test_msa = MergedSpikeAnalysis()
-    test_msa.add_analysis([sa, sa], name=["test1", "test2"])
+    test_msa.add_analysis([sa, sa2], name=["test1", "test2"])
 
     assert len(test_msa.spikeanalysis_list) == len(test_msa.name_list)
 
