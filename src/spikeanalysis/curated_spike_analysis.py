@@ -45,7 +45,9 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
     """Class for analyzing curated spiketrain data
     based on a curation dictionary"""
 
-    def __init__(self, curation: dict | None = None, st: SpikeAnalysis | None = None, save_parameters=False, verbose=False):
+    def __init__(
+        self, curation: dict | None = None, st: SpikeAnalysis | None = None, save_parameters=False, verbose=False
+    ):
         """
         Parameters
         ----------
@@ -59,8 +61,10 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
             self.set_spike_analysis(st=st)
         super().__init__(save_parameters=save_parameters, verbose=verbose)
 
-    def set_curation(self, curation: dict,):
-
+    def set_curation(
+        self,
+        curation: dict,
+    ):
         """
         Function for seting the curation dictionary
         Parameters
@@ -69,34 +73,36 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
             The curation dict for curating
         """
         if not isinstance(curation, dict):
-            raise TypeError(f'curation must be dict not a {type(curation)}')
+            raise TypeError(f"curation must be dict not a {type(curation)}")
         self.curation = curation
 
     def set_spike_data(self, sp: SpikeData):
         """
         Function for setting a SpikeData object
-        
+
         Parameters
         ----------
         sp: SpikeData
             A spikeanalysis.SpikeData object to be curated
         """
         if not isinstance(sp, SpikeData):
-            raise TypeError('Set with spike data')
+            raise TypeError("Set with spike data")
         from copy import deepcopy
+
         super().set_spike_data(sp=sp)
         self._original_cluster_ids = deepcopy(self.cluster_ids)
 
     def set_spike_data_si(self, sp: "Sorting"):
         """
         Function for setting a spikeinterface sorting
-        
+
         Parameters
         ----------
         sp: spikeinterface.BaseSorting
             The spikeinterface Sorting object to load
         """
         from copy import deepcopy
+
         super().set_spike_data_si(sp=sp)
         self._original_cluster_ids = deepcopy(self.cluster_ids)
 
@@ -106,13 +112,14 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
         st: spikanalysis.SpikeAnalysis
             The SpikeAnalysis (containing Stim and Spike Data to load)"""
         from copy import deepcopy
+
         self.events = st.events
         self._sampling_rate = st._sampling_rate
         self._original_cluster_ids = deepcopy(st.cluster_ids)
         self.raw_spike_times = st.spike_times
         self.spike_clusters = st.spike_clusters
         self._cids = st._cids
-        self.cluster_ids = self.cluster_ids
+        self.cluster_ids = st.cluster_ids
 
     def curate(
         self,
@@ -139,7 +146,7 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
         """
         curation = self.curation
         if len(curation) == 0:
-            raise RuntimeError('Must set curation first. Run `set_curation`')
+            raise RuntimeError("Must set curation first. Run `set_curation`")
 
         if by_stim and by_response:
             assert isinstance(criteria, dict), "must give both stim and response as a dict to run"
