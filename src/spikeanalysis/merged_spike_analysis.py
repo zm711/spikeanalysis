@@ -11,10 +11,10 @@ class MergedSpikeAnalysis(SpikeAnalysis):
 
         if spikeanalysis_list is not None:
             if not isinstance(spikeanalysis_list, list) and not isinstance(
-                spikeanalysis_list, (SpikeAnalysis | CuratedSpikeAnalysis)
+                spikeanalysis_list, (SpikeAnalysis, CuratedSpikeAnalysis)
             ):
                 raise TypeError("spikeanalysis must be a list or an individual spikeanalysis")
-            if isinstance(spikeanalysis_list, (SpikeAnalysis | CuratedSpikeAnalysis)):
+            if isinstance(spikeanalysis_list, (SpikeAnalysis, CuratedSpikeAnalysis)):
                 spikeanalysis_list = [spikeanalysis_list]
         if name_list is not None:
             if not isinstance(name_list, list) and not isinstance(name_list, str):
@@ -38,7 +38,7 @@ class MergedSpikeAnalysis(SpikeAnalysis):
                     raise RuntimeError("The same name can not be used for multiple datasets")
                 self.name_list.append(name[idx])
         else:
-            if not isinstance(spikeanalysis, (SpikeAnalysis | CuratedSpikeAnalysis)):
+            if not isinstance(spikeanalysis, (SpikeAnalysis, CuratedSpikeAnalysis)):
                 raise TypeError(f"Spikeanalysis must be a list or a spikeanalysis not a type {type(spikeanalysis)}")
             if not isinstance(name, str):
                 raise TypeError("if spikeanalysis is type SpikeAnalysis, then name must be a string")
