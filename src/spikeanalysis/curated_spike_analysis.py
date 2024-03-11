@@ -46,6 +46,7 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
     based on a curation dictionary"""
 
     def __init__(self, curation: dict | None = None, st: SpikeAnalysis | None = None, save_parameters=False, verbose=False):
+
         """
         Parameters
         ----------
@@ -83,9 +84,11 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
         """
         if not isinstance(sp, SpikeData):
             raise TypeError('Set with spike data')
-        from copy import deepcopy
-        super().set_spike_data(sp=sp)
-        self._original_cluster_ids = deepcopy(self.cluster_ids)
+
+    def set_curation(self, curation: dict):
+        self.curation = curation
+
+
 
     def set_spike_data_si(self, sp: "Sorting"):
         """
@@ -96,6 +99,7 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
         sp: spikeinterface.BaseSorting
             The spikeinterface Sorting object to load
         """
+
         from copy import deepcopy
         super().set_spike_data_si(sp=sp)
         self._original_cluster_ids = deepcopy(self.cluster_ids)
