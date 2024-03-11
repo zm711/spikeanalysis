@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 from pathlib import Path
+from copy import deepcopy
 
 
 from spikeanalysis.merged_spike_analysis import MergedSpikeAnalysis
@@ -54,8 +55,8 @@ def sa_mocked(sa):
 
 
 def test_merge(sa_mocked):
-
-    test_msa = MergedSpikeAnalysis([sa_mocked, sa_mocked], ["test1", "test2"])
+    sa_mocked2 = deepcopy(sa_mocked)
+    test_msa = MergedSpikeAnalysis([sa_mocked, sa_mocked2], ["test1", "test2"])
     test_msa.merge_data()
 
     assert len(test_msa.raw_spike_times) == 2 * len(sa_mocked.raw_spike_times)  # same data twice
@@ -65,7 +66,8 @@ def test_merge(sa_mocked):
 
 def test_fr_z_psth(sa_mocked):
 
-    test_msa = MergedSpikeAnalysis([sa_mocked, sa_mocked], ["test1", "test2"])
+    sa_mocked2 = deepcopy(sa_mocked)
+    test_msa = MergedSpikeAnalysis([sa_mocked, sa_mocked2], ["test1", "test2"])
     test_msa.merge_data()
     test_msa.get_raw_psth(
         window=[0, 300],
@@ -85,7 +87,6 @@ def test_fr_z_psth(sa_mocked):
 
 
 def test_fr_z_psth_different_trials(sa_mocked):
-    from copy import deepcopy
 
     sa_mocked1 = deepcopy(sa_mocked)
     sa_mocked1.events = {
@@ -117,7 +118,8 @@ def test_fr_z_psth_different_trials(sa_mocked):
 
 def test_interspike_interval(sa_mocked):
 
-    test_msa = MergedSpikeAnalysis([sa_mocked, sa_mocked], ["test1", "test2"])
+    sa_mocked2 = deepcopy(sa_mocked)
+    test_msa = MergedSpikeAnalysis([sa_mocked, sa_mocked2], ["test1", "test2"])
     test_msa.merge_data()
     test_msa.get_interspike_intervals()
     

@@ -21,9 +21,23 @@ To make generation of this easier there is a bit in :code:`get_responsive_neuron
     st.get_responsive_neurons(z_parameters=my_parameters) # created a parameters dict
     st.save_responsive_neurons()
 
-    curation = sa.read_responsive_neurons()
+    curation = sa.read_responsive_neurons(file_path)
 
     curated_st = sa.CuratedSpikeAnalysis(curation=curation)
+
+Loading the Data
+----------------
+
+Because :code:`CuratedSpikeAnalysis` is a :code:`SpikeAnalysis` object it requires :code:`StimulusData` and a 
+:code:`SpikeData`. These can be loaded with the normal methods :code:`set_stimulus_data()` and 
+:code:`set_spike_data()`, but there is also a convenience function to load all necessary data from the :code:`SpikeAnalysis`:
+:code:`set_spike_analysis()`.
+
+.. code-block:: python
+
+    # This will collect stim and spike data all at once.
+    curated_st.set_spike_analysis(st)
+
 
 Curating the Data
 -----------------

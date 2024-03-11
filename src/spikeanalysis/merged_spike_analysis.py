@@ -9,6 +9,19 @@ class MergedSpikeAnalysis(SpikeAnalysis):
 
     def __init__(self, spikeanalysis_list=None, name_list=None, save_parameters=False, verbose=False):
 
+        if spikeanalysis_list is not None:
+            if not isinstance(spikeanalysis_list, list) and not isinstance(
+                spikeanalysis_list, (SpikeAnalysis | CuratedSpikeAnalysis)
+            ):
+                raise TypeError("spikeanalysis must be a list or an individual spikeanalysis")
+            if isinstance(spikeanalysis_list, (SpikeAnalysis | CuratedSpikeAnalysis)):
+                spikeanalysis_list = [spikeanalysis_list]
+        if name_list is not None:
+            if not isinstance(name_list, list) and not isinstance(name_list, str):
+                raise TypeError("name list must be a list or a str")
+            if isinstance(name_list, str):
+                name_list = [name_list]
+
         self.spikeanalysis_list = spikeanalysis_list or []
         self.name_list = name_list or []
         super().__init__(save_parameters=save_parameters, verbose=verbose)
@@ -19,7 +32,10 @@ class MergedSpikeAnalysis(SpikeAnalysis):
             if len(spikeanalysis) != len(name):
                 raise RuntimeError(f"{len(spikeanalysis)=} != {len(name)=}")
             for idx, sa in enumerate(spikeanalysis):
+                self._verify_obj(sa)
                 self.spikeanalysis_list.append(sa)
+                if name[idx] in self.name_list:
+                    raise RuntimeError("The same name can not be used for multiple datasets")
                 self.name_list.append(name[idx])
         else:
             if not isinstance(spikeanalysis, (SpikeAnalysis | CuratedSpikeAnalysis)):
@@ -28,6 +44,11 @@ class MergedSpikeAnalysis(SpikeAnalysis):
                 raise TypeError("if spikeanalysis is type SpikeAnalysis, then name must be a string")
             self.spikeanalysis_list.append(spikeanalysis)
             self.name_list.append(name)
+
+    def _verify_obj(self, obj):
+
+        if any([id(sa) == id(obj) for sa in self.spikeanalysis_list]):
+            raise RuntimeError("Cannot merge the same data twice")
 
     def merge_data(self):
 
@@ -101,7 +122,7 @@ class MergedSpikeAnalysis(SpikeAnalysis):
         if not np.isnan(fill) and not isinstance(fill, (int, float)):
             raise TypeError(f"fill should be nan or ideally 0; it is {fill}")
 
-        tg_list = [np.unique(x[self._get_stim_key(x, stim)]['trial_groups']) for x in self.events_list]
+        tg_list = [np.unique(x[self._get_stim_key(x, stim)]["trial_groups"]) for x in self.events_list]
         flat_tg_list = list(set([y for x in tg_list for y in x]))
         for psth_idx, fr in enumerate(data_list):
             current_tg = tg_list[psth_idx]
@@ -165,7 +186,7 @@ class MergedSpikeAnalysis(SpikeAnalysis):
 
         self.z_scores = merged_z_scores
         self.z_bins = self.spikeanalysis_list[0].z_bins
-        self.z_windows=self.spikeanalysis_list[0].z_windows
+        self.z_windows = self.spikeanalysis_list[0].z_windows
 
 
     def latencies(self):
@@ -181,7 +202,7 @@ class MergedSpikeAnalysis(SpikeAnalysis):
         self,
         window: list | list[list],
         time_bin_ms: float | None = None,
-        dataset = "psth",
-        method = "pearson",
+        dataset="psth",
+        method="pearson",
     ):
         raise NotImplementedError("Should run in the base SpikeAnalysis")
