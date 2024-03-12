@@ -19,34 +19,32 @@ similar fashion to other classes
     # or we can use lists
     merged_data.add_analysis(analysis=[st3,st4], name=['animal3', 'animal4'])
 
-Once the data to merge is ready to be merged one can use the :code:`merge()` function. This takes
-in the value :code:`psth`, which can either be set to :code:`True` to mean to load a balanced 
-:code:`psths` values or can be a value in a list of potential merge values, e.g. :code:`zscore` or
-for example :code:`fr`.
+Once the data to merge is ready to be merged one can use the :code:`merge_data()` function.
 
 .. code-block:: python
 
-    # will attempt to merge the psths of each dataset
-    merged_data.merge(psth=True)
+    merged_data.merge_data()
 
-    # will attempt to merge z scores
-    merged_data.merge(psth=['zscore'])
 
-Note, that the datasets to be merged must be balanced. For example a dataset with 5 neurons,
-10 trials, and 200 timepoints can only be merged to another dataset with :code:`x` neurons, 10 
-trials, and 200 timepoints. The concatenation occurs at the level of the neuron axis (:code:`axis 0`)
-so everything else must have the same dimensionality.
+After merging the datasets the standard :code:`SpikeAnalysis` functions can be run. Under the hood each dataset
+will be run with the exact same conditions to ensure the time bins are balanced. At a fundamental level the data
+is set up as a series of matrices with :code:`(n_neurons, n_trialgroups, n_time_bins)`. 
+
+Since different animals each have different numbers of trial groups the functions after :code:`get_raw_psth()` are
+run with the :code:`fill` which will take animals missing a trial group and fill with :code:`fill`. The default for this
+is :code:`np.nan`.
+
+.. code-block:: python
+
+    merged_data.get_raw_psth(window=[-1, 2], time_bin_ms=1)
+    merged_data.zscore_data(time_bin_ms=10, bsl_window=[-1,-.1], z_window=[-1,2], fill=np.nan)
 
 Finally, the merged data set can be return for use in the :code:`SpikePlotter` class.
 
 .. code-block:: python
 
-    msa = merged_data.get_merged_data()
     plotter = sa.SpikePlotter()
-    plotter.set_analysis(msa)
+    plotter.set_analysis(merged_data)
 
-This works because the :code:`MSA` returned is a :code:`SpikeAnalysis` object that has specific
-guardrails around methods which can no longer be accessed. For example, if the data was merged with
-:code:`psth=True`, then z scores can be regenerated across the data with a different :code:`time_bin_ms`,
-but if :code:`psth=['zscore']` was used then new z scores can be generated and the :code:`MSA` will
-return a :code:`NotImplementedError`
+This works because the :code:`merged_data` is a :code:`SpikeAnalysis` object that has specific
+guardrails around methods which can no longer be accessed. Plotting can occur as would normally occur.

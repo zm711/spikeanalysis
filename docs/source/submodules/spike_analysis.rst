@@ -26,6 +26,9 @@ Setting Stimulus and Spike Data
 -------------------------------
 
 :code:`SpikeAnalysis` requires both :code:`StimulusData` and :code:`SpikeData` to perform analyses. It has a setting method for each of these datasets.
+To leverage the power of the SpikeInterface project there is a separate function: :code:`set_spike_data_si()`, which takes
+any :code:`spikeinterface.BaseSorting`.
+
 
 .. code-block:: python
 
@@ -37,6 +40,18 @@ Setting Stimulus and Spike Data
     spiketrain = SpikeAnalysis()
     spiketrain.set_stimulus_data(event_times = stim)
     spiketrain.set_spike_data(sp = spikes)
+
+or
+
+.. code-block:: python
+
+    # sorting = spikeinterface.BaseSorting
+
+    import spikeanalysis as sa
+    spiketrain = sa.SpikeAnalysis()
+    spiketrain.set_stimulus_data(event_times=stim)
+    spiketrain.set_spike_data_si(sp=sorting)
+
 
 Calculating Peristimulus Histogram (PSTH)
 -----------------------------------------
