@@ -159,7 +159,7 @@ class SpikeAnalysis:
                     {event_times._file_path}, Spike: {self._file_path}"
 
         self._digital_events = getattr(event_times, "digital_events", None)
-        self._have_digital = hasattr(event_times, "digital_events")
+        self._have_digital = event_times.digital_events is not None
 
         if not self._have_digital and self._verbose:
             print(
