@@ -120,7 +120,7 @@ class StimulusData:
         try:
             self.get_all_files()
             return
-        except AssertionError:
+        except FileNotFoundError:
             print("Reading raw data files")
 
         self.create_neo_reader()

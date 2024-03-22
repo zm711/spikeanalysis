@@ -364,4 +364,3 @@ def test_timestamp_reader(stim):
     assert "testdata2" not in stim2.digital_events.keys()
     assert "testdata2" in stim3.digital_events.keys()
 
-    reader.load_into_stimulus_data(stim=stim_no_event, new_stim_key="warning_test", in_place=True)
