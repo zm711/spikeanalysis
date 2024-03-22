@@ -14,7 +14,7 @@ from .utils import NumpyEncoder
 class StimulusData:
     """Class for preprocessing stimulus data for spike train analysis"""
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str, recordingless: bool=False):
         """Enter the file_path as a string. For Windows prepend with r to prevent spurious escaping.
         A Path object can also be given, but make sure it was generated with a raw string"""
 
@@ -28,20 +28,27 @@ class StimulusData:
         windows append r in front of the str."
         self._file_path = file_path
         os.chdir(file_path)
-        try:
-            filename = glob.glob("*rhd")[0]
-        except IndexError:
-            raise Exception("There is no rhd file present in this folder")
-        self._filename = filename
+        if not recordingless:
+            try:
+                filename = glob.glob("*rhd")[0]
+            except IndexError:
+                raise Exception("There is no rhd file present in this folder")
+        self._filename = filename or ""
         self.analog_data = None
         self.digital_data = None
 
     def __repr__(self):
+        txt = f"File Path: {self._file_path}"
+        txt += f"\nAnalog Data Present {self.analog_data is not None}"
+        txt += f"\nDigital Data Present {self.digital_data is not None}"
         var_methods = dir(self)
         var = list(vars(self).keys())  # get our currents variables
+        final_vars = [public_var for public_var in var if public_var[0] != "_"]
         methods = list(set(var_methods) - set(var))
         final_methods = [method for method in methods if "__" not in method and method[0] != "_"]
-        return f"The methods are {final_methods}"
+        txt += f"\n The vars are {final_vars}"
+        txt += f"\n The methods are {final_methods}"
+        return txt
 
     def get_all_files(self):
         """
