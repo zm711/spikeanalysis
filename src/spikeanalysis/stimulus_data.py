@@ -14,7 +14,7 @@ from .utils import NumpyEncoder
 class StimulusData:
     """Class for preprocessing stimulus data for spike train analysis"""
 
-    def __init__(self, file_path: str, recordingless: bool=False):
+    def __init__(self, file_path: str, recordingless: bool = False, verbose: bool = True):
         """Enter the file_path as a string. For Windows prepend with r to prevent spurious escaping.
         A Path object can also be given, but make sure it was generated with a raw string"""
 
@@ -34,20 +34,24 @@ class StimulusData:
             except IndexError:
                 raise Exception("There is no rhd file present in this folder")
         self._filename = filename or ""
+        self.dig_analog_events = None
+        self.digital_events = None
         self.analog_data = None
         self.digital_data = None
+        self._verbose = verbose
 
     def __repr__(self):
         txt = f"File Path: {self._file_path}"
-        txt += f"\nAnalog Data Present {self.analog_data is not None}"
-        txt += f"\nDigital Data Present {self.digital_data is not None}"
+        txt += f"\nAnalog Data Present {self.dig_analog_events is not None}"
+        txt += f"\nDigital Data Present {self.digital_events is not None}"
         var_methods = dir(self)
         var = list(vars(self).keys())  # get our currents variables
-        final_vars = [public_var for public_var in var if public_var[0] != "_"]
+        final_vars = [public_var for public_var in var if public_var[0] != "_" and vars(self)[public_var] is not None]
         methods = list(set(var_methods) - set(var))
         final_methods = [method for method in methods if "__" not in method and method[0] != "_"]
-        txt += f"\n The vars are {final_vars}"
-        txt += f"\n The methods are {final_methods}"
+        if self._verbose:
+            txt += f"\n The vars are {final_vars}"
+            txt += f"\n The methods are {final_methods}"
         return txt
 
     def get_all_files(self):
@@ -56,31 +60,35 @@ class StimulusData:
         if saved
 
         """
-
+        _possible_files = (
+            "digital_events.json",
+            "dig_analog_events.json",
+        )
         os.chdir(self._file_path)
         import glob
 
         files = glob.glob("*events.json")
-        assert len(files) > 0, "There are no previous files"
+        if len(files) < 1:
+            raise FileNotFoundError(f"There must be at least one of {_possible_files}")
 
         files = "".join(files)
 
         if "digital_events" in files:
-            with open("digital_events.json", "r") as read_file:
+            with open(self._file_path / "digital_events.json", "r") as read_file:
                 self.digital_events = json.load(read_file)
 
         if "dig_analog" in files:
-            with open("dig_analog_events.json") as read_file:
+            with open(self._file_path / "dig_analog_events.json") as read_file:
                 self.dig_analog_events = json.load(read_file)
             raw_analog = glob.glob("raw_analog*")[0]
             self.analog_data = np.load(raw_analog)
 
         try:
-            with open("sampling_rate.json") as read_file:
+            with open(self._file_path / "sampling_rate.json") as read_file:
                 sr = json.load(read_file)
                 self.sample_frequency = sr["sampling_rate"]
         except FileNotFoundError:
-            with open("params.py", "r") as p:
+            with open(self._file_path / "params.py", "r") as p:
                 params = p.readlines()
 
             sampling_rate = float(params[4].split()[-1])
@@ -239,7 +247,12 @@ class StimulusData:
             current_analog_data = np.expand_dims(current_analog_data, axis=1)
 
         self.dig_analog_events = {}
-        for row in tqdm(range(np.shape(current_analog_data)[1])):
+
+        if self._verbose:
+            event_range = tqdm(range(np.shape(current_analog_data)[1]))
+        else:
+            event_range = range(np.shape(current_analog_data)[1])
+        for row in event_range:
             self.dig_analog_events[str(row)] = {}
             sub_data = current_analog_data[:, row]
             filtered_analog_data = np.where(sub_data > 0.09, 1, 0)
@@ -316,7 +329,7 @@ class StimulusData:
             len(np.isnan(self._raw_digital_data))
 
         except TypeError:
-            raise Exception("There is no digital data present")
+            raise TypeError("There is no digital data present")
 
         values = np.zeros((16, len(self._raw_digital_data)), dtype=np.int16)  # 16 digital-in for intan
         for value in range(16):
@@ -336,7 +349,13 @@ class StimulusData:
 
         self.digital_events = {}
         self.digital_channels = []
-        for idx, row in enumerate(tqdm(self.digital_data)):
+
+        if self._verbose:
+            event_range = enumerate(tqdm(self.digital_data))
+        else:
+            event_range = enumerate(self.digital_data)
+
+        for idx, row in event_range:
             if idx < 10:
                 title = "DIGITAL-IN-0"
             else:
@@ -407,7 +426,7 @@ class StimulusData:
                                                                             but you put in {len(trial_dictionary[channel])} trial groups"
                 self.digital_events[channel]["trial_groups"] = trial_dictionary[channel]
         except KeyError:
-            raise Exception(
+            raise KeyError(
                 f"Incorrect channel name. use `get_stimulus_channels` or create dict with \
                             keys of {self.digital_channels}"
             )
@@ -418,7 +437,7 @@ class StimulusData:
                 assert isinstance(stim_names[channel], str), "stim names should be strings"
                 self.digital_events[channel]["stim"] = stim_names[channel]
         except KeyError:
-            raise Exception(
+            raise KeyError(
                 f"Incorrect channel name. use `get_stimulus_channels` or create dict with \
                             keys of {self.digital_channels}"
             )
@@ -476,22 +495,22 @@ class StimulusData:
                 assert (
                     "stim" in event_type.keys()
                 ), f"Must provide name for each stim using the the set_stimulus_name() function. Please do this for {dig_channel}"
-            with open("digital_events.json", "w") as write_file:
+            with open(self._file_path / "digital_events.json", "w") as write_file:
                 json.dump(self.digital_events, write_file, cls=NumpyEncoder)
         except AttributeError:
             print("No digital events to save")
 
         try:
             _ = self.dig_analog_events
-            with open("dig_analog_events.json", "w") as write_file:
+            with open(self._file_path / "dig_analog_events.json", "w") as write_file:
                 json.dump(self.dig_analog_events, write_file, cls=NumpyEncoder)
-            np.save("raw_analog_data.npy", self.analog_data)
+            np.save(self._file_path / "raw_analog_data.npy", self.analog_data)
         except AttributeError:
             print("No analog events to save")
 
         sr = {"sampling_rate": self.sample_frequency}
 
-        with open("sampling_rate.json", "w") as write_file:
+        with open(self._file_path / "sampling_rate.json", "w") as write_file:
             json.dump(sr, write_file)
 
     def delete_events(
@@ -610,7 +629,6 @@ class StimulusData:
 
 
 class TimestampReader:
-
     """utility class for helping load non-synced timestamp based data with leading-edge falling-edge."""
 
     def __init__(

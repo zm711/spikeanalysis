@@ -39,12 +39,17 @@ class SpikeAnalysis:
         self._verbose = verbose
 
     def __repr__(self):
+        txt = f"File path: {self._file_path}"
+        txt += f"\nEvents loaded: {len(self.events.keys())>0}"
         var_methods = dir(self)
         var = list(vars(self).keys())  # get our current variables
         methods = list(set(var_methods) - set(var))
         final_methods = [method for method in methods if "__" not in method and method[0] != "_"]
         final_vars = [current_var for current_var in var if "_" not in current_var[:2]]
-        return f"File: {self._file_path} \n\n The methods: {final_methods} \n\n Variables: {final_vars}"
+        if self._verbose:
+            txt += f"\nVars loaded: {final_vars}"
+            txt += f"\nMethods: {final_methods}"
+        return txt
 
     def set_spike_data(self, sp: SpikeData, cluster_ids: np.array | list | None = None, same_folder: bool = True):
         """
