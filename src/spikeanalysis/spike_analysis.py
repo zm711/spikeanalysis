@@ -37,10 +37,12 @@ class SpikeAnalysis:
         self.events = {}
         self._save_params = save_parameters
         self._verbose = verbose
+        self.raw_spike_times = None
 
     def __repr__(self):
         txt = f"File path: {self._file_path}"
         txt += f"\nEvents loaded: {len(self.events.keys())>0}"
+        txt += f"\nSpikes loaded {self.raw_spike_times is not None}"
         var_methods = dir(self)
         var = list(vars(self).keys())  # get our current variables
         methods = list(set(var_methods) - set(var))
@@ -165,7 +167,7 @@ class SpikeAnalysis:
             )
 
         self._dig_analog_events = getattr(event_times, "dig_analog_events", None)
-        self._have_dig_analog = hasattr(event_times, "dig_analog_events")
+        self._have_dig_analog = event_times.dig_analog_events is not None
 
         if not self._have_dig_analog and self._verbose:
             print(
@@ -173,7 +175,7 @@ class SpikeAnalysis:
             )
 
         self._analog_data = getattr(event_times, "analog_data", None)
-        self._have_analog = hasattr(event_times, "analog_data")
+        self._have_analog = event_times.analog_data is not None
         if not self._have_analog and self._verbose:
             print("There is no raw analog data provided. Run get_analog_data if needed.")
 
@@ -590,12 +592,13 @@ class SpikeAnalysis:
                             bsl_fr, psth_by_trial[:, bins >= 0], final_time_bin_size
                         )
                         for shuffle in tqdm(range(num_shuffles)):
-                            self.latency[stim]["latency_shuffled"][
-                                idx, trials == trial, shuffle
-                            ] = 1000 * lf.latency_core_stats(
-                                bsl_fr,
-                                psth_by_trial[:, bins >= bsl_shuffled_trial_cluster[shuffle]],
-                                final_time_bin_size,
+                            self.latency[stim]["latency_shuffled"][idx, trials == trial, shuffle] = (
+                                1000
+                                * lf.latency_core_stats(
+                                    bsl_fr,
+                                    psth_by_trial[:, bins >= bsl_shuffled_trial_cluster[shuffle]],
+                                    final_time_bin_size,
+                                )
                             )
 
                     else:
@@ -603,10 +606,11 @@ class SpikeAnalysis:
                             psth_by_trial[:, bins >= 0], final_time_bin_size
                         )
                         for shuffle in tqdm(range(num_shuffles)):
-                            self.latency[stim]["latency_shuffled"][
-                                idx, trials == trial, shuffle
-                            ] = 1000 * lf.latency_median(
-                                psth_by_trial[:, bins >= bsl_shuffled_trial_cluster[shuffle]], final_time_bin_size
+                            self.latency[stim]["latency_shuffled"][idx, trials == trial, shuffle] = (
+                                1000
+                                * lf.latency_median(
+                                    psth_by_trial[:, bins >= bsl_shuffled_trial_cluster[shuffle]], final_time_bin_size
+                                )
                             )
 
     def get_interspike_intervals(self):
@@ -867,9 +871,9 @@ class SpikeAnalysis:
 
         return example_z_parameter
 
-    def save_z_parameters(self, z_parameters: dict, overwrite:bool = False):
+    def save_z_parameters(self, z_parameters: dict, overwrite: bool = False):
         """saves the z parameters to be used in the future
-        
+
         Parameters
         ----------
         overwrite: bool, default: False
@@ -964,9 +968,9 @@ class SpikeAnalysis:
                 responsive_neurons = np.where(z_above_threshold > current_n_bins, True, False)
                 self.responsive_neurons[stim][key] = responsive_neurons
 
-    def save_responsive_neurons(self, overwrite: bool= False):
+    def save_responsive_neurons(self, overwrite: bool = False):
         """Saves responsive neurons as a json file
-        
+
         Parameters
         ----------
         overwrite: bool, default: False
@@ -978,7 +982,7 @@ class SpikeAnalysis:
 
         if (file_path / "responsive_profile.json").exists():
             if not overwrite:
-                raise FileExistsError('This file already exists set overwrite to True to overwrite')
+                raise FileExistsError("This file already exists set overwrite to True to overwrite")
 
         with open(file_path / "response_profile.json", "w") as write_file:
             json.dump(self.responsive_neurons, write_file, cls=NumpyEncoder)
