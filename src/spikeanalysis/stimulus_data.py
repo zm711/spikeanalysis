@@ -33,7 +33,9 @@ class StimulusData:
                 filename = glob.glob("*rhd")[0]
             except IndexError:
                 raise Exception("There is no rhd file present in this folder")
-        self._filename = filename or ""
+        else:
+            filename = ""
+        self._filename = filename
         self.dig_analog_events = None
         self.digital_events = None
         self.analog_data = None
