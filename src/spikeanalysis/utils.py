@@ -222,8 +222,10 @@ def prevalence_counts(
             for keep in inclusive_list:
                 keep_list.append(response_labels.index(keep))
             final_response_idx = np.array(keep_list)
+            delete_indices = np.array([x for x in range(0, final_responses.shape[0]) if x not in keep_list])
             if len(final_response_idx) < np.shape(final_responses)[0] and len(pos_neuron_idx) > 0:
-                final_responses[~final_response_idx, pos_neuron_idx] = False
+                for index in delete_indices:
+                    final_responses[index, pos_neuron_idx] = False
 
         prevalences = np.sum(final_responses, axis=1)
         prevalence_dict[st]["labels"] = response_labels
