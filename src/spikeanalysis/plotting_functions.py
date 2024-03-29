@@ -26,11 +26,12 @@ def plot_piechart(wedges: Sequence, counts: Sequence, kwargs={}):
             colorblind_safe = value
 
     assert len(wedges) == len(counts), "each wedge needs a corresponding count"
-    try:
-        _ = counts.index(0)
-        raise ValueError("counts with 0 will not display correctly")
-    except ValueError:
-        pass
+    final_count = []
+    final_labels = []
+    for idx, count in enumerate(counts):
+        if count != 0:
+            final_count.append(count)
+            final_labels.append(wedges[idx])
 
     if figsize[0] <= 10:
         fontsize = 10
@@ -54,9 +55,9 @@ def plot_piechart(wedges: Sequence, counts: Sequence, kwargs={}):
             ]
 
     ax.pie(
-        counts,
-        labels=wedges,
-        autopct=lambda pct: "{:.1f}%\n(n={:d})".format(pct, int(np.round(pct / 100 * np.sum(counts)))),
+        final_count,
+        labels=final_labels,
+        autopct=lambda pct: "{:.1f}%\n(n={:d})".format(pct, int(np.round(pct / 100 * np.sum(final_count)))),
         shadow=False,
         startangle=90,
         colors=colors,
