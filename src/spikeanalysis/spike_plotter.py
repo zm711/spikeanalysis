@@ -711,8 +711,8 @@ class SpikePlotter(PlotterBase):
                         fontname=plot_kwargs.fontname,
                     )
                 else:
-                    if self.data.si_ids:
-                        title = f"{stimulus}: {self.data.si_ids[self.data.cluster_ids[cluster_number]]}"
+                    if self.data.si_units:
+                        title = f"{stimulus}: {self.data.si_units[self.data.cluster_ids[cluster_number]]}"
                     else:
                         title = f"{stimulus}: {self.data.cluster_ids[cluster_number]}"
                     plt.title(
