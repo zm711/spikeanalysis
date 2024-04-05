@@ -123,6 +123,7 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
         self.spike_clusters = st.spike_clusters
         self._cids = st._cids
         self.cluster_ids = st.cluster_ids
+        self.si_units = st.si_units
 
     def curate(
         self,
