@@ -287,7 +287,7 @@ class SpikePlotter(PlotterBase):
 
             z_score_sorting_index = np.argsort(-np.sum(sub_zscores[:, current_sorting_index, event_window], axis=1))
             if indices:
-                if self.data.si_units:
+                if len(self.data.si_units) > 0:
                     sorted_cluster_ids[stimulus] = {}
                     sorted_cluster_ids[stimulus]['index'] = self.data.cluster_ids[z_score_sorting_index]
                     sorted_cluster_ids[stimulus]['cluster_id'] = self.data.unit_ids[self.data.cluster_ids[z_score_sorting_index]] 
@@ -524,7 +524,7 @@ class SpikePlotter(PlotterBase):
 
                 self._despine(ax)
                 if plot_kwargs.title is None:
-                    if self.data.si_units:
+                    if len(self.data.si_units) > 0:
                         title = f"{stimulus}: {self.data.si_units[self.data.cluster_ids[idy]]}"
                     else:
                         title = f"{stimulus}: {self.data.cluster_ids[idy]}"
@@ -711,7 +711,7 @@ class SpikePlotter(PlotterBase):
                         fontname=plot_kwargs.fontname,
                     )
                 else:
-                    if self.data.si_units:
+                    if len(self.data.si_units) > 0:
                         title = f"{stimulus}: {self.data.si_units[self.data.cluster_ids[cluster_number]]}"
                     else:
                         title = f"{stimulus}: {self.data.cluster_ids[cluster_number]}"
