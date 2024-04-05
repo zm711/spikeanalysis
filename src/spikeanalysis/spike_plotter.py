@@ -289,8 +289,10 @@ class SpikePlotter(PlotterBase):
             if indices:
                 if len(self.data.si_units) > 0:
                     sorted_cluster_ids[stimulus] = {}
-                    sorted_cluster_ids[stimulus]['index'] = self.data.cluster_ids[z_score_sorting_index]
-                    sorted_cluster_ids[stimulus]['cluster_id'] = self.data.unit_ids[self.data.cluster_ids[z_score_sorting_index]] 
+                    sorted_cluster_ids[stimulus]["index"] = self.data.cluster_ids[z_score_sorting_index]
+                    sorted_cluster_ids[stimulus]["cluster_id"] = self.data.si_units[
+                        self.data.cluster_ids[z_score_sorting_index]
+                    ]
                 else:
                     sorted_cluster_ids[stimulus] = self.data.cluster_ids[z_score_sorting_index]
             sorted_z_scores = sub_zscores[z_score_sorting_index, :, :]
@@ -1064,7 +1066,7 @@ class SpikePlotter(PlotterBase):
             func = np.nanmin
         else:
             func = mode
-        
+
         plot_kwargs = self._convert_plot_kwargs(plot_kwargs=plot_kwargs)
 
         for stimulus, response in data.items():
@@ -1218,7 +1220,7 @@ class SpikePlotter(PlotterBase):
         Function for plotting one response trace in 2D. I'm going to try
         to let it autoscale
         """
-        
+
         if isinstance(plot_kwargs, dict):
             plot_kwargs = self._convert_plot_kwargs(plot_kwargs)
 
