@@ -58,9 +58,9 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
         """
 
         self.curation = curation or {}
+        super().__init__(save_parameters=save_parameters, verbose=verbose)
         if st is not None:
             self.set_spike_analysis(st=st)
-        super().__init__(save_parameters=save_parameters, verbose=verbose)
 
     def set_curation(
         self,
@@ -106,7 +106,7 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
 
         from copy import deepcopy
 
-        super().set_spike_data_si(sp=sp)
+        super().set_spike_data_si(sp)
         self._original_cluster_ids = deepcopy(self.cluster_ids)
 
     def set_spike_analysis(self, st: SpikeAnalysis):
@@ -119,10 +119,11 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
         self.events = st.events
         self._sampling_rate = st._sampling_rate
         self._original_cluster_ids = deepcopy(st.cluster_ids)
-        self.raw_spike_times = st.spike_times
+        self.raw_spike_times = st.raw_spike_times
         self.spike_clusters = st.spike_clusters
         self._cids = st._cids
         self.cluster_ids = st.cluster_ids
+        self.si_units = st.si_units
 
     def curate(
         self,

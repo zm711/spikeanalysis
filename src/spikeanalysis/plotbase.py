@@ -7,6 +7,21 @@ import matplotlib.pyplot as plt
 _possible_kwargs = ["dpi", "figsize", "x_axis", "y_axis", "cmap", "title"]
 
 
+_plot_kwargs = {
+    "figsize": "The size of the figures",
+    "dpi": "Density per inch ~ resolution of fig",
+    "xlim": "The limits for the x-axis",
+    "ylim": "The limits for the y-axis",
+    "title": "A title to add to the figure",
+    "cmap": "A matplotlib cmap to use for making the figure",
+    "x_axis": "The label for the x-axis",
+    "y_axis": "The label for the y-axis",
+    "fontname": "The font to use",
+    "fontstyle": "The style to use for the font",
+    "fontsize": "The size of the text",
+}
+
+
 class PlotterBase:
     def __init__(
         self,
@@ -45,7 +60,7 @@ class PlotterBase:
         if "figsize" in kwargs:
             self.figsize = kwargs["figsize"]
 
-    def convert_plot_kwargs(self, plot_kwargs: dict) -> namedtuple:
+    def _convert_plot_kwargs(self, plot_kwargs: dict) -> namedtuple:
         """If given a dict of kwargs converts to namedtuple otherwise
         uses the global kwargs set for plotting
 
@@ -75,8 +90,8 @@ class PlotterBase:
             [
                 "figsize",
                 "dpi",
-                "x_lim",
-                "y_lim",
+                "xlim",
+                "ylim",
                 "title",
                 "cmap",
                 "x_axis",
@@ -91,9 +106,13 @@ class PlotterBase:
 
         return plot_kwargs
 
-    def set_plot_kwargs(self, ax: plt.axes, plot_kwargs: namedtuple):
-        if plot_kwargs.x_lim is not None:
-            ax.set_xlim(plot_kwargs.x_lim)
+    def get_plot_kwargs_descriptions(self) -> dict:
 
-        if plot_kwargs.y_lim is not None:
-            ax.set_ylim(plot_kwargs.y_lim)
+        return _plot_kwargs
+
+    def set_plot_kwargs(self, ax: plt.axes, plot_kwargs: namedtuple):
+        if plot_kwargs.xlim is not None:
+            ax.set_xlim(plot_kwargs.xlim)
+
+        if plot_kwargs.ylim is not None:
+            ax.set_ylim(plot_kwargs.ylim)

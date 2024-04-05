@@ -126,6 +126,9 @@ def prevalence_counts(
     all_trials: bool = False,
     exclusive_list: list | None = None,
     inclusive_list: list | None = None,
+    by_trialgroup: bool = False,
+    cross_stim: bool = False,
+    by_neuron: bool = False,
 ) -> dict:
     """
     Function for counting number of neurons with specific response properties for each stimulus
@@ -144,17 +147,24 @@ def prevalence_counts(
             * if all it will require all trial groups for a stim to be positive
             * if any it will require at least one trial group of a stim to be positive
     all_trials: bool, default False
-        Sets the trial_index to 'all' if true or 'any' if false. This is only used if trial_index is None
+        Sets the trial_index to 'all' if true or 'any' if false if trial_index is None
+        If trial_index give whether any or all of the given trial indices must be positive
     exclusive_list: list | None, default: None
         The list of stimuli which are assessed in order. If given a neuron can only be in one of the categories
     inclusive_list: list | None, deafult: None
         This allows a neuron to be this category even if exclusive_list is provided
+    by_trialgroup: bool, default: False
+        If True returns the counts on a per trial group basis rather than as a total basis
+    cross_stim: bool, deafult: False
+        If True returns counts based on 'all' or 'any' counts (any response type) for all stimuli in stim
 
     Returns
     -------
     prevalence_dict: dict
         Dict of prevalence counts with each key being a stim and the values being
         a 'labels' of response types 'counts' the prevalence counts
+        If cross_stim true a dict with keys of 'Total Neurons', 'All Stim Neurons', and 'Any Stim Neurons'
+        with the associated counts
     """
     # prep responsive neurons from file or from argument
     from pathlib import Path
@@ -196,37 +206,148 @@ def prevalence_counts(
 
     # count final data
     prevalence_dict = {}
-    for st in stim:
-        prevalence_dict[st] = {}
-        response_types = responsive_neurons[st]
-        trial_indices = trial_index[st]
-        response_list = []
-        response_labels = []
-        for rt_label, rt in response_types.items():
-            response_labels.append(rt_label)
-            if trial_indices == "all":
-                response_list.append(np.all(rt, axis=1))
-            elif trial_indices == "any":
-                response_list.append(np.any(rt, axis=1))
-            else:
-                if len(trial_indices) == 2:
-                    start, end = trial_indices[0], trial_indices[1]
-                    response_list.append(np.all(rt[:, start:end], axis=1))
-                else:
-                    response_list.append(np.all(rt[:, np.array(trial_indices)], axis=1))
-        final_responses = np.vstack(response_list)
-        for response in exclusive_list:
-            rt_idx = response_labels.index(response)
-            pos_neuron_idx = np.array(np.nonzero(final_responses[rt_idx])[0])
-            keep_list = [rt_idx]
-            for keep in inclusive_list:
-                keep_list.append(response_labels.index(keep))
-            final_response_idx = np.array(keep_list)
-            if len(final_response_idx) < np.shape(final_responses)[0] and len(pos_neuron_idx) > 0:
-                final_responses[~final_response_idx, pos_neuron_idx] = False
 
-        prevalences = np.sum(final_responses, axis=1)
-        prevalence_dict[st]["labels"] = response_labels
-        prevalence_dict[st]["counts"] = prevalences
+    rt_0 = responsive_neurons[stim[0]][list(responsive_neurons[stim[0]].keys())[0]]
+    n_tgs = rt_0.shape[1]
+    n_neurons = rt_0.shape[0]
+    if by_trialgroup:
+        for st in stim:
+            prevalence_dict[st] = {}
+            response_types = responsive_neurons[st]
+            for n_trial in range(n_tgs):
+                response_list = []
+                response_labels = []
+                prevalence_dict[st][n_trial] = {}
+                for rt_label, rt in response_types.items():
+                    response_labels.append(rt_label)
+                    response_list.append(rt[:, n_trial])
+                final_responses = np.vstack(response_list)
+                _response_hierarchy_corrector(
+                    final_responses,
+                    exclusive_list,
+                    inclusive_list,
+                    response_labels,
+                )
+
+                prevalences = np.sum(final_responses, axis=1)
+                prevalence_dict[st][n_trial]["labels"] = response_labels
+                prevalence_dict[st][n_trial]["counts"] = prevalences
+
+    elif cross_stim:
+        all_stim = np.empty((len(stim), rt_0.shape[0]), dtype=bool)
+        for st in stim:
+            print(st)
+            response_types = responsive_neurons[st]
+            response_labels = []
+            response_list = []
+            trial_indices = trial_index[st]
+            for rt_label, rt in response_types.items():
+                response_labels.append(rt_label)
+                if trial_indices == "all":
+                    response_list.append(np.all(rt, axis=1))
+                elif trial_indices == "any":
+                    response_list.append(np.any(rt, axis=1))
+                else:
+                    if len(trial_indices) == 2:
+                        start, end = trial_indices[0], trial_indices[1]
+                        response_list.append(np.all(rt[:, start:end], axis=1))
+                    else:
+                        response_list.append(np.all(rt[:, np.array(trial_indices)], axis=1))
+            sub_final_responses = np.vstack(response_list)
+            _response_hierarchy_corrector(sub_final_responses, exclusive_list, inclusive_list, response_labels)
+            sub_final_responses = np.expand_dims(np.any(sub_final_responses, axis=0), axis=0)
+            all_stim = np.concatenate((all_stim, sub_final_responses), axis=0)
+        all_stim = all_stim[1:, :]
+        final_responses = np.all(all_stim, axis=0)
+        final_either_responses = np.any(all_stim, axis=0)
+        if all_stim.shape[0] > 1:
+            xor_responses = np.sum(all_stim, axis=0)
+        prevalence_dict = {
+            "Total neurons": len(final_responses),
+            "All Stim Neurons": np.sum(final_responses),
+            "Any Stim Neurons": np.sum(final_either_responses),
+        }
+        if all_stim.shape[0] > 1:
+            prevalence_dict["One Stim Neurons"] = len(np.where(xor_responses == 1)[0])
+        return prevalence_dict
+
+    elif by_neuron:
+        for st in stim:
+            prevalence_dict[st] = {}
+            response_types = responsive_neurons[st]
+            for n_neuron in range(n_neurons):
+                response_list = []
+                response_labels = []
+                prevalence_dict[st][n_neuron] = {}
+                for rt_label, rt in response_types.items():
+                    response_labels.append(rt_label)
+                    response_list.append(rt[n_neuron, :])
+                final_responses = np.vstack(response_list)
+                _response_hierarchy_corrector(
+                    final_responses,
+                    exclusive_list,
+                    inclusive_list,
+                    response_labels,
+                )
+                # prevalences = np.sum(final_responses, axis=0)
+                pos_prevs = np.nonzero(final_responses)
+                prevalences = [(pos_prevs[0][value], pos_prevs[1][value]) for value in range(len(pos_prevs[0]))]
+                if len(prevalences) == 0:
+                    del prevalence_dict[st][n_neuron]
+                    continue
+                prevalence_dict[st][n_neuron]["labels"] = response_labels
+                prevalence_dict[st][n_neuron]["counts"] = prevalences
+
+    else:
+        for st in stim:
+            prevalence_dict[st] = {}
+            response_types = responsive_neurons[st]
+            trial_indices = trial_index[st]
+            response_list = []
+            response_labels = []
+            for rt_label, rt in response_types.items():
+                response_labels.append(rt_label)
+                if trial_indices == "all":
+                    response_list.append(np.all(rt, axis=1))
+                elif trial_indices == "any":
+                    response_list.append(np.any(rt, axis=1))
+                else:
+                    if len(trial_indices) == 2:
+                        start, end = trial_indices[0], trial_indices[1]
+                        if all_trials:
+                            response_list.append(np.all(rt[:, start:end], axis=1))
+                        else:
+                            response_list.append(np.any(rt[:, start:end], axis=1))
+                    else:
+                        if all_trials:
+                            response_list.append(np.all(rt[:, np.array(trial_indices)], axis=1))
+                        else:
+                            response_list.append(np.any(rt[:, np.array(trial_indices)], axis=1))
+            final_responses = np.vstack(response_list)
+            _response_hierarchy_corrector(final_responses, exclusive_list, inclusive_list, response_labels)
+
+            prevalences = np.sum(final_responses, axis=1)
+            prevalence_dict[st]["labels"] = response_labels
+            prevalence_dict[st]["counts"] = prevalences
 
     return prevalence_dict
+
+
+def _response_hierarchy_corrector(
+    final_responses,
+    exclusive_list,
+    inclusive_list,
+    response_labels,
+):
+
+    for response in exclusive_list:
+        rt_idx = response_labels.index(response)
+        pos_neuron_idx = np.array(np.nonzero(final_responses[rt_idx])[0])
+        keep_list = [rt_idx]
+        for keep in inclusive_list:
+            keep_list.append(response_labels.index(keep))
+        final_response_idx = np.array(keep_list)
+        delete_indices = np.array([x for x in range(0, final_responses.shape[0]) if x not in keep_list])
+        if len(final_response_idx) < np.shape(final_responses)[0] and len(pos_neuron_idx) > 0:
+            for index in delete_indices:
+                final_responses[index, pos_neuron_idx] = False

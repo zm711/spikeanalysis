@@ -34,8 +34,16 @@ def test_convert_plot_kwargs():
 
     test_plotter = PlotterBase()
     plot_kwargs = dict(figsize=(10, 10), dpi=300, x_axis="a", y_axis="b", cmap="blue", title="test")
-    new_kwargs = test_plotter.convert_plot_kwargs(plot_kwargs)
+    new_kwargs = test_plotter._convert_plot_kwargs(plot_kwargs)
 
     assert new_kwargs.figsize == (10, 10)
     assert new_kwargs.cmap == "blue"
     assert new_kwargs.dpi == 300
+
+
+def test_get_plot_kwargs_descriptions():
+
+    test_plotter = PlotterBase()
+    kargs = test_plotter.get_plot_kwargs_descriptions()
+    for key in ['figsize', 'dpi', 'xlim']:
+        assert key in kargs.keys()

@@ -45,19 +45,23 @@ class SpikePlotter(PlotterBase):
                 analysis, (SpikeAnalysis, CuratedSpikeAnalysis, MergedSpikeAnalysis)
             ), "analysis must be a SpikeAnalysis dataset"
             self.data = analysis
+        else:
+            self.data = None
 
     def set_kwargs(self, **kwargs):
         self._check_kwargs(**kwargs)
         self._set_kwargs(**kwargs)
 
     def __repr__(self):
+        txt = f"Analysis set: {self.data is not None}\n"
         var_methods = dir(self)
         var = list(vars(self).keys())  # get our currents variables
         methods = list(set(var_methods) - set(var))
-        final_methods = [method for method in methods if "plot" in method]
-        return f"The methods are {final_methods}"
+        final_methods = [method for method in methods if "plot" in method and "_" not in method[0]]
+        txt += f"Methods: {final_methods}"
+        return txt
 
-    def set_analysis(self, analysis: SpikeAnalysis | CuratedSpikeAnalysis | MSA):
+    def set_analysis(self, analysis: SpikeAnalysis | CuratedSpikeAnalysis | MergedSpikeAnalysis):
         """
         Set the SpikeAnalysis object for plotting
 
@@ -68,7 +72,7 @@ class SpikePlotter(PlotterBase):
 
         """
         # assert isinstance(
-        #    analysis, (SpikeAnalysis, CuratedSpikeAnalysis, MSA)
+        #    analysis, (SpikeAnalysis, CuratedSpikeAnalysis, MergedSpikeAnalysis)
         # ), "analysis must be a SpikeAnalysis dataset"
         self.data = analysis
 
@@ -232,7 +236,7 @@ class SpikePlotter(PlotterBase):
         else:
             raise Exception(f"plotting not initialized for data of {data}")
 
-        plot_kwargs = self.convert_plot_kwargs(plot_kwargs)
+        plot_kwargs = self._convert_plot_kwargs(plot_kwargs)
 
         if figsize is None:
             figsize = plot_kwargs.figsize
@@ -283,7 +287,14 @@ class SpikePlotter(PlotterBase):
 
             z_score_sorting_index = np.argsort(-np.sum(sub_zscores[:, current_sorting_index, event_window], axis=1))
             if indices:
-                sorted_cluster_ids[stimulus] = self.data.cluster_ids[z_score_sorting_index]
+                if len(self.data.si_units) > 0:
+                    sorted_cluster_ids[stimulus] = {}
+                    sorted_cluster_ids[stimulus]["index"] = self.data.cluster_ids[z_score_sorting_index]
+                    sorted_cluster_ids[stimulus]["cluster_id"] = self.data.si_units[
+                        self.data.cluster_ids[z_score_sorting_index]
+                    ]
+                else:
+                    sorted_cluster_ids[stimulus] = self.data.cluster_ids[z_score_sorting_index]
             sorted_z_scores = sub_zscores[z_score_sorting_index, :, :]
 
             if len(np.shape(sorted_z_scores)) == 2:
@@ -414,7 +425,7 @@ class SpikePlotter(PlotterBase):
 
         psths = getattr(self.data, "psths")
 
-        plot_kwargs = self.convert_plot_kwargs(plot_kwargs)
+        plot_kwargs = self._convert_plot_kwargs(plot_kwargs)
 
         if color_raster:
             import matplotlib as mpl
@@ -515,8 +526,12 @@ class SpikePlotter(PlotterBase):
 
                 self._despine(ax)
                 if plot_kwargs.title is None:
+                    if len(self.data.si_units) > 0:
+                        title = f"{stimulus}: {self.data.si_units[self.data.cluster_ids[idy]]}"
+                    else:
+                        title = f"{stimulus}: {self.data.cluster_ids[idy]}"
                     plt.title(
-                        f"{stimulus}: {self.data.cluster_ids[idy]}",
+                        title,
                         fontsize=plot_kwargs.fontsize,
                         fontstyle=plot_kwargs.fontstyle,
                         fontname=plot_kwargs.fontname,
@@ -565,7 +580,7 @@ class SpikePlotter(PlotterBase):
         import matplotlib as mpl
         from .analysis_utils import histogram_functions as hf
 
-        plot_kwargs = self.convert_plot_kwargs(plot_kwargs)
+        plot_kwargs = self._convert_plot_kwargs(plot_kwargs)
 
         if plot_kwargs.cmap is not None:
             cmap = mpl.colormaps[plot_kwargs.cmap]
@@ -698,8 +713,12 @@ class SpikePlotter(PlotterBase):
                         fontname=plot_kwargs.fontname,
                     )
                 else:
+                    if len(self.data.si_units) > 0:
+                        title = f"{stimulus}: {self.data.si_units[self.data.cluster_ids[cluster_number]]}"
+                    else:
+                        title = f"{stimulus}: {self.data.cluster_ids[cluster_number]}"
                     plt.title(
-                        f"{stimulus}: {self.data.cluster_ids[cluster_number]}",
+                        title,
                         fontsize=plot_kwargs.fontsize,
                         fontstyle=plot_kwargs.fontstyle,
                         fontname=plot_kwargs.fontname,
@@ -834,7 +853,7 @@ class SpikePlotter(PlotterBase):
         except AttributeError:
             raise Exception("must run `latencies()` function")
 
-        plot_kwargs = self.convert_plot_kwargs(plot_kwargs)
+        plot_kwargs = self._convert_plot_kwargs(plot_kwargs)
 
         bin_size = self.data._latency_time_bin
         bins = np.arange(0, 400 + bin_size, bin_size)
@@ -933,7 +952,7 @@ class SpikePlotter(PlotterBase):
         else:
             keep_list = np.arange(0, len(self.data.cluster_ids), 1)
 
-        plot_kwargs = self.convert_plot_kwargs(plot_kwargs)
+        plot_kwargs = self._convert_plot_kwargs(plot_kwargs)
 
         for stimulus, isis in final_isi.items():
             baseline = isis["bsl_isi"].sum(axis=1)
@@ -1047,6 +1066,8 @@ class SpikePlotter(PlotterBase):
             func = np.nanmin
         else:
             func = mode
+
+        plot_kwargs = self._convert_plot_kwargs(plot_kwargs=plot_kwargs)
 
         for stimulus, response in data.items():
             current_length = stim_lengths[stimulus]
@@ -1200,7 +1221,8 @@ class SpikePlotter(PlotterBase):
         to let it autoscale
         """
 
-        plot_kwargs = self.convert_plot_kwargs(plot_kwargs)
+        if isinstance(plot_kwargs, dict):
+            plot_kwargs = self._convert_plot_kwargs(plot_kwargs)
 
         fig, ax = plt.subplots(figsize=plot_kwargs.figsize)
         ax.plot(bins, trace, color=color, linewidth=1.5)
