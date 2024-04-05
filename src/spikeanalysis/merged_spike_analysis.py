@@ -37,7 +37,7 @@ class MergedSpikeAnalysis(SpikeAnalysis):
         txt = f"Number of Analyses: {len(self.spikeanalysis_list)}\n"
         txt += f"Number of Neurons {len(self.cluster_ids)}\n"
         if len(self.events.keys()) > 0:
-            stimuli = [v['stim'] for v in self.events.values()]
+            stimuli = [v["stim"] for v in self.events.values()]
             txt += f"Stimuli being analyzed {stimuli}"
         return txt
 
@@ -67,7 +67,6 @@ class MergedSpikeAnalysis(SpikeAnalysis):
 
     def merge_data(self):
 
-        
         self._sampling_rate = self.spikeanalysis_list[0]._sampling_rate
         self.events_list = [sa.events for sa in self.spikeanalysis_list]
 
@@ -77,18 +76,17 @@ class MergedSpikeAnalysis(SpikeAnalysis):
 
         min_event = self.events_list[min_stim_index]
         self.events = min_event
-        min_event_stim = [stim['stim'] for stim in min_event.values()]
+        min_event_stim = [stim["stim"] for stim in min_event.values()]
 
         for event_idx, event in enumerate(self.events_list):
-            new_event = {k:v for k,v in event.items() if v['stim'] in min_event_stim}
-            self.events_list[event_idx] =  new_event
+            new_event = {k: v for k, v in event.items() if v["stim"] in min_event_stim}
+            self.events_list[event_idx] = new_event
             self.spikeanalysis_list[event_idx].events = new_event
-
 
         for sa in self.spikeanalysis_list:
             if sa._sampling_rate != self._sampling_rate:
                 raise RuntimeError("Can not combine incompatible data")
-            
+
         self._total_stim = len(self.events.keys())
         spike_times = np.concatenate([sa.raw_spike_times for sa in self.spikeanalysis_list])
 
@@ -156,7 +154,7 @@ class MergedSpikeAnalysis(SpikeAnalysis):
             for sub_tg in flat_tg_list:
                 if sub_tg not in current_tg:
                     expand_dims.append(flat_tg_list.index(sub_tg))
-            expand_dims = sorted(expand_dims, reverse=True) # need to only add dims from later to early times
+            expand_dims = sorted(expand_dims, reverse=True)  # need to only add dims from later to early times
             for dim in expand_dims:
                 fr = np.insert(fr, dim, fill, axis=1)
             data_list[psth_idx] = fr
@@ -194,7 +192,6 @@ class MergedSpikeAnalysis(SpikeAnalysis):
         self.fr_bins = self.spikeanalysis_list[0].fr_bins
         self.fr_windows = self.spikeanalysis_list[0].fr_windows
 
-
     def z_score_data(self, time_bin_ms, bsl_window, z_window, eps=0, fill=np.nan):
 
         z_score_list = []
@@ -215,16 +212,16 @@ class MergedSpikeAnalysis(SpikeAnalysis):
         self.z_bins = self.spikeanalysis_list[0].z_bins
         self.z_windows = self.spikeanalysis_list[0].z_windows
 
-
     def latencies(self):
         print("To do")
 
     def get_interspike_intervals(self):
         super().get_interspike_intervals()
 
-    def compute_event_interspike_intervals(self,):
+    def compute_event_interspike_intervals(
+        self,
+    ):
         raise NotImplementedError("Should run in the base Spikeanalysis for this")
 
-    def trial_correlation(self
-    ):
+    def trial_correlation(self):
         raise NotImplementedError("Should run in the base SpikeAnalysis")

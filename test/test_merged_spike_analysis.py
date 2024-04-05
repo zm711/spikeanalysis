@@ -75,12 +75,12 @@ def test_fr_z_psth(sa_mocked):
     )
 
     test_msa.get_raw_firing_rate(time_bin_ms=1000, bsl_window=None, fr_window=[0, 300], mode="raw")
-
+    sa_mocked.get_raw_firing_rate(time_bin_ms=1000, bsl_window=None, fr_window=[0, 300], mode="raw")
     assert test_msa.mean_firing_rate["test"].shape[0] == 4  # sa_mocked has two neurons
     assert test_msa.mean_firing_rate["test"].shape[1:] == sa_mocked.mean_firing_rate["test"].shape[1:]
 
     test_msa.z_score_data(time_bin_ms=1000, bsl_window=[0, 50], z_window=[0, 300])
-
+    sa_mocked.z_score_data(time_bin_ms=1000, bsl_window=[0, 50], z_window=[0, 300])
     assert test_msa.z_scores["test"].shape[0] == 4
 
     assert test_msa.z_scores["test"].shape[1:] == sa_mocked.z_scores["test"].shape[1:]  # same except neuron number

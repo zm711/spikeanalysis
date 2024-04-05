@@ -291,12 +291,12 @@ def prevalence_counts(
                 )
                 # prevalences = np.sum(final_responses, axis=0)
                 pos_prevs = np.nonzero(final_responses)
-                prevalences = [(pos_prevs[0][value],pos_prevs[1][value]) for value in range(len(pos_prevs[0]))]
-                if len(prevalences) == 0 :
+                prevalences = [(pos_prevs[0][value], pos_prevs[1][value]) for value in range(len(pos_prevs[0]))]
+                if len(prevalences) == 0:
                     del prevalence_dict[st][n_neuron]
                     continue
-                prevalence_dict[st][n_neuron]['labels'] = response_labels
-                prevalence_dict[st][n_neuron]['counts'] = prevalences
+                prevalence_dict[st][n_neuron]["labels"] = response_labels
+                prevalence_dict[st][n_neuron]["counts"] = prevalences
 
     else:
         for st in stim:
