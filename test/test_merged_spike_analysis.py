@@ -73,7 +73,10 @@ def test_fr_z_psth(sa_mocked):
         window=[0, 300],
         time_bin_ms=50,
     )
-
+    sa_mocked.get_raw_psth(
+        window=[0, 300],
+        time_bin_ms=50,
+    )
     test_msa.get_raw_firing_rate(time_bin_ms=1000, bsl_window=None, fr_window=[0, 300], mode="raw")
     sa_mocked.get_raw_firing_rate(time_bin_ms=1000, bsl_window=None, fr_window=[0, 300], mode="raw")
     assert test_msa.mean_firing_rate["test"].shape[0] == 4  # sa_mocked has two neurons

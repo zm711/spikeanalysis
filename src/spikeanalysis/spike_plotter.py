@@ -287,7 +287,12 @@ class SpikePlotter(PlotterBase):
 
             z_score_sorting_index = np.argsort(-np.sum(sub_zscores[:, current_sorting_index, event_window], axis=1))
             if indices:
-                sorted_cluster_ids[stimulus] = self.data.cluster_ids[z_score_sorting_index]
+                if self.data.si_units:
+                    sorted_cluster_ids[stimulus] = {}
+                    sorted_cluster_ids[stimulus]['index'] = self.data.cluster_ids[z_score_sorting_index]
+                    sorted_cluster_ids[stimulus]['cluster_id'] = self.data.unit_ids[self.data.cluster_ids[z_score_sorting_index]] 
+                else:
+                    sorted_cluster_ids[stimulus] = self.data.cluster_ids[z_score_sorting_index]
             sorted_z_scores = sub_zscores[z_score_sorting_index, :, :]
 
             if len(np.shape(sorted_z_scores)) == 2:
@@ -519,8 +524,12 @@ class SpikePlotter(PlotterBase):
 
                 self._despine(ax)
                 if plot_kwargs.title is None:
+                    if self.data.si_units:
+                        title = f"{stimulus}: {self.data.si_units[self.data.cluster_ids[idy]]}"
+                    else:
+                        title = f"{stimulus}: {self.data.cluster_ids[idy]}"
                     plt.title(
-                        f"{stimulus}: {self.data.cluster_ids[idy]}",
+                        title,
                         fontsize=plot_kwargs.fontsize,
                         fontstyle=plot_kwargs.fontstyle,
                         fontname=plot_kwargs.fontname,
@@ -702,8 +711,12 @@ class SpikePlotter(PlotterBase):
                         fontname=plot_kwargs.fontname,
                     )
                 else:
+                    if self.data.unit_ids:
+                        title = f"{stimulus}: {self.data.unit_ids[self.data.cluster_ids[cluster_number]]}"
+                    else:
+                        title = f"{stimulus}: {self.data.cluster_ids[cluster_number]}"
                     plt.title(
-                        f"{stimulus}: {self.data.cluster_ids[cluster_number]}",
+                        title,
                         fontsize=plot_kwargs.fontsize,
                         fontstyle=plot_kwargs.fontstyle,
                         fontname=plot_kwargs.fontname,

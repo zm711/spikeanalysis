@@ -117,6 +117,7 @@ class SpikeAnalysis:
 
         self.spike_clusters = sp.spike_clusters
         self._sampling_rate = sp._sampling_rate
+        self._si_units = []
 
     def set_spike_data_si(self, sorting: "Sorting"):
         """loads in a spikeinterface sorting object to serve as spike data
@@ -136,6 +137,7 @@ class SpikeAnalysis:
         self.spike_clusters = unit_ids
         self._cids = cids
         self.cluster_ids = cids
+        self.si_units = sorting.unit_ids
 
     def set_stimulus_data(self, event_times: StimulusData, same_folder: bool = True):
         """
