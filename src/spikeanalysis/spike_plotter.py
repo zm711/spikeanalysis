@@ -115,7 +115,11 @@ class SpikePlotter(PlotterBase):
         reset = False
         if self.cmap is None:
             reset = True
-            self.cmap = "vlag"
+            try:
+                import seaborn
+                self.cmap = "vlag"
+            except ImportError:
+                self.cmap = "bwr"
 
         sorted_cluster_ids = self._plot_scores(
             data="zscore",
