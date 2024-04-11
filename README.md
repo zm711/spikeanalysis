@@ -10,6 +10,8 @@ but with plans to expand to other recording systems (using `Neo` for reading *ep
 are classes for preparing stimulus data as well as the spike data. Then spiketrain analysis or analog based stimulus analysis can
 occur. Finally plotting classes allow for easy plotting of the data.
 
+Really just for my labmates, but if you find something useful or a mistake let me know :) 
+
 ## Installation
 
 Currently there is no pypi or conda-forge package. So installation should be from repo. For automatic install with conda 
