@@ -255,7 +255,15 @@ class SpikePlotter(PlotterBase):
         if bar is not None:
             assert len(bar) == 2, f"Please give z_bar as [min, max], you entered {bar}"
 
-        stim_lengths = self._get_event_lengths()
+        stim_lengths = self._get_event_lengths_all()
+        trial_groups = self._get_trial_groups()
+
+        final_stim_lengths = {}
+        for stim_id, stim in stim_lengths.items():
+            final_stim_lengths[stim_id] = []
+            for trial in np.sort(np.unique(trial_groups[stim_id])):
+                final_stim_lengths[stim_id].append(np.mean(stim[trial_groups[stim_id] == trial]))
+
         sorted_cluster_ids = {}
         for stim_idx, stimulus in enumerate(z_scores.keys()):
             if len(np.shape(z_scores)) < 3:
@@ -271,7 +279,7 @@ class SpikePlotter(PlotterBase):
                 z_window = self.data.fr_windows[stimulus]
                 bins = self.data.fr_bins[stimulus]
 
-            length = stim_lengths[stimulus]
+            lengths = final_stim_lengths[stimulus]
 
             sub_zscores = sub_zscores[:, :, np.logical_and(bins >= z_window[0], bins <= z_window[1])]
             bins = bins[np.logical_and(bins >= z_window[0], bins <= z_window[1])]
@@ -287,7 +295,8 @@ class SpikePlotter(PlotterBase):
                     current_sorting_index = sorting_index[stim_idx]
                 else:
                     current_sorting_index = sorting_index
-            event_window = np.logical_and(bins >= 0, bins <= length)
+
+            event_window = np.logical_and(bins >= 0, bins <= lengths[current_sorting_index])
 
             z_score_sorting_index = np.argsort(-np.sum(sub_zscores[:, current_sorting_index, event_window], axis=1))
             if indices:
@@ -321,9 +330,7 @@ class SpikePlotter(PlotterBase):
                 vmin = -5
             bin_size = bins[1] - bins[0]
             zero_point = np.where((bins > -bin_size) & (bins < bin_size))[0][0]  # aim for nearest bin to zero
-            end_point = np.where((bins > length - bin_size) & (bins < length + bin_size))[0][
-                0
-            ]  # aim for nearest bin at end of stim
+
             bins_length = int(len(bins) / 7)
 
             fig, axes = plt.subplots(1, columns, sharey=True, figsize=figsize)
@@ -344,6 +351,9 @@ class SpikePlotter(PlotterBase):
                 if idx == 0:
                     sub_ax.set_ylabel(y_axis, fontsize="small")
                 if show_stim:
+                    end_point = np.where((bins > lengths[idx] - bin_size) & (bins < lengths[idx] + bin_size))[0][
+                        0
+                    ]  # aim for nearest bin at end of stim
                     sub_ax.axvline(
                         zero_point,
                         0,

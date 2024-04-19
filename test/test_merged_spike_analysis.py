@@ -110,7 +110,6 @@ def test_fr_z_psth_different_trials(sa_mocked):
     test_msa.get_raw_firing_rate(time_bin_ms=1000, bsl_window=None, fr_window=[0, 300], mode="raw")
 
     assert test_msa.mean_firing_rate["test"].shape[0] == 4  # sa_mocked has two neurons
-    
 
     assert np.isnan(test_msa.mean_firing_rate["test"][0, 1, 0])  # should fill with nan
 
@@ -125,5 +124,5 @@ def test_interspike_interval(sa_mocked):
     test_msa = MergedSpikeAnalysis([sa_mocked, sa_mocked2], ["test1", "test2"])
     test_msa.merge_data()
     test_msa.get_interspike_intervals()
-    
+
     assert isinstance(test_msa.isi_raw, dict)
