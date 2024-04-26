@@ -414,6 +414,12 @@ class SpikeAnalysis:
                 self.fr_bins[stim] = bins[fr_window_values]
             self.mean_firing_rate = final_fr
 
+
+    def zscore_data(self, time_bin_ms, bsl_window, z_window, eps=0):
+        """Runs z_score_data. See that docstring for more info"""
+
+        self.z_score_data(self, time_bin_ms=time_bin_ms, bsl_window=bsl_window, z_window=z_window, eps=eps)
+
     def z_score_data(
         self,
         time_bin_ms: Union[list[float], float],
@@ -839,7 +845,14 @@ class SpikeAnalysis:
             print(f"possible values are {_values}")
             raise AttributeError(f"{value} does not exist run appropriate function")
 
-    def _generate_sample_z_parameter(self, save: bool = True) -> dict:
+    def _generate_sample_z_parameter(self, save: bool = True):
+        """
+        Deprecated version. Use generate_sample_z_parameter"""
+
+        z_params = self.generate_sample_z_parameter(save=save)
+        return z_params
+
+    def generate_sample_z_parameter(self, save: bool = True) -> dict:
         """
         Function for providing example z score parameters. Then saves as json
         for easy editing in the future.
