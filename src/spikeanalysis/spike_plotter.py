@@ -541,7 +541,7 @@ class SpikePlotter(PlotterBase):
                 self._despine(ax)
                 if plot_kwargs.title is None:
                     if len(self.data.si_units) > 0:
-                        title = f"{stimulus}: {self.data.si_units[self.data.cluster_ids[idy]]}"
+                        title = f"{stimulus}: si{self.data.si_units[self.data.cluster_ids[idy]]}: id{self.data.cluster_ids[idy]}"
                     else:
                         title = f"{stimulus}: {self.data.cluster_ids[idy]}"
                     plt.title(
@@ -728,7 +728,7 @@ class SpikePlotter(PlotterBase):
                     )
                 else:
                     if len(self.data.si_units) > 0:
-                        title = f"{stimulus}: {self.data.si_units[self.data.cluster_ids[cluster_number]]}"
+                        title = f"{stimulus}: si{self.data.si_units[self.data.cluster_ids[cluster_number]]}: id{self.data.cluster_ids[cluster_number]}"
                     else:
                         title = f"{stimulus}: {self.data.cluster_ids[cluster_number]}"
                     plt.title(
@@ -1095,6 +1095,10 @@ class SpikePlotter(PlotterBase):
             response[~np.isfinite(response)] = np.nan
 
             if by_trial and by_neuron:
+                if len(self.data.si_units) > 0:
+                    neuron_txt = f"neuron: {self.data.si_units[neuron]}, id: {self.data.cluster_ids[neuron]} "
+                else:
+                    neuron_txt = f"neuron: {self.data.cluster_ids[neuron]} "
                 for neuron in range(np.shape(response)[0]):
                     for trial in range(np.shape(response)[1]):
                         self._plot_one_trace(
@@ -1102,24 +1106,43 @@ class SpikePlotter(PlotterBase):
                             response[neuron, trial, :],
                             ebars=None,
                             color=color,
-                            stim=f"{stimulus}: {self.data.cluster_ids[neuron]}: {trial}",
+                            stim=f"{stimulus}: " + neuron_txt + f"{trial=}",
                             show_stim=show_stim,
                             stim_lines=current_length,
                             plot_kwargs=plot_kwargs,
                         )
-            elif by_neuron:
+
+            if by_trialgroup and by_neuron:
                 for neuron in range(np.shape(response)[0]):
-                    avg_response = func(response[neuron], axis=0)
-                    ebars = np.nanstd(response[neuron], axis=0)
+                    if len(self.data.si_units) > 0:
+                        neuron_txt = f"neuron: {self.data.si_units[neuron]}, id: {self.data.cluster_ids[neuron]} "
+                    else:
+                        neuron_txt = f"neuron: {self.data.cluster_ids[neuron]} "
+                    for trial in range(np.shape(response)[1]):
+                        self._plot_one_trace(
+                            current_bins,
+                            response[neuron,trial, :],
+                            ebars=None,
+                            color=color,
+                            stim=f"{stimulus} " + neuron_txt + f"{trial=}",
+                            show_stim=show_stim,
+                            stim_lines=current_length,
+                            plot_kwargs=plot_kwargs,
+                        )
+
+            elif by_trialgroup:
+                for trial in range(np.shape(response)[1]):
+                    avg_response = func(response[:, trial, :], axis=0)
+                    ebars = np.nanstd(response[:, trial, :], axis=0)
                     if sem:
-                        ebars /= np.sqrt(response.shape[1])
+                        ebars /= np.sqrt(response.shape[0])
                     if ebar or sem:
                         self._plot_one_trace(
                             current_bins,
                             avg_response,
                             ebars=ebars,
                             color=color,
-                            stim=f"{stimulus}: neuron: {self.data.cluster_ids[neuron]}",
+                            stim=f"{stimulus} trial group number {trial}",
                             show_stim=show_stim,
                             stim_lines=current_length,
                             plot_kwargs=plot_kwargs,
@@ -1130,7 +1153,40 @@ class SpikePlotter(PlotterBase):
                             avg_response,
                             ebars=None,
                             color=color,
-                            stim=f"{stimulus}: neuron: {self.data.cluster_ids[neuron]}",
+                            stim=f"{stimulus} trial group number {trial}",
+                            show_stim=show_stim,
+                            stim_lines=current_length,
+                            plot_kwargs=plot_kwargs,
+                        )
+
+            elif by_neuron:
+                for neuron in range(np.shape(response)[0]):
+                    if len(self.data.si_units) > 0:
+                        neuron_txt = f"neuron: {self.data.si_units[neuron]}, id: {self.data.cluster_ids[neuron]} "
+                    else:
+                        neuron_txt = f"neuron: {self.data.cluster_ids[neuron]} "
+                    avg_response = func(response[neuron], axis=0)
+                    ebars = np.nanstd(response[neuron], axis=0)
+                    if sem:
+                        ebars /= np.sqrt(response.shape[1])
+                    if ebar or sem:
+                        self._plot_one_trace(
+                            current_bins,
+                            avg_response,
+                            ebars=ebars,
+                            color=color,
+                            stim=f"{stimulus}: " + neuron_txt,
+                            show_stim=show_stim,
+                            stim_lines=current_length,
+                            plot_kwargs=plot_kwargs,
+                        )
+                    else:
+                        self._plot_one_trace(
+                            current_bins,
+                            avg_response,
+                            ebars=None,
+                            color=color,
+                            stim=f"{stimulus}: " + neuron_txt,
                             show_stim=show_stim,
                             stim_lines=current_length,
                             plot_kwargs=plot_kwargs,
@@ -1163,34 +1219,7 @@ class SpikePlotter(PlotterBase):
                             stim_lines=current_length,
                             plot_kwargs=plot_kwargs,
                         )
-            elif by_trialgroup:
-                for trial in range(np.shape(response)[1]):
-                    avg_response = func(response[:, trial, :], axis=0)
-                    ebars = np.nanstd(response[:, trial, :], axis=0)
-                    if sem:
-                        ebars /= np.sqrt(response.shape[0])
-                    if ebar or sem:
-                        self._plot_one_trace(
-                            current_bins,
-                            avg_response,
-                            ebars=ebars,
-                            color=color,
-                            stim=f"{stimulus} trial group number {trial}",
-                            show_stim=show_stim,
-                            stim_lines=current_length,
-                            plot_kwargs=plot_kwargs,
-                        )
-                    else:
-                        self._plot_one_trace(
-                            current_bins,
-                            avg_response,
-                            ebars=None,
-                            color=color,
-                            stim=f"{stimulus} trial group number {trial}",
-                            show_stim=show_stim,
-                            stim_lines=current_length,
-                            plot_kwargs=plot_kwargs,
-                        )
+
             else:
                 avg_response = np.mean(func(response, axis=1), axis=0)
                 ebars = np.nanstd(func(response, axis=1), axis=0)
