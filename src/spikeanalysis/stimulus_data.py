@@ -533,7 +533,7 @@ class StimulusData:
         """
 
         os.chdir(self._file_path)
-        try:
+        if self.digital_events is not None:
             digital_events = self.digital_events
             for dig_channel, event_type in digital_events.items():
                 assert (
@@ -541,15 +541,15 @@ class StimulusData:
                 ), f"Must provide name for each stim using the the set_stimulus_name() function. Please do this for {dig_channel}"
             with open(self._file_path / "digital_events.json", "w") as write_file:
                 json.dump(self.digital_events, write_file, cls=NumpyEncoder)
-        except AttributeError:
+        else:
             print("No digital events to save")
 
-        try:
+        if self.dig_analog_events is not None:
             _ = self.dig_analog_events
             with open(self._file_path / "dig_analog_events.json", "w") as write_file:
                 json.dump(self.dig_analog_events, write_file, cls=NumpyEncoder)
             np.save(self._file_path / "raw_analog_data.npy", self.analog_data)
-        except AttributeError:
+        else:
             print("No analog events to save")
 
         sr = {"sampling_rate": self.sample_frequency}
