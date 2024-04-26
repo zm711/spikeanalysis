@@ -600,6 +600,61 @@ class StimulusData:
         else:
             self.dig_analog_events[key] = data_to_clean
 
+    def merge_events(self, stim_name_or_index, new_name, digital):
+
+        if digital:
+            current_events = self.digital_events
+        else:
+            current_events = self.dig_analog_events
+
+        events = []
+        lengths = []
+        trial_groups = []
+        other_info = []
+        other_info_obtained = False
+
+        for index in stim_name_or_index:
+            sub_events = current_events[index]
+            if not other_info_obtained:
+                for key, value in sub_events.items():
+                    if key not in ["events", "lengths", "trial_groups","stim"]:
+                        other_info.append({key: value})
+                other_info_obtained = True
+
+            events.append(np.array(sub_events["events"]))
+            lengths.append(np.array(sub_events["lengths"]))
+            trial_groups.append(np.array(sub_events["trial_groups"]))
+
+        trial_number = []
+        for trial_group in trial_groups:
+            trial_number.append(len(trial_group))
+
+        concatenated_events = np.concatenate(events)
+        concatenated_lengths = np.concatenate(lengths)
+        concatenated_trial_groups = np.concatenate(trial_groups)
+
+        previous_n_trials = 0
+        for idx, n_trials in enumerate(trial_number):
+            concatenated_trial_groups[np.arange(previous_n_trials, previous_n_trials + n_trials)] = (
+                concatenated_trial_groups[np.arange(previous_n_trials, previous_n_trials + n_trials)] + (100 * idx)
+            )
+            previous_n_trials += n_trials
+
+        sorting_idx = np.argsort(concatenated_events)
+        current_events[new_name] = {}
+        current_events[new_name]["events"] = concatenated_events[sorting_idx]
+        current_events[new_name]["lengths"] = concatenated_lengths[sorting_idx]
+        current_events[new_name]["trial_groups"] = concatenated_trial_groups[sorting_idx]
+        current_events[new_name]["stim"] = new_name
+        for info in other_info:
+            for key, value in info.items():
+
+                current_events[new_name][key] = value
+        if digital:
+            self.digital_events = current_events
+        else:
+            self.dig_analog = current_events
+
     def _intan_neo_read_no_dig(self, reader: neo.rawio.IntanRawIO, time_slice: tuple = (None, None)) -> np.array:
         """
         Utility function that hacks the Neo memmap structure to be able to read
