@@ -484,6 +484,48 @@ class StimulusData:
 
         self.digital_events = digital_events
 
+
+    def split_events(self, index_or_name, new_index_or_name, event_indices, new_stim_name, digital):
+
+        if digital:
+            events = self.digital_events
+        else:
+            events = self.dig_analog_events
+
+        current_events = events[index_or_name]
+        for key, value in current_events.items():
+            if not isinstance(value, np.ndarray) and not isinstance(value, str):
+                current_events[key] = np.array(value)
+
+        n_events = len(current_events['events'])
+        total_indices = np.arange(0,n_events)
+
+        if isinstance(event_indices, (list, int)):
+            event_indices = np.array(event_indices)
+
+        keep_indices = np.array([index for index in total_indices if index not in event_indices])
+
+        events_to_move = current_events['events'][event_indices]
+        lengths_to_move = current_events['lengths'][event_indices]
+        trial_groups_to_move = current_events['trial_groups'][event_indices]
+
+        events[new_index_or_name] = dict(
+            events=events_to_move,
+            lengths=lengths_to_move,
+            trial_groups=trial_groups_to_move,
+            stim=new_stim_name
+        )
+
+        events[index_or_name]['events'] = current_events['events'][keep_indices]
+        events[index_or_name]['lengths'] = current_events['lengths'][keep_indices]
+        events[index_or_name]['trial_groups'] = current_events['trial_groups'][keep_indices]
+
+        if digital:
+            self.digital_events = events
+        else:
+            self.dig_analog_events = events
+
+
     def save_events(self):
         """
         Function for saving events in json for nested structures and .npy files for simple arrays
