@@ -601,6 +601,24 @@ class StimulusData:
             self.dig_analog_events[key] = data_to_clean
 
     def merge_events(self, stim_name_or_index, new_name, digital):
+        """"
+        Function for merge different stimuli channels into one stimulus in the 
+        stim dict.
+
+        Note that this creates a new stim of the merged events and does not delete
+        the old events.
+
+        It also just adds 100 to the trial group numbering to keep them separate.
+
+        Parameters
+        ----------
+        stim_namr_or_index: list[str]
+            The stim_key name for digital events or the stim_key index for analog events
+            e.g. 'DIGITAL-IN-01'
+        new_name: str:
+             The new stim_key name and 'stim' for the combined stim
+        digital: bool
+            Whether the events are digital or analog to fuse"""
 
         if digital:
             current_events = self.digital_events
@@ -637,7 +655,7 @@ class StimulusData:
         for idx, n_trials in enumerate(trial_number):
             concatenated_trial_groups[np.arange(previous_n_trials, previous_n_trials + n_trials)] = (
                 concatenated_trial_groups[np.arange(previous_n_trials, previous_n_trials + n_trials)] + (100 * idx)
-            )
+            ) # we pick a big value that shouldn't overlap.
             previous_n_trials += n_trials
 
         sorting_idx = np.argsort(concatenated_events)
