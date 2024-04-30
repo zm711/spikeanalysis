@@ -418,7 +418,7 @@ class SpikeAnalysis:
     def zscore_data(self, time_bin_ms, bsl_window, z_window, eps=0):
         """Runs z_score_data. See that docstring for more info"""
 
-        self.z_score_data(self, time_bin_ms=time_bin_ms, bsl_window=bsl_window, z_window=z_window, eps=eps)
+        self.z_score_data(time_bin_ms=time_bin_ms, bsl_window=bsl_window, z_window=z_window, eps=eps)
 
     def z_score_data(
         self,

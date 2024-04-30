@@ -48,6 +48,8 @@ class SpikePlotter(PlotterBase):
         else:
             self.data = None
 
+        self._trial_groups = None
+        
     def set_kwargs(self, **kwargs):
         self._check_kwargs(**kwargs)
         self._set_kwargs(**kwargs)
@@ -75,6 +77,18 @@ class SpikePlotter(PlotterBase):
         #    analysis, (SpikeAnalysis, CuratedSpikeAnalysis, MergedSpikeAnalysis)
         # ), "analysis must be a SpikeAnalysis dataset"
         self.data = analysis
+
+
+    def set_trial_group_names(self, tg_dict:dict):
+        """
+        Set the dict to display trial group names
+        Parameters
+        ----------
+        tg_dict: dict
+        """
+        if not isinstance(tg_dict, dict):
+            raise TypeError(f"tg_dict should be a dict not type {type(tg_dict)}")
+        self._trial_groups = tg_dict
 
     def plot_zscores(
         self,
