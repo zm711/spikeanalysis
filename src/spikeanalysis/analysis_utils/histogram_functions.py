@@ -28,7 +28,7 @@ def rasterize(time_stamps: np.array) -> tuple[np.array, np.array]:
     x_out[0:-1:3] = time_stamps
     x_out[1:-1:3] = time_stamps
     y_out = np.empty((len(time_stamps) * 3))
-    y_out[:] = np.NaN
+    y_out[:] = np.nan
     y_out[0:-1:3] = 0
     y_out[1:-1:3] = 1
     xx = x_out.reshape(1, len(x_out))
