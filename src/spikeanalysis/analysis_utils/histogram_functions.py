@@ -23,7 +23,7 @@ def spike_times_to_bins(
 
 def rasterize(time_stamps: np.array) -> tuple[np.array, np.array]:
     x_out = np.empty((len(time_stamps) * 3))
-    x_out[:] = np.NaN
+    x_out[:] = np.nan
 
     x_out[0:-1:3] = time_stamps
     x_out[1:-1:3] = time_stamps
