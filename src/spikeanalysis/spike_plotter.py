@@ -96,7 +96,7 @@ class SpikePlotter(PlotterBase):
         sorting_index: Optional[int] | list[int] = None,
         z_bar: Optional[list[int]] = None,
         indices: bool = False,
-        show_stim: bool = True,
+        show_stim: bool | float = True,
         plot_kwargs: dict = {},
     ) -> Optional[np.array]:
         """
@@ -156,7 +156,7 @@ class SpikePlotter(PlotterBase):
         sorting_index: Optional[int] | list[int] = None,
         bar: Optional[list[int]] = None,
         indices: bool = False,
-        show_stim: bool = True,
+        show_stim: bool | float = True,
         plot_kwargs: dict = {},
     ) -> Optional[np.array]:
         """
@@ -216,7 +216,7 @@ class SpikePlotter(PlotterBase):
         sorting_index: Optional[int] | list[int] = None,
         bar: Optional[list[int]] = None,
         indices: bool = False,
-        show_stim: bool = True,
+        show_stim: bool | float = True,
         plot_kwargs: dict = {},
     ) -> Optional[np.array]:
         """
@@ -365,6 +365,14 @@ class SpikePlotter(PlotterBase):
                 if idx == 0:
                     sub_ax.set_ylabel(y_axis, fontsize="small")
                 if show_stim:
+                    if data == "zscore":
+                        stim_color = 'black'
+                    else:
+                        stim_color = 'white'
+                    if isinstance(show_stim, bool):
+                        stim_size = 0.5
+                    else:
+                        stim_size = show_stim
                     end_point = np.where((bins > lengths[idx] - bin_size) & (bins < lengths[idx] + bin_size))[0][
                         0
                     ]  # aim for nearest bin at end of stim
@@ -372,17 +380,17 @@ class SpikePlotter(PlotterBase):
                         zero_point,
                         0,
                         np.shape(sorted_z_scores)[0],
-                        color="black",
+                        color=stim_color,
                         linestyle=":",
-                        linewidth=0.5,
+                        linewidth=stim_size,
                     )
                     sub_ax.axvline(
                         end_point,
                         0,
                         np.shape(sorted_z_scores)[0],
-                        color="black",
+                        color=stim_color,
                         linestyle=":",
-                        linewidth=0.5,
+                        linewidth=show_stim,
                     )
                 self._despine(sub_ax)
                 sub_ax.spines["bottom"].set_visible(False)
@@ -428,7 +436,7 @@ class SpikePlotter(PlotterBase):
     def plot_raster(
         self,
         window: Union[list, list[list]],
-        show_stim: bool = True,
+        show_stim: bool | float = True,
         include_ids: list | np.nadarry | None = None,
         color_raster: bool = False,
         plot_kwargs: dict = {},
@@ -537,8 +545,11 @@ class SpikePlotter(PlotterBase):
 
                 ax.plot(raster_x, raster_y, color="black")
                 if show_stim:
-                    ax.plot([0, 0], [0, np.nanmax(raster_y) + 1], color="red", linestyle=":")
-                    ax.plot([events, events], [0, np.nanmax(raster_y) + 1], color="red", linestyle=":")
+                    show_stim_dict = dict(color='red', linestyle=':')
+                    if isinstance(show_stim, (float, int)):
+                        show_stim_dict['linewidth'] = show_stim
+                    ax.plot([0, 0], [0, np.nanmax(raster_y) + 1], **show_stim_dict)
+                    ax.plot([events, events], [0, np.nanmax(raster_y) + 1], **show_stim_dict)
 
                 ax.set(
                     xlabel=plot_kwargs.x_axis,
@@ -579,7 +590,7 @@ class SpikePlotter(PlotterBase):
         window: Union[list, list[list]],
         time_bin_ms: Union[float, list[float]],
         sm_time_ms: Union[float, list[float]],
-        show_stim: bool = True,
+        show_stim: bool | float = True,
         include_ids: list | np.ndarray | None = None,
         plot_kwargs: dict = {},
     ):
@@ -702,17 +713,19 @@ class SpikePlotter(PlotterBase):
                     ax.plot(bins, err_plus, color=cmap(norm(value)), linewidth=0.25)
                     ax.fill_between(bins, err_minus, err_plus, color=cmap(norm(value)), alpha=0.2)
                     if show_stim:
+                        show_stim_dict = dict(color="red", linestyle=':')
+                        if isinstance(show_stim, (float, int)):
+                            show_stim_dict["linewidth"] = show_stim
                         ax.plot(
                             [0, 0],
                             [min_value, np.max(mean_smoothed_psth) + np.max(err_plus) + 1],
-                            color="red",
-                            linestyle=":",
+                            **show_stim_dict
                         )
+                        show_stim_dict["color"] = cmap(norm(value))
                         ax.plot(
                             [event_len[value], event_len[value]],
                             [min_value, np.max(mean_smoothed_psth) + np.max(err_plus) + 1],
-                            color=cmap(norm(value)),
-                            linestyle=":",
+                            **show_stim_dict
                         )
 
                     ax.set(ylim=(0, np.max(mean_smoothed_psth) + np.max(stderr) + 1))
@@ -754,7 +767,7 @@ class SpikePlotter(PlotterBase):
                 plt.figure(dpi=plot_kwargs.dpi)
                 plt.show()
 
-    def plot_zscores_ind(self, z_bar: Optional[list[int]] = None, show_stim: bool = True):
+    def plot_zscores_ind(self, z_bar: Optional[list[int]] = None, show_stim: bool | float = True):
         """
         Function for plotting z scored heatmaps by trial group rather than all trial groups on the same set of axes. In
         This function all data is ordered based on the most responsive unit/trial group. Rows can be different units
@@ -830,21 +843,20 @@ class SpikePlotter(PlotterBase):
                 ax.set_xticklabels([round(bins[i * bins_length], 4) if i < 7 else z_window[1] for i in range(7)])
                 ax.set_ylabel(y_axis, fontsize="small")
                 if show_stim:
+                    show_stim_dict = dict(color='black', linestyle=':', linewdith=0.5)
+                    if isinstance(show_stim, (float, int)):
+                        show_stim_dict['linewidth'] = show_stim
                     ax.axvline(
                         zero_point,
                         0,
                         np.shape(sorted_z_scores)[0],
-                        color="black",
-                        linestyle=":",
-                        linewidth=0.5,
+                        **show_stim_dict
                     )
                     ax.axvline(
                         end_point,
                         0,
                         np.shape(sorted_z_scores)[0],
-                        color="black",
-                        linestyle=":",
-                        linewidth=0.5,
+                        **show_stim_dict
                     )
                 self._despine(ax)
                 ax.spines["bottom"].set_visible(False)
