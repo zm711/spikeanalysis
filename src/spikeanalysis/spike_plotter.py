@@ -49,7 +49,7 @@ class SpikePlotter(PlotterBase):
             self.data = None
 
         self._trial_groups = None
-        
+
     def set_kwargs(self, **kwargs):
         self._check_kwargs(**kwargs)
         self._set_kwargs(**kwargs)
@@ -78,8 +78,7 @@ class SpikePlotter(PlotterBase):
         # ), "analysis must be a SpikeAnalysis dataset"
         self.data = analysis
 
-
-    def set_trial_group_names(self, tg_dict:dict):
+    def set_trial_group_names(self, tg_dict: dict):
         """
         Set the dict to display trial group names
         Parameters
@@ -131,6 +130,7 @@ class SpikePlotter(PlotterBase):
             reset = True
             try:
                 import seaborn
+
                 self.cmap = "vlag"
             except ImportError:
                 self.cmap = "bwr"
@@ -153,7 +153,7 @@ class SpikePlotter(PlotterBase):
     def plot_raw_firing(
         self,
         figsize: Optional[tuple] = (24, 10),
-        sorting_index: Optional[int] | list[int] = None,
+        sorting_index: Optional[int] | list[int] | dict = None,
         bar: Optional[list[int]] = None,
         indices: bool = False,
         show_stim: bool | float = True,
@@ -213,7 +213,7 @@ class SpikePlotter(PlotterBase):
         self,
         data: str = "zscore",
         figsize: Optional[tuple] = (24, 10),
-        sorting_index: Optional[int] | list[int] = None,
+        sorting_index: Optional[int] | list[int] | dict = None,
         bar: Optional[list[int]] = None,
         indices: bool = False,
         show_stim: bool | float = True,
@@ -301,6 +301,10 @@ class SpikePlotter(PlotterBase):
             if sorting_index is None:
                 current_sorting_index = np.shape(sub_zscores)[1] - 1
                 reset_index = True
+                z_score_sorting_index = None
+
+            elif isinstance(sorting_index, dict):
+                z_score_sorting_index = sorting_index[stimulus]
 
             else:
                 reset_index = False
@@ -309,10 +313,12 @@ class SpikePlotter(PlotterBase):
                     current_sorting_index = sorting_index[stim_idx]
                 else:
                     current_sorting_index = sorting_index
+                z_score_sorting_index = None
 
-            event_window = np.logical_and(bins >= 0, bins <= lengths[current_sorting_index])
+            if z_score_sorting_index is None:
+                event_window = np.logical_and(bins >= 0, bins <= lengths[current_sorting_index])
+                z_score_sorting_index = np.argsort(-np.sum(sub_zscores[:, current_sorting_index, event_window], axis=1))
 
-            z_score_sorting_index = np.argsort(-np.sum(sub_zscores[:, current_sorting_index, event_window], axis=1))
             if indices:
                 if len(self.data.si_units) > 0:
                     sorted_cluster_ids[stimulus] = {}
@@ -366,9 +372,9 @@ class SpikePlotter(PlotterBase):
                     sub_ax.set_ylabel(y_axis, fontsize="small")
                 if show_stim:
                     if data == "zscore":
-                        stim_color = 'black'
+                        stim_color = "black"
                     else:
-                        stim_color = 'white'
+                        stim_color = "white"
                     if isinstance(show_stim, bool):
                         stim_size = 0.5
                     else:
@@ -545,9 +551,9 @@ class SpikePlotter(PlotterBase):
 
                 ax.plot(raster_x, raster_y, color="black")
                 if show_stim:
-                    show_stim_dict = dict(color='red', linestyle=':')
+                    show_stim_dict = dict(color="red", linestyle=":")
                     if isinstance(show_stim, (float, int)):
-                        show_stim_dict['linewidth'] = show_stim
+                        show_stim_dict["linewidth"] = show_stim
                     ax.plot([0, 0], [0, np.nanmax(raster_y) + 1], **show_stim_dict)
                     ax.plot([events, events], [0, np.nanmax(raster_y) + 1], **show_stim_dict)
 
@@ -713,19 +719,17 @@ class SpikePlotter(PlotterBase):
                     ax.plot(bins, err_plus, color=cmap(norm(value)), linewidth=0.25)
                     ax.fill_between(bins, err_minus, err_plus, color=cmap(norm(value)), alpha=0.2)
                     if show_stim:
-                        show_stim_dict = dict(color="red", linestyle=':')
+                        show_stim_dict = dict(color="red", linestyle=":")
                         if isinstance(show_stim, (float, int)):
                             show_stim_dict["linewidth"] = show_stim
                         ax.plot(
-                            [0, 0],
-                            [min_value, np.max(mean_smoothed_psth) + np.max(err_plus) + 1],
-                            **show_stim_dict
+                            [0, 0], [min_value, np.max(mean_smoothed_psth) + np.max(err_plus) + 1], **show_stim_dict
                         )
                         show_stim_dict["color"] = cmap(norm(value))
                         ax.plot(
                             [event_len[value], event_len[value]],
                             [min_value, np.max(mean_smoothed_psth) + np.max(err_plus) + 1],
-                            **show_stim_dict
+                            **show_stim_dict,
                         )
 
                     ax.set(ylim=(0, np.max(mean_smoothed_psth) + np.max(stderr) + 1))
@@ -843,21 +847,11 @@ class SpikePlotter(PlotterBase):
                 ax.set_xticklabels([round(bins[i * bins_length], 4) if i < 7 else z_window[1] for i in range(7)])
                 ax.set_ylabel(y_axis, fontsize="small")
                 if show_stim:
-                    show_stim_dict = dict(color='black', linestyle=':', linewdith=0.5)
+                    show_stim_dict = dict(color="black", linestyle=":", linewdith=0.5)
                     if isinstance(show_stim, (float, int)):
-                        show_stim_dict['linewidth'] = show_stim
-                    ax.axvline(
-                        zero_point,
-                        0,
-                        np.shape(sorted_z_scores)[0],
-                        **show_stim_dict
-                    )
-                    ax.axvline(
-                        end_point,
-                        0,
-                        np.shape(sorted_z_scores)[0],
-                        **show_stim_dict
-                    )
+                        show_stim_dict["linewidth"] = show_stim
+                    ax.axvline(zero_point, 0, np.shape(sorted_z_scores)[0], **show_stim_dict)
+                    ax.axvline(end_point, 0, np.shape(sorted_z_scores)[0], **show_stim_dict)
                 self._despine(ax)
                 ax.spines["bottom"].set_visible(False)
                 ax.spines["left"].set_visible(False)
@@ -1147,7 +1141,7 @@ class SpikePlotter(PlotterBase):
                     for trial in range(np.shape(response)[1]):
                         self._plot_one_trace(
                             current_bins,
-                            response[neuron,trial, :],
+                            response[neuron, trial, :],
                             ebars=None,
                             color=color,
                             stim=f"{stimulus} " + neuron_txt + f"{trial=}",
