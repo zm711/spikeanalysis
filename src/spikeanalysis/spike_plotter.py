@@ -847,7 +847,7 @@ class SpikePlotter(PlotterBase):
                 ax.set_xticklabels([round(bins[i * bins_length], 4) if i < 7 else z_window[1] for i in range(7)])
                 ax.set_ylabel(y_axis, fontsize="small")
                 if show_stim:
-                    show_stim_dict = dict(color="black", linestyle=":", linewdith=0.5)
+                    show_stim_dict = dict(color="black", linestyle=":", linewidth=0.5)
                     if isinstance(show_stim, (float, int)):
                         show_stim_dict["linewidth"] = show_stim
                     ax.axvline(zero_point, 0, np.shape(sorted_z_scores)[0], **show_stim_dict)
