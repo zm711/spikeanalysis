@@ -995,7 +995,7 @@ class SpikeAnalysis:
 
         file_path = self._file_path
 
-        if (file_path / "responsive_profile.json").exists():
+        if (file_path / "response_profile.json").exists():
             if not overwrite:
                 raise FileExistsError("This file already exists set overwrite to True to overwrite")
 
