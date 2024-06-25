@@ -771,7 +771,7 @@ class SpikePlotter(PlotterBase):
                 plt.figure(dpi=plot_kwargs.dpi)
                 plt.show()
 
-    def plot_zscores_ind(self, z_bar: Optional[list[int]] = None, show_stim: bool | float = True):
+    def plot_zscores_ind(self, z_bar: Optional[list[int]] = None, show_stim: bool | float = True, plot_kwargs:dict={}):
         """
         Function for plotting z scored heatmaps by trial group rather than all trial groups on the same set of axes. In
         This function all data is ordered based on the most responsive unit/trial group. Rows can be different units
@@ -787,16 +787,17 @@ class SpikePlotter(PlotterBase):
         """
 
         z_scores = getattr(self.data, "z_scores")
+        plot_kwargs = self._convert_plot_kwargs(plot_kwargs)
 
-        if self.cmap is None:
+        if plot_kwargs.cmap is None:
             cmap = "vlag"
         else:
-            cmap = self.cmap
+            cmap = plot_kwargs.cmap
 
-        if self.y_axis is None:
+        if plot_kwargs.y_axis is None:
             y_axis = "Units"
         else:
-            y_axis = self.y_axis
+            y_axis = plot_kwargs.y_axis
 
         if z_bar is not None:
             assert len(z_bar) == 2, f"Please give z_bar as [min, max], you entered {z_bar}"
@@ -822,7 +823,7 @@ class SpikePlotter(PlotterBase):
             ]  # aim for nearest bin at end of stim
             bins_length = int(len(bins) / 7)
             for trial_idx in range(np.shape(sub_zscores)[1]):
-                fig, ax = plt.subplots(figsize=self.figsize)
+                fig, ax = plt.subplots(figsize=plot_kwargs.figsize)
                 z_score_sorting_index = np.argsort(-np.sum(sub_zscores[:, trial_idx, event_window], axis=1))
 
                 sorted_z_scores = sub_zscores[z_score_sorting_index, trial_idx, :]
@@ -842,7 +843,7 @@ class SpikePlotter(PlotterBase):
                     vmin = -5
 
                 im = ax.imshow(sorted_z_scores, vmin=vmin, vmax=vmax, cmap=cmap, aspect="auto")
-                ax.set_xlabel(self.x_axis, fontsize="small")
+                ax.set_xlabel(plot_kwargs.x_axis, fontsize="small")
                 ax.set_xticks([i * bins_length for i in range(7)])
                 ax.set_xticklabels([round(bins[i * bins_length], 4) if i < 7 else z_window[1] for i in range(7)])
                 ax.set_ylabel(y_axis, fontsize="small")
