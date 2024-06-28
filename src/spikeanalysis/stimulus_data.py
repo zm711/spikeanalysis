@@ -693,7 +693,12 @@ class StimulusData:
             the raw digital data stored. Cannot be used. Must be processed first.
 
         """
-        digital_memmap = reader._raw_data["DIGITAL-IN"]  # directly grab memory map from neo
+        try:
+            digital_memmap = reader._raw_data['USB board digital input channel'] # this will be the field name now
+        except ValueError:
+            # As of PR1491 the name has changed keep this for back compatibility
+            digital_memmap = reader._raw_data["DIGITAL-IN"]  # directly grab memory map from neo
+            
         dig_size = digital_memmap.size
         dig_shape = digital_memmap.shape
         # below we have all the shaping information necessary
@@ -705,6 +710,7 @@ class StimulusData:
             i_stop = int(np.rint(time_slice[1] * self.sample_frequency))
         else:
             i_stop = dig_size
+
         block_size = dig_shape[1]
         block_start = i_start // block_size
         block_stop = i_stop // block_size + 1
