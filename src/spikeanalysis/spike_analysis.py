@@ -130,7 +130,9 @@ class SpikeAnalysis:
         if hasattr(sorting_or_analyzer, "sorting"):
             self.sorting_analyzer = sorting_or_analyzer
             sorting = sorting_or_analyzer.sorting
-
+        else:
+            sorting = sorting_or_analyzer
+            self.sorting_analyzer = None
         spike_vector = sorting.to_spike_vector(concatenated=True)
         spike_times = spike_vector["sample_index"]
         unit_ids = spike_vector["unit_index"]
@@ -198,7 +200,7 @@ class SpikeAnalysis:
 
         self.sorting_analyzer = sorting_analyzer
 
-    def get_depths(self):
+    def get_depths(self,):
 
         if hasattr(self, "locations"):
             return self.locations[:,1]
