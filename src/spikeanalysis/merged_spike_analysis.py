@@ -103,6 +103,7 @@ class MergedSpikeAnalysis(SpikeAnalysis):
         self.raw_spike_times = spike_times[sort_idx]
         self.spike_clusters = sub_cluster_ids[sort_idx]
         self.cluster_ids = np.unique(self.spike_clusters)
+        self._cids = np.unique(self.spike_clusters)
 
         event_names = {v["stim"]: k for k, v in self.events.items()}
 
