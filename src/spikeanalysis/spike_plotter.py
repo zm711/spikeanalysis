@@ -1116,11 +1116,11 @@ class SpikePlotter(PlotterBase):
             response[~np.isfinite(response)] = np.nan
 
             if by_trial and by_neuron:
-                if len(self.data.si_units) > 0:
-                    neuron_txt = f"neuron: {self.data.si_units[neuron]}, id: {self.data.cluster_ids[neuron]} "
-                else:
-                    neuron_txt = f"neuron: {self.data.cluster_ids[neuron]} "
                 for neuron in range(np.shape(response)[0]):
+                    if len(self.data.si_units) > 0:
+                        neuron_txt = f"neuron: {self.data.si_units[neuron]}, id: {self.data.cluster_ids[neuron]} "
+                    else:
+                        neuron_txt = f"neuron: {self.data.cluster_ids[neuron]} "
                     for trial in range(np.shape(response)[1]):
                         self._plot_one_trace(
                             current_bins,
