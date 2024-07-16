@@ -119,13 +119,17 @@ class SpikeAnalysis:
         self._sampling_rate = sp._sampling_rate
         self._si_units = []
 
-    def set_spike_data_si(self, sorting: "Sorting"):
+    def set_spike_data_si(self, sorting_or_analyzer: "Sorting | SortingAnalyzer"):
         """loads in a spikeinterface sorting object to serve as spike data
 
         Parameters
         ----------
         sorting: Sorting
             spikeinterface sorting"""
+
+        if hasattr(sorting_or_analyzer, "sorting"):
+            self.sorting_analyzer = sorting_or_analyzer
+            sorting = sorting_or_analyzer.sorting
 
         spike_vector = sorting.to_spike_vector(concatenated=True)
         spike_times = spike_vector["sample_index"]
@@ -141,7 +145,7 @@ class SpikeAnalysis:
 
     def set_stimulus_data(self, event_times: StimulusData, same_folder: bool = True):
         """
-        loads in the stimulus data for anayzing spike trains
+        loads in the stimulus data for analyzing spike trains
 
         Parameters
         ----------
@@ -189,6 +193,33 @@ class SpikeAnalysis:
             self.events = self._dig_analog_events
         else:
             raise ValueError("Code requires some stimulus data")
+
+    def set_sorting_analyzer(self, sorting_analyzer):
+
+        self.sorting_analyzer = sorting_analyzer
+
+    def get_depths(self):
+
+        if hasattr(self, "locations"):
+            return self.locations[:,1]
+        
+        if not hasattr(self, "sorting_analyzer"):
+            raise AttributeError('You must have a sorting analyzer set to get depths')
+        # locs is (x, y, z) with y = depth, z equal 3d
+        locs = self.sorting_analyzer.get_extension('unit_locations').get_data()
+        self.locations = locs
+        return locs[:, 1]
+    
+    def get_x_dims(self):
+        if hasattr(self, "locations"):
+            return self.locations[:,0]
+        
+        if not hasattr(self, "sorting_analyzer"):
+            raise AttributeError('You must have a sorting analyzer set to get depths')
+        # locs is (x, y, z) with y = depth, z equal 3d
+        locs = self.sorting_analyzer.get_extension('unit_locations').get_data()
+        self.locations = locs
+        return locs[:, 0]
 
     def get_raw_psth(
         self,
