@@ -55,6 +55,21 @@ class StimulusData:
             txt += f"\n The vars are {final_vars}"
             txt += f"\n The methods are {final_methods}"
         return txt
+    
+    def set_reader(self, reader):
+
+        """Sets a Neo reader
+        
+        Parameters
+        ----------
+        reader: Neo.rawio | spikeinterface.recording
+            The neo_reader to be set
+            
+        """
+        if hasattr(reader, "neo_reader"):
+            self.reader = getattr(reader, "neo_reader")
+        else:
+            self.reader = reader
 
     def get_all_files(self):
         """
@@ -125,7 +140,9 @@ class StimulusData:
         except FileNotFoundError:
             print("Reading raw data files")
 
-        self.create_neo_reader()
+        if not hasattr(self, "reader"):
+            self.create_neo_reader()
+
         try:
             self.get_analog_data(time_slice=time_slice)
             have_analog = True
