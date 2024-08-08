@@ -2,8 +2,8 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python
-  - numpy
+  - python<3.12
+  - numpy<2.0
   - scipy
   - matplotlib
   - numba
