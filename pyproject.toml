@@ -13,7 +13,7 @@ classifiers = [
 
 dependencies = [
   "numpy<2.0",
-  "neo>=0.12.0",
+  "neo<=0.13.1",
   "tqdm",
   "scipy",
   "matplotlib",
