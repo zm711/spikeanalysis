@@ -751,12 +751,13 @@ class SpikeAnalysis:
                     number of bins is{len(time_bin_ms)} and should be {self._total_stim}"
                 time_bin_size = np.array(time_bin_ms) / 1000
 
-            try:
-                stim_dict = self._get_key_for_stim()
-            except AttributeError:
-                pass
         else:
             time_bin_size = [None] * self._total_stim
+
+        try:
+            stim_dict = self._get_key_for_stim()
+        except AttributeError:
+                pass
 
         correlations = {}
         for idx, stimulus in enumerate(data.keys()):
