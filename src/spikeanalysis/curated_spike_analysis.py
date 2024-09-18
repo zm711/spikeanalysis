@@ -303,7 +303,7 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
                 current_window = window[stim]
 
             current_bins = bins[stim]
-            bin_window = current_window[0] <= current_bins <= current_window[1]
+            bin_window = np.logical_and(current_window[0] <= current_bins, current_bins <= current_window[1])
 
             final_scores = scores[:, :, bin_window]
 
@@ -315,5 +315,5 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
             )
             mask = np.logical_and(mask, final_scores_masked)
 
-        self.mask
+        self.mask = mask
             
