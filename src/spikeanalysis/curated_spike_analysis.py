@@ -264,7 +264,8 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
             if filter_params is None:
                 filter_params = {"all": dict(min=-50, max=50)}
             else:
-                assert all(['min' in filter_params.keys(), 'max' in filter_params.keys()])
+                assert all(['min' in value for value in filter_params.values()])
+                assert all(['max' in value for value in filter_params.values()])
             operator = np.nansum
         else:
             raise ValueError("only auc is implemented")
