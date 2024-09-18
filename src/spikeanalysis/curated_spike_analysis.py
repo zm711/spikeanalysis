@@ -284,7 +284,7 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
                 assert len(window) == len(data.keys())
             else:
                 assert len(window) == 2, "only give start stop"
-                window = [window for _ in len(data.keys())]
+                window = [window for _ in range(len(data.keys()))]
         elif isinstance(window, dict):
             window_is_list = False
             assert len(window.keys()) == len(data.keys()), "for dict please give one list of stims per stim"
