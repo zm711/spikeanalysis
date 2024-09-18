@@ -187,10 +187,11 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
                     assert trial_index is not None, "must give the trial index to look at only the trial"
                     if len(sub_curation.shape) == 1:
                         sub_curation = np.expand_dims(sub_curation, axis=1)
-                    if len(np.array(trial_index)) > 1:
-                        mask = np.all(sub_curation[:, np.array(trial_index)], axis=1)
-                    else:
+                    if isinstance(trial_index, (int, float)):
                         mask = sub_curation[:, trial_index]
+                    else:
+                        mask = np.all(sub_curation[:, np.array(trial_index)], axis=1)
+                        
 
             else:
                 if len(sub_curation.shape) == 1:
