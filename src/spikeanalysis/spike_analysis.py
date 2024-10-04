@@ -414,6 +414,10 @@ class SpikeAnalysis:
                 self.fr_bins[stim] = bins[fr_window_values]
             self.mean_firing_rate = final_fr
 
+    def zscore_data(self, time_bin_ms, bsl_window, z_window, eps):
+
+        self.z_score_data(time_bin_ms=time_bin_ms, bsl_window=bsl_window, z_window=z_window, eps=eps)
+
     def z_score_data(
         self,
         time_bin_ms: Union[list[float], float],
@@ -734,6 +738,7 @@ class SpikeAnalysis:
             data = getattr(self, "psths")
         elif dataset == "raw":
             data = getattr(self, "raw_firing_rate")
+            bins = self.fr_bins
         elif dataset == "z_scores":
             data = getattr(self, "raw_zscores")
             bins = self.z_bins
