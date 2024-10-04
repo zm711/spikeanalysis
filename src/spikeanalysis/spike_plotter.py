@@ -220,7 +220,7 @@ class SpikePlotter(PlotterBase):
             If given a list with min for the cbar at index 0 and the max at index 1. Overrides cbar generation
         indices: bool, default False
             If true will return the cluster ids sorted in the order they appear in the graph as a dict of stimuli
-        show_stim: bool, default True
+        show_stim: bool |int, default True
             Show lines where stim onset and offset are
         plot_kwargs: dict default: {}
             matplot lib kwargs to overide the global kwargs for just the function
@@ -351,6 +351,8 @@ class SpikePlotter(PlotterBase):
                 if idx == 0:
                     sub_ax.set_ylabel(y_axis, fontsize="small")
                 if show_stim:
+                    if isinstance(show_stim, bool):
+                        show_stim = 0.5
                     end_point = np.where((bins > lengths[idx] - bin_size) & (bins < lengths[idx] + bin_size))[0][
                         0
                     ]  # aim for nearest bin at end of stim
@@ -360,7 +362,7 @@ class SpikePlotter(PlotterBase):
                         np.shape(sorted_z_scores)[0],
                         color="black",
                         linestyle=":",
-                        linewidth=0.5,
+                        linewidth=show_stim,
                     )
                     sub_ax.axvline(
                         end_point,
@@ -368,7 +370,7 @@ class SpikePlotter(PlotterBase):
                         np.shape(sorted_z_scores)[0],
                         color="black",
                         linestyle=":",
-                        linewidth=0.5,
+                        linewidth=show_stim,
                     )
                 self._despine(sub_ax)
                 sub_ax.spines["bottom"].set_visible(False)
