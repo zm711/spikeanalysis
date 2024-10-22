@@ -31,7 +31,7 @@ def latency_core_stats(bsl_fr: float, firing_data: np.array, time_bin_size: floa
             )
             if final_prob <= 10e-6:
                 break
-            elif n_bin * time_bin_size >= 0.400:  # past 400 ms is not really a true latency
+            elif n_bin * time_bin_size >= 5:  # past 400 ms is not really a true latency
                 n_bin = np.shape(firing_data)[1] - 1
                 break
 
