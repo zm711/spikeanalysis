@@ -287,6 +287,7 @@ class SpikePlotter(PlotterBase):
             if sorting_index is None:
                 current_sorting_index = np.shape(sub_zscores)[1] - 1
                 reset_index = True
+                is_the_sorting_index_the_filter=False
 
             else:
                 reset_index = False
