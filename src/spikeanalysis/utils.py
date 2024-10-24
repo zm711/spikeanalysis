@@ -208,12 +208,13 @@ def prevalence_counts(
     prevalence_dict = {}
 
     rt_0 = responsive_neurons[stim[0]][list(responsive_neurons[stim[0]].keys())[0]]
-    n_tgs = rt_0.shape[1]
+    n_tgs_dict = {st: rt[list(rt.keys())[0]].shape[1] for st, rt in responsive_neurons.items()}
     n_neurons = rt_0.shape[0]
     if by_trialgroup:
         for st in stim:
             prevalence_dict[st] = {}
             response_types = responsive_neurons[st]
+            n_tgs = n_tgs_dict[st]
             for n_trial in range(n_tgs):
                 response_list = []
                 response_labels = []
