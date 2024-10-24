@@ -488,7 +488,7 @@ class SpikeAnalysis:
             bsl_current = bsl_windows[idx]
             z_window_current = z_windows[idx]
             self.z_windows[stim] = z_window_current
-
+            self.exclude_trials = {}
             new_bin_number = np.int32((n_bins * bin_size) / time_bin_current)
 
             if new_bin_number != n_bins:
@@ -505,11 +505,19 @@ class SpikeAnalysis:
                 bsl_trial = bsl_psth[:, trials == trial, :]
                 mean_fr = np.mean(np.sum(bsl_trial, axis=2), axis=1) / ((bsl_current[1] - bsl_current[0]))
                 # for future computations may be beneficial to have small eps to std to prevent divide by 0
-                std_fr = np.std(np.sum(bsl_trial, axis=2), axis=1) / ((bsl_current[1] - bsl_current[0])) + eps
+                std_fr = np.std(np.sum(bsl_trial, axis=2), axis=1) / (((bsl_current[1] - bsl_current[0])) + eps)
+
+                mean_baseline_fr_over_trials = np.mean(mean_fr)
+                std_baseline_fr_over_trials = np.std(mean_fr)
+
+                trials_to_keep = (mean_fr < ((mean_baseline_fr_over_trials) + 3 * std_baseline_fr_over_trials)) & (mean_fr > ((mean_baseline_fr_over_trials) - 3 * std_baseline_fr_over_trials))
+
+                self.exclude_trials[stim][trial] = trials_to_keep
+
                 z_trial = z_psth[:, trials == trial, :] / time_bin_current
                 z_trials = hf.z_score_values(z_trial, mean_fr, std_fr)
                 z_scores[stim][:, trials == trial, :] = z_trials[:, :, :]
-                final_z_scores[stim][:, trial_number, :] = np.nanmean(z_trials, axis=1)
+                final_z_scores[stim][:, trial_number, :] = np.nanmean(z_trials[:,trials_to_keep,:], axis=1)
                 self.raw_zscores[stim][:, trials == trial, :] = z_trials[:, :, :]
             self.z_bins[stim] = bins[z_window_values]
         self.z_scores = final_z_scores
