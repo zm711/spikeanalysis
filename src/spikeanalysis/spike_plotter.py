@@ -303,7 +303,7 @@ class SpikePlotter(PlotterBase):
             if is_the_sorting_index_the_filter:
                 z_score_sorting_index = sorting_index
             else:
-                z_score_sorting_index = np.argsort(-np.sum(sub_zscores[:, current_sorting_index, event_window], axis=1))
+                z_score_sorting_index = np.argsort(-np.nansum(sub_zscores[:, current_sorting_index, event_window], axis=1))
 
             if indices:
                 if len(self.data.si_units) > 0:
@@ -320,8 +320,8 @@ class SpikePlotter(PlotterBase):
             if len(np.shape(sorted_z_scores)) == 2:
                 sorted_z_scores = np.expand_dims(sorted_z_scores, axis=1)
 
-            nan_mask = np.all(
-                np.all(np.isnan(sorted_z_scores) | np.equal(sorted_z_scores, 0) | np.isinf(sorted_z_scores), axis=2),
+            nan_mask = np.any(
+                np.any(np.isnan(sorted_z_scores) | np.isinf(sorted_z_scores), axis=2) | np.all(np.equal(sorted_z_scores, 0),axis=2),
                 axis=1,
             )
 
