@@ -538,7 +538,7 @@ class SpikeAnalysis:
                 # if we are > 3 sd away from the tg mean then we eliminate a trial.
                 for neuron_bsl_idx in range(total_neuron_tg_mean.shape[0]):
                     keep_trials = np.logical_and(mean_fr[neuron_bsl_idx] < total_neuron_tg_mean[neuron_bsl_idx] + (3* total_neuron_tg_std[neuron_bsl_idx]), mean_fr[neuron_bsl_idx] > total_neuron_tg_mean[neuron_bsl_idx] - (3 * total_neuron_tg_std[neuron_bsl_idx]))
-                    final_z_scores[stim][neuron_bsl_idx, trial_number, :] = np.nanmean(z_trials[neuron_bsl_idx, keep_trials, :])
+                    final_z_scores[stim][neuron_bsl_idx, trial_number, :] = np.nanmean(z_trials[neuron_bsl_idx, keep_trials, :], axis=0)
 
                     self.keep_trials[stim][trial][neuron_bsl_idx,:] = keep_trials
                 self.raw_zscores[stim][:, trials == trial, :] = z_trials[:, :, :]
