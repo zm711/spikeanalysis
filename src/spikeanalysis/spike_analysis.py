@@ -501,7 +501,7 @@ class SpikeAnalysis:
             z_psth = psth[:, :, z_window_values]
             z_scores[stim] = np.zeros(np.shape(z_psth))
             self.raw_zscores[stim] = np.zeros(np.shape(z_psth))
-            self.keep_trials[stim] = np.zeros((z_psth.shape[0], len(trials)), dtype=bool)
+            self.keep_trials[stim] = {}
             final_z_scores[stim] = np.zeros((np.shape(z_psth)[0], len(trial_set), np.shape(z_psth)[2]))
 
             # to get baseline firing we do a per trial baseline for the neuron. To get an estimate
@@ -509,6 +509,7 @@ class SpikeAnalysis:
             # the sub firing rate. Then we average those.
             n_chunks = sum(bsl_values) // 3
             for trial_number, trial in enumerate(tqdm(trial_set)):
+                self.keep_trials[stim][trial] = np.zeros((z_psth.shape[0], sum(trials==trial))
                 bsl_trial = bsl_psth[:, trials == trial, :]
                 bsl_chunks = []
                 # iterate over baseline chunks and do sum to get point firing rate
@@ -539,7 +540,7 @@ class SpikeAnalysis:
                     keep_trials = np.logical_and(mean_fr[neuron_bsl_idx] < total_neuron_tg_mean[neuron_bsl_idx] + (3* total_neuron_tg_std[neuron_bsl_idx]), mean_fr[neuron_bsl_idx] > total_neuron_tg_mean[neuron_bsl_idx] - (3 * total_neuron_tg_std[neuron_bsl_idx]))
                     final_z_scores[stim][neuron_bsl_idx, trial_number, :] = np.nanmean(z_trials[neuron_bsl_idx, keep_trials, :])
 
-                    self.keep_trials[stim][neuron_bsl_idx, :] = keep_trials
+                    self.keep_trials[stim][trial][neuron_bsl_idx,:] = keep_trials
                 self.raw_zscores[stim][:, trials == trial, :] = z_trials[:, :, :]
             self.z_bins[stim] = bins[z_window_values]
         self.z_scores = final_z_scores
