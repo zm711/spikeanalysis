@@ -489,7 +489,7 @@ class SpikeAnalysis:
             bsl_current = bsl_windows[idx]
             z_window_current = z_windows[idx]
             self.z_windows[stim] = z_window_current
-            self.keep_trials[stim] = {}
+            
             new_bin_number = np.int32((n_bins * bin_size) / time_bin_current)
 
             if new_bin_number != n_bins:
@@ -501,35 +501,45 @@ class SpikeAnalysis:
             z_psth = psth[:, :, z_window_values]
             z_scores[stim] = np.zeros(np.shape(z_psth))
             self.raw_zscores[stim] = np.zeros(np.shape(z_psth))
+            self.keep_trials[stim] = np.zeros((z_psth.shape[0], len(trial_set)), dtype=bool)
             final_z_scores[stim] = np.zeros((np.shape(z_psth)[0], len(trial_set), np.shape(z_psth)[2]))
+
+            # to get baseline firing we do a per trial baseline for the neuron. To get an estimate
+            # we divide the baseline into 3 periods and iterate through those chunks of data to get
+            # the sub firing rate. Then we average those.
             n_chunks = sum(bsl_values) // 3
             for trial_number, trial in enumerate(tqdm(trial_set)):
                 bsl_trial = bsl_psth[:, trials == trial, :]
                 bsl_chunks = []
+                # iterate over baseline chunks and do sum to get point firing rate
                 for bsl_chunk_index in range(3):
                     bsl_chunk = bsl_trial[:, :, (bsl_chunk_index * n_chunks): (bsl_chunk_index+1) * n_chunks]
                     # neuron x trial x value
                     bsl_chunk_sum = np.sum(bsl_chunk, axis=2) / ((bsl_current[1]-bsl_current[0])/3)
                     bsl_chunks.append(bsl_chunk_sum)
-                bsl_chunks = np.stack(bsl_chunks, axis=1)
 
+                # stack chunks in order to take the mean of the chunks
+                bsl_chunks = np.stack(bsl_chunks, axis=1)
                 mean_fr = np.mean(bsl_chunks, axis=1)
                 # for future computations may be beneficial to have small eps to std to prevent divide by 0
                 std_fr = np.std(bsl_chunks, axis=1) + eps
 
+                # We take the mean across the trials to get the trial group mean to see if a trial deviates too far
+                # from this value
                 total_neuron_tg_mean = np.mean(mean_fr, axis=1)
                 total_neuron_tg_std = np.std(mean_fr, axis=1)
 
-                for neuron_bsl_idx in range(total_neuron_tg_mean.shape[0]):
-                    keep_trials = np.logical_and(mean_fr[neuron_bsl_idx] < total_neuron_tg_mean[neuron_bsl_idx] + (3* total_neuron_tg_std[neuron_bsl_idx]), mean_fr[neuron_bsl_idx] > total_neuron_tg_mean[neuron_bsl_idx] - (3 * total_neuron_tg_std[neuron_bsl_idx]))
 
-
-                self.keep_trials[stim][trial] = keep_trials
 
                 z_trial = z_psth[:, trials == trial, :] / time_bin_current
                 z_trials = hf.z_score_values(z_trial, mean_fr, std_fr)
                 z_scores[stim][:, trials == trial, :] = z_trials[:, :, :]
-                final_z_scores[stim][:, trial_number, :] = np.nanmean(z_trials[:, keep_trials, :], axis=1)
+                # if we are > 3 sd away from the tg mean then we eliminate a trial.
+                for neuron_bsl_idx in range(total_neuron_tg_mean.shape[0]):
+                    keep_trials = np.logical_and(mean_fr[neuron_bsl_idx] < total_neuron_tg_mean[neuron_bsl_idx] + (3* total_neuron_tg_std[neuron_bsl_idx]), mean_fr[neuron_bsl_idx] > total_neuron_tg_mean[neuron_bsl_idx] - (3 * total_neuron_tg_std[neuron_bsl_idx]))
+                    final_z_scores[stim][neuron_bsl_idx, trial_number, :] = np.nanmean(z_trials[neuron_bsl_idx, keep_trials, :])
+
+                    self.keep_trials[stim][neuron_bsl_idx, :] = keep_trials
                 self.raw_zscores[stim][:, trials == trial, :] = z_trials[:, :, :]
             self.z_bins[stim] = bins[z_window_values]
         self.z_scores = final_z_scores
