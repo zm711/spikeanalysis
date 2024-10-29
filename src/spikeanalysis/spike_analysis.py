@@ -501,7 +501,7 @@ class SpikeAnalysis:
             z_psth = psth[:, :, z_window_values]
             z_scores[stim] = np.zeros(np.shape(z_psth))
             self.raw_zscores[stim] = np.zeros(np.shape(z_psth))
-            self.keep_trials[stim] = np.zeros((z_psth.shape[0], len(trial_set)), dtype=bool)
+            self.keep_trials[stim] = np.zeros((z_psth.shape[0], len(trials)), dtype=bool)
             final_z_scores[stim] = np.zeros((np.shape(z_psth)[0], len(trial_set), np.shape(z_psth)[2]))
 
             # to get baseline firing we do a per trial baseline for the neuron. To get an estimate
