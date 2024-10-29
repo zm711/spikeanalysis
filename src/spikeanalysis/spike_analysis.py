@@ -509,7 +509,7 @@ class SpikeAnalysis:
             # the sub firing rate. Then we average those.
             n_chunks = sum(bsl_values) // 3
             for trial_number, trial in enumerate(tqdm(trial_set)):
-                self.keep_trials[stim][trial] = np.zeros((z_psth.shape[0], sum(trials==trial)))
+                self.keep_trials[stim][trial] = np.zeros((z_psth.shape[0], sum(trials==trial)), dtype=bool)
                 bsl_trial = bsl_psth[:, trials == trial, :]
                 bsl_chunks = []
                 # iterate over baseline chunks and do sum to get point firing rate
