@@ -507,7 +507,7 @@ class SpikeAnalysis:
             final_z_scores[stim] = np.zeros((np.shape(z_psth)[0], len(trial_set), np.shape(z_psth)[2]))
             bsl_mean_global = np.mean(np.sum(bsl_psth, axis=2)/(bsl_current[1]-bsl_current[0]), axis=1)
             bsl_std_global = np.std(np.sum(bsl_psth, axis=2)/(bsl_current[1]-bsl_current[0]), axis=1)
-            self.z_baselines[stim] = bsl_mean_global
+            self.z_baselines[stim] = np.sum(bsl_psth, axis=2)/(bsl_current[1]-bsl_current[0])
             # to get baseline firing we do a per trial baseline for the neuron. To get an estimate
             # we divide the baseline into 3 periods and iterate through those chunks of data to get
             # the sub firing rate. Then we average those.
