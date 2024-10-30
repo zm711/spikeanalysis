@@ -473,6 +473,7 @@ class SpikeAnalysis:
         self.z_bins = {}
         self.raw_zscores = {}
         self.keep_trials = {}
+        self.z_baselines = {}
         for idx, stim in enumerate(self.psths.keys()):
             if self._verbose:
                 print(stim)
@@ -502,8 +503,11 @@ class SpikeAnalysis:
             z_scores[stim] = np.zeros(np.shape(z_psth))
             self.raw_zscores[stim] = np.zeros(np.shape(z_psth))
             self.keep_trials[stim] = {}
+            
             final_z_scores[stim] = np.zeros((np.shape(z_psth)[0], len(trial_set), np.shape(z_psth)[2]))
-
+            bsl_mean_global = np.mean(np.sum(bsl_psth, axis=2)/(bsl_current[1]-bsl_current[0]), axis=1)
+            bsl_std_global = np.std(np.sum(bsl_psth, axis=2)/(bsl_current[1]-bsl_current[0]), axis=1)
+            self.z_baselines[stim] = bsl_mean_global
             # to get baseline firing we do a per trial baseline for the neuron. To get an estimate
             # we divide the baseline into 3 periods and iterate through those chunks of data to get
             # the sub firing rate. Then we average those.
@@ -525,19 +529,12 @@ class SpikeAnalysis:
                 # for future computations may be beneficial to have small eps to std to prevent divide by 0
                 std_fr = np.std(bsl_chunks, axis=1) + eps
 
-                # We take the mean across the trials to get the trial group mean to see if a trial deviates too far
-                # from this value
-                total_neuron_tg_mean = np.mean(mean_fr, axis=1)
-                total_neuron_tg_std = np.std(mean_fr, axis=1)
-
-
-
                 z_trial = z_psth[:, trials == trial, :] / time_bin_current
                 z_trials = hf.z_score_values(z_trial, mean_fr, std_fr)
                 z_scores[stim][:, trials == trial, :] = z_trials[:, :, :]
                 # if we are > 3 sd away from the tg mean then we eliminate a trial.
-                for neuron_bsl_idx in range(total_neuron_tg_mean.shape[0]):
-                    keep_trials = np.logical_and(mean_fr[neuron_bsl_idx] < total_neuron_tg_mean[neuron_bsl_idx] + (3* total_neuron_tg_std[neuron_bsl_idx]), mean_fr[neuron_bsl_idx] > total_neuron_tg_mean[neuron_bsl_idx] - (3 * total_neuron_tg_std[neuron_bsl_idx]))
+                for neuron_bsl_idx in range(bsl_mean_global.shape[0]):
+                    keep_trials = np.logical_and(mean_fr[neuron_bsl_idx] < (bsl_mean_global[neuron_bsl_idx] + (3* bsl_std_global[neuron_bsl_idx])), mean_fr[neuron_bsl_idx] > (bsl_mean_global[neuron_bsl_idx] - (3 * bsl_std_global[neuron_bsl_idx])))
                     final_z_scores[stim][neuron_bsl_idx, trial_number, :] = np.nanmean(z_trials[neuron_bsl_idx, keep_trials, :], axis=0)
 
                     self.keep_trials[stim][trial][neuron_bsl_idx,:] = keep_trials
