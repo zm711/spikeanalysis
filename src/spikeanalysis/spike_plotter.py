@@ -320,6 +320,8 @@ class SpikePlotter(PlotterBase):
             if len(np.shape(sorted_z_scores)) == 2:
                 sorted_z_scores = np.expand_dims(sorted_z_scores, axis=1)
 
+
+            # at baseline we need to eliminate cases of nan's, infinities, and 0's (if all the way across a stimulus)
             nan_mask = np.any(
                 np.any(np.isnan(sorted_z_scores) | np.isinf(sorted_z_scores), axis=2) | np.all(np.equal(sorted_z_scores, 0),axis=2),
                 axis=1,
