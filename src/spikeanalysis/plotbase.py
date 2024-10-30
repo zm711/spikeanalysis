@@ -127,7 +127,7 @@ class PlotterBase:
         if plot_kwargs.ylim is not None:
             ax.set_ylim(plot_kwargs.ylim)
 
-    def _save_fig(self, cluster_number, extra_title='', format='png'):
+    def _save_fig(self, fig,cluster_number, extra_title='', format='png'):
 
         title = f"{cluster_number}_{extra_title}"
-        plt.savefig(title, format=format)
+        fig.savefig(title + '.' + format, format=format)

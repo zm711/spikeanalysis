@@ -438,8 +438,8 @@ class SpikePlotter(PlotterBase):
                 )
             plt.figure(dpi=plot_kwargs.dpi)
             if plot_kwargs.save and plot_kwargs.title is not None:
-                self._save_fig(plot_kwargs.title, extra_title=plot_kwargs.extra_title, format=plot_kwargs.format)
-            elif plot_kwargs.title is None:
+                self._save_fig(fig=fig,cluster_number = plot_kwargs.title +str(stimulus), extra_title=plot_kwargs.extra_title, format=plot_kwargs.format)
+            elif plot_kwargs.save and plot_kwargs.title is None:
                 print('give title to save heat map')
             plt.show()
 
@@ -597,7 +597,7 @@ class SpikePlotter(PlotterBase):
                     )
                 plt.figure(dpi=plot_kwargs.dpi)
                 if plot_kwargs.save:
-                    self._save_fig(title, extra_title=plot_kwargs.extra_title, format=plot_kwargs.format)
+                    self._save_fig(fig, title, extra_title=plot_kwargs.extra_title, format=plot_kwargs.format)
                 plt.show()
 
     def plot_sm_fr(
@@ -780,8 +780,10 @@ class SpikePlotter(PlotterBase):
                 plt.figure(dpi=plot_kwargs.dpi)
 
                 if plot_kwargs.save:
-                    self._save_fig(title, extra_title=plot_kwargs.extra_title, format=plot_kwargs.format)
+                    self._save_fig(fig, title, extra_title=plot_kwargs.extra_title, format=plot_kwargs.format)
                 plt.show()
+
+
 
     def plot_zscores_ind(self, z_bar: Optional[list[int]] = None, show_stim: bool = True):
         """
