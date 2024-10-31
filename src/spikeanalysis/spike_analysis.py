@@ -762,7 +762,7 @@ class SpikeAnalysis:
         try:
             stim_dict = self._get_key_for_stim()
         except AttributeError:
-                pass
+            pass
 
         correlations = {}
         for idx, stimulus in enumerate(data.keys()):

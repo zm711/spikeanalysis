@@ -114,13 +114,14 @@ class SpikePlotter(PlotterBase):
 
         """
         if self.cmap is None:
-            if plot_kwargs.get('cmap', None) is None:
+            if plot_kwargs.get("cmap", None) is None:
                 try:
                     import seaborn
-                    cmap = 'vlag'
+
+                    cmap = "vlag"
                 except ImportError:
-                    cmap = 'bwr'
-                plot_kwargs['cmap'] = cmap
+                    cmap = "bwr"
+                plot_kwargs["cmap"] = cmap
 
         sorted_cluster_ids = self._plot_scores(
             data="zscore",
@@ -132,7 +133,6 @@ class SpikePlotter(PlotterBase):
             exclusion_dict=exclusion_dict,
             plot_kwargs=plot_kwargs,
         )
-
 
         if indices:
             return sorted_cluster_ids
@@ -177,8 +177,8 @@ class SpikePlotter(PlotterBase):
 
         """
         if self.cmap is None:
-            if plot_kwargs.get('cmap', None) is None:
-                plot_kwargs['cmap'] = 'viridis'
+            if plot_kwargs.get("cmap", None) is None:
+                plot_kwargs["cmap"] = "viridis"
 
         sorted_cluster_ids = self._plot_scores(
             data="raw-data",
@@ -287,7 +287,7 @@ class SpikePlotter(PlotterBase):
             if sorting_index is None:
                 current_sorting_index = np.shape(sub_zscores)[1] - 1
                 reset_index = True
-                is_the_sorting_index_the_filter=False
+                is_the_sorting_index_the_filter = False
 
             else:
                 reset_index = False
@@ -303,7 +303,9 @@ class SpikePlotter(PlotterBase):
             if is_the_sorting_index_the_filter:
                 z_score_sorting_index = sorting_index
             else:
-                z_score_sorting_index = np.argsort(-np.nansum(sub_zscores[:, current_sorting_index, event_window], axis=1))
+                z_score_sorting_index = np.argsort(
+                    -np.nansum(sub_zscores[:, current_sorting_index, event_window], axis=1)
+                )
 
             if indices:
                 if len(self.data.si_units) > 0:
@@ -320,10 +322,10 @@ class SpikePlotter(PlotterBase):
             if len(np.shape(sorted_z_scores)) == 2:
                 sorted_z_scores = np.expand_dims(sorted_z_scores, axis=1)
 
-
             # at baseline we need to eliminate cases of nan's, infinities, and 0's (if all the way across a stimulus)
             nan_mask = np.any(
-                np.any(np.isnan(sorted_z_scores) | np.isinf(sorted_z_scores), axis=2) | np.all(np.equal(sorted_z_scores, 0),axis=2),
+                np.any(np.isnan(sorted_z_scores) | np.isinf(sorted_z_scores), axis=2)
+                | np.all(np.equal(sorted_z_scores, 0), axis=2),
                 axis=1,
             )
 
@@ -331,12 +333,12 @@ class SpikePlotter(PlotterBase):
             if exclusion_dict is not None:
 
                 current_exclusion = exclusion_dict[stimulus]
-                any_values = current_exclusion['type'] == 'any'
+                any_values = current_exclusion["type"] == "any"
 
-                if current_exclusion['index'] is None:
-                    masked_indices = np.arange(0,sorted_z_scores.shape[1],1, dtype=int)
+                if current_exclusion["index"] is None:
+                    masked_indices = np.arange(0, sorted_z_scores.shape[1], 1, dtype=int)
                 else:
-                    masked_indices = np.asarray(current_exclusion['index'])
+                    masked_indices = np.asarray(current_exclusion["index"])
 
                 if any_values:
                     mask_func = np.any
@@ -344,9 +346,14 @@ class SpikePlotter(PlotterBase):
                     mask_func = np.all
 
                 extra_mask = mask_func(
-                np.all(np.isnan(sorted_z_scores[:, masked_indices,:]) | np.equal(sorted_z_scores[:, masked_indices,:], 0) | np.isinf(sorted_z_scores[:, masked_indices, :]), axis=2),
-                axis=1,
-            )
+                    np.all(
+                        np.isnan(sorted_z_scores[:, masked_indices, :])
+                        | np.equal(sorted_z_scores[:, masked_indices, :], 0)
+                        | np.isinf(sorted_z_scores[:, masked_indices, :]),
+                        axis=2,
+                    ),
+                    axis=1,
+                )
                 nan_mask = np.logical_or(nan_mask, extra_mask)
 
             sorted_z_scores = sorted_z_scores[~nan_mask]
@@ -438,9 +445,14 @@ class SpikePlotter(PlotterBase):
                 )
             plt.figure(dpi=plot_kwargs.dpi)
             if plot_kwargs.save and plot_kwargs.title is not None:
-                self._save_fig(fig=fig,cluster_number = plot_kwargs.title +str(stimulus), extra_title=plot_kwargs.extra_title, format=plot_kwargs.format)
+                self._save_fig(
+                    fig=fig,
+                    cluster_number=plot_kwargs.title + str(stimulus),
+                    extra_title=plot_kwargs.extra_title,
+                    format=plot_kwargs.format,
+                )
             elif plot_kwargs.save and plot_kwargs.title is None:
-                print('give title to save heat map')
+                print("give title to save heat map")
             plt.show()
 
             if reset_index:
@@ -782,8 +794,6 @@ class SpikePlotter(PlotterBase):
                 if plot_kwargs.save:
                     self._save_fig(fig, title, extra_title=plot_kwargs.extra_title, format=plot_kwargs.format)
                 plt.show()
-
-
 
     def plot_zscores_ind(self, z_bar: Optional[list[int]] = None, show_stim: bool = True):
         """
