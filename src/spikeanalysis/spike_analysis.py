@@ -473,7 +473,7 @@ class SpikeAnalysis:
         self.z_bins = {}
         self.raw_zscores = {}
         self.keep_trials = {}
-        self.z_baselines = {}
+        self.raw_baselines = {}
         for idx, stim in enumerate(self.psths.keys()):
             if self._verbose:
                 print(stim)
@@ -505,9 +505,13 @@ class SpikeAnalysis:
             self.keep_trials[stim] = {}
             
             final_z_scores[stim] = np.zeros((np.shape(z_psth)[0], len(trial_set), np.shape(z_psth)[2]))
-            bsl_mean_global = np.mean(np.sum(bsl_psth, axis=2)/(bsl_current[1]-bsl_current[0]), axis=1)
-            bsl_std_global = np.std(np.sum(bsl_psth, axis=2)/(bsl_current[1]-bsl_current[0]), axis=1)
-            self.z_baselines[stim] = np.sum(bsl_psth, axis=2)/(bsl_current[1]-bsl_current[0])
+
+            # use median instead for determining good trials
+            bsl_mean_global = np.median(np.sum(bsl_psth, axis=2)/(bsl_current[1]-bsl_current[0]), axis=1) # test median
+
+            bsl_std_global = np.median(np.abs(np.sum(bsl_psth, axis=2)/(bsl_current[1]-bsl_current[0]) - bsl_mean_global[:, None]), axis=1) / 0.6744897501960817
+
+            self.raw_baselines[stim] = np.sum(bsl_psth, axis=2)/(bsl_current[1]-bsl_current[0])
             # to get baseline firing we do a per trial baseline for the neuron. To get an estimate
             # we divide the baseline into 3 periods and iterate through those chunks of data to get
             # the sub firing rate. Then we average those.
@@ -532,7 +536,7 @@ class SpikeAnalysis:
                 z_trial = z_psth[:, trials == trial, :] / time_bin_current
                 z_trials = hf.z_score_values(z_trial, mean_fr, std_fr)
                 z_scores[stim][:, trials == trial, :] = z_trials[:, :, :]
-                # if we are > 3 sd away from the tg mean then we eliminate a trial.
+                # if we are > 3 mads away from the tg mean then we eliminate a trial.
                 for neuron_bsl_idx in range(bsl_mean_global.shape[0]):
                     keep_trials = np.logical_and(mean_fr[neuron_bsl_idx] < (bsl_mean_global[neuron_bsl_idx] + (3* bsl_std_global[neuron_bsl_idx])), mean_fr[neuron_bsl_idx] > (bsl_mean_global[neuron_bsl_idx] - (3 * bsl_std_global[neuron_bsl_idx])))
                     final_z_scores[stim][neuron_bsl_idx, trial_number, :] = np.nanmean(z_trials[neuron_bsl_idx, keep_trials, :], axis=0)
@@ -864,8 +868,31 @@ class SpikeAnalysis:
 
         self.acg = acg
 
+    def calculate_baseline_values(self, mode: str = 'mean'):
+
+        if not hasattr(self, 'raw_baselines'):
+            raise ValueError("must run zscore_data in order to collect trial baselines")
+        
+        if mode=='mean':
+            func = np.mean
+        elif mode == 'median':
+            func = np.median
+        elif mode == 'max':
+            func = np.max
+        elif callable(mode):
+            func = mode
+        else:
+            raise ValueError("enter a function or one of ['mean', 'median', 'max']")
+
+        baselines = {}
+        for stim, baseline in self.z_baselines.items():
+            baselines[stim] = func(baseline, axis=1)
+        
+        self.baselines = baselines
+
+
     def return_value(self, value: str):
-        _values = ("z_scores", "raw_zscores", "mean_firing_rate", "raw_firing_rate", "correlations", "latency", "psths")
+        _values = ("z_scores", "raw_zscores", "mean_firing_rate", "raw_firing_rate", "correlations", "latency", "psths", "baselines")
 
         if hasattr(self, value):
             return getattr(self, value)
@@ -923,7 +950,7 @@ class SpikeAnalysis:
         with open(self._file_path / "z_parameters.json", "w") as write_file:
             json.dump(z_parameters, write_file)
 
-    def get_responsive_neurons(self, z_parameters: Optional[dict] = None):
+    def get_responsive_neurons(self, z_parameters: Optional[dict] = None, latency_threshold_ms: Optional[dict]=None):
         """
         function for assessing only responsive neurons based on z scored parameters.
 
@@ -968,12 +995,16 @@ class SpikeAnalysis:
         else:
             same_params = False
 
+        if latency_threshold_ms is None:
+            latency_threshold_ms = {k:[None] for k in self.z_scores.keys()}
+
         self.responsive_neurons = {}
         for stim in self.z_scores.keys():
             self.responsive_neurons[stim] = {}
             bins = self.z_bins[stim]
             current_z_scores = self.z_scores[stim]
 
+            current_latency_threshold = latency_threshold_ms[stim]
             if same_params:
                 current_z_params = z_parameters["all"]
             else:
@@ -995,13 +1026,26 @@ class SpikeAnalysis:
                         f"Not implemented for window of size {len(current_window)} possible lengths are 2 or 4"
                     )
 
+                current_bin_size = bins[1] - bins[0] # likely in ms
+                if current_latency_threshold is not None:
+                    bins_to_threshold = current_latency_threshold // current_bin_size
+                else:
+                    bins_to_threshold = -1
+
                 current_z_scores_sub = current_z_scores[:, :, window_index]
+                bin_threshold_z_score = current_z_scores_sub[:, :, :bins_to_threshold]
+                
+
                 if current_score > 0 or "inhib" not in key.lower():
                     z_above_threshold = np.sum(np.where(current_z_scores_sub > current_score, 1, 0), axis=2)
+                    latency_resp_neurons = np.where(bin_threshold_z_score > current_score, True, False)
                 else:
                     z_above_threshold = np.sum(np.where(current_z_scores_sub < current_score, 1, 0), axis=2)
+                    latency_resp_neurons = np.where(bin_threshold_z_score < current_score, True, False)
 
                 responsive_neurons = np.where(z_above_threshold > current_n_bins, True, False)
+
+                responsive_neurons = np.logical_and(responsive_neurons, latency_resp_neurons)
                 self.responsive_neurons[stim][key] = responsive_neurons
 
     def save_responsive_neurons(self, overwrite: bool = False):
