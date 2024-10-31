@@ -490,7 +490,7 @@ class SpikeAnalysis:
             bsl_current = bsl_windows[idx]
             z_window_current = z_windows[idx]
             self.z_windows[stim] = z_window_current
-            
+
             new_bin_number = np.int32((n_bins * bin_size) / time_bin_current)
 
             if new_bin_number != n_bins:
@@ -503,28 +503,36 @@ class SpikeAnalysis:
             z_scores[stim] = np.zeros(np.shape(z_psth))
             self.raw_zscores[stim] = np.zeros(np.shape(z_psth))
             self.keep_trials[stim] = {}
-            
+
             final_z_scores[stim] = np.zeros((np.shape(z_psth)[0], len(trial_set), np.shape(z_psth)[2]))
 
             # use median instead for determining good trials
-            bsl_mean_global = np.median(np.sum(bsl_psth, axis=2)/(bsl_current[1]-bsl_current[0]), axis=1) # test median
+            bsl_mean_global = np.median(
+                np.sum(bsl_psth, axis=2) / (bsl_current[1] - bsl_current[0]), axis=1
+            )  # test median
 
-            bsl_std_global = np.median(np.abs(np.sum(bsl_psth, axis=2)/(bsl_current[1]-bsl_current[0]) - bsl_mean_global[:, None]), axis=1) / 0.6744897501960817
+            bsl_std_global = (
+                np.median(
+                    np.abs(np.sum(bsl_psth, axis=2) / (bsl_current[1] - bsl_current[0]) - bsl_mean_global[:, None]),
+                    axis=1,
+                )
+                / 0.6744897501960817
+            )
 
-            self.raw_baselines[stim] = np.sum(bsl_psth, axis=2)/(bsl_current[1]-bsl_current[0])
+            self.raw_baselines[stim] = np.sum(bsl_psth, axis=2) / (bsl_current[1] - bsl_current[0])
             # to get baseline firing we do a per trial baseline for the neuron. To get an estimate
             # we divide the baseline into 3 periods and iterate through those chunks of data to get
             # the sub firing rate. Then we average those.
             n_chunks = sum(bsl_values) // 3
             for trial_number, trial in enumerate(tqdm(trial_set)):
-                self.keep_trials[stim][trial] = np.zeros((z_psth.shape[0], sum(trials==trial)), dtype=bool)
+                self.keep_trials[stim][trial] = np.zeros((z_psth.shape[0], sum(trials == trial)), dtype=bool)
                 bsl_trial = bsl_psth[:, trials == trial, :]
                 bsl_chunks = []
                 # iterate over baseline chunks and do sum to get point firing rate
                 for bsl_chunk_index in range(3):
-                    bsl_chunk = bsl_trial[:, :, (bsl_chunk_index * n_chunks): (bsl_chunk_index+1) * n_chunks]
+                    bsl_chunk = bsl_trial[:, :, (bsl_chunk_index * n_chunks) : (bsl_chunk_index + 1) * n_chunks]
                     # neuron x trial x value
-                    bsl_chunk_sum = np.sum(bsl_chunk, axis=2) / ((bsl_current[1]-bsl_current[0])/3)
+                    bsl_chunk_sum = np.sum(bsl_chunk, axis=2) / ((bsl_current[1] - bsl_current[0]) / 3)
                     bsl_chunks.append(bsl_chunk_sum)
 
                 # stack chunks in order to take the mean of the chunks
@@ -538,10 +546,17 @@ class SpikeAnalysis:
                 z_scores[stim][:, trials == trial, :] = z_trials[:, :, :]
                 # if we are > 3 mads away from the tg mean then we eliminate a trial.
                 for neuron_bsl_idx in range(bsl_mean_global.shape[0]):
-                    keep_trials = np.logical_and(mean_fr[neuron_bsl_idx] < (bsl_mean_global[neuron_bsl_idx] + (3* bsl_std_global[neuron_bsl_idx])), mean_fr[neuron_bsl_idx] > (bsl_mean_global[neuron_bsl_idx] - (3 * bsl_std_global[neuron_bsl_idx])))
-                    final_z_scores[stim][neuron_bsl_idx, trial_number, :] = np.nanmean(z_trials[neuron_bsl_idx, keep_trials, :], axis=0)
+                    keep_trials = np.logical_and(
+                        mean_fr[neuron_bsl_idx]
+                        < (bsl_mean_global[neuron_bsl_idx] + (3 * bsl_std_global[neuron_bsl_idx])),
+                        mean_fr[neuron_bsl_idx]
+                        > (bsl_mean_global[neuron_bsl_idx] - (3 * bsl_std_global[neuron_bsl_idx])),
+                    )
+                    final_z_scores[stim][neuron_bsl_idx, trial_number, :] = np.nanmean(
+                        z_trials[neuron_bsl_idx, keep_trials, :], axis=0
+                    )
 
-                    self.keep_trials[stim][trial][neuron_bsl_idx,:] = keep_trials
+                    self.keep_trials[stim][trial][neuron_bsl_idx, :] = keep_trials
                 self.raw_zscores[stim][:, trials == trial, :] = z_trials[:, :, :]
             self.z_bins[stim] = bins[z_window_values]
         self.z_scores = final_z_scores
@@ -794,7 +809,7 @@ class SpikeAnalysis:
         try:
             stim_dict = self._get_key_for_stim()
         except AttributeError:
-                pass
+            pass
 
         correlations = {}
         for idx, stimulus in enumerate(data.keys()):
@@ -868,16 +883,16 @@ class SpikeAnalysis:
 
         self.acg = acg
 
-    def calculate_baseline_values(self, mode: str = 'mean'):
+    def calculate_baseline_values(self, mode: str = "mean"):
 
-        if not hasattr(self, 'raw_baselines'):
+        if not hasattr(self, "raw_baselines"):
             raise ValueError("must run zscore_data in order to collect trial baselines")
-        
-        if mode=='mean':
+
+        if mode == "mean":
             func = np.mean
-        elif mode == 'median':
+        elif mode == "median":
             func = np.median
-        elif mode == 'max':
+        elif mode == "max":
             func = np.max
         elif callable(mode):
             func = mode
@@ -887,12 +902,20 @@ class SpikeAnalysis:
         baselines = {}
         for stim, baseline in self.z_baselines.items():
             baselines[stim] = func(baseline, axis=1)
-        
+
         self.baselines = baselines
 
-
     def return_value(self, value: str):
-        _values = ("z_scores", "raw_zscores", "mean_firing_rate", "raw_firing_rate", "correlations", "latency", "psths", "baselines")
+        _values = (
+            "z_scores",
+            "raw_zscores",
+            "mean_firing_rate",
+            "raw_firing_rate",
+            "correlations",
+            "latency",
+            "psths",
+            "baselines",
+        )
 
         if hasattr(self, value):
             return getattr(self, value)
@@ -950,7 +973,7 @@ class SpikeAnalysis:
         with open(self._file_path / "z_parameters.json", "w") as write_file:
             json.dump(z_parameters, write_file)
 
-    def get_responsive_neurons(self, z_parameters: Optional[dict] = None, latency_threshold_ms: Optional[dict]=None):
+    def get_responsive_neurons(self, z_parameters: Optional[dict] = None, latency_threshold_ms: Optional[dict] = None):
         """
         function for assessing only responsive neurons based on z scored parameters.
 
@@ -996,7 +1019,7 @@ class SpikeAnalysis:
             same_params = False
 
         if latency_threshold_ms is None:
-            latency_threshold_ms = {k:[None] for k in self.z_scores.keys()}
+            latency_threshold_ms = {k: [None] for k in self.z_scores.keys()}
 
         self.responsive_neurons = {}
         for stim in self.z_scores.keys():
@@ -1026,7 +1049,7 @@ class SpikeAnalysis:
                         f"Not implemented for window of size {len(current_window)} possible lengths are 2 or 4"
                     )
 
-                current_bin_size = bins[1] - bins[0] # likely in ms
+                current_bin_size = bins[1] - bins[0]  # likely in ms
                 if current_latency_threshold is not None:
                     bins_to_threshold = current_latency_threshold // current_bin_size
                 else:
@@ -1034,7 +1057,6 @@ class SpikeAnalysis:
 
                 current_z_scores_sub = current_z_scores[:, :, window_index]
                 bin_threshold_z_score = current_z_scores_sub[:, :, :bins_to_threshold]
-                
 
                 if current_score > 0 or "inhib" not in key.lower():
                     z_above_threshold = np.sum(np.where(current_z_scores_sub > current_score, 1, 0), axis=2)
