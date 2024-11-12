@@ -102,6 +102,7 @@ class StimulusData:
         stim_length_seconds: float | None = None,
         stim_name: list | None = None,
         time_slice: tuple = (None, None),
+        min_threshold: None | list = None
     ):
         """
         Pipeline function to run through all steps necessary to load intan data
@@ -116,6 +117,8 @@ class StimulusData:
             Name of the stimulus. The default is None.
         time_slice: tuple[start, stop]
             time slice of recording to use, given in seconds with start and stop
+        min_threshold: None | list, deafult: None,
+            Whether to set a distinct threshold for analog stim
 
         """
 
@@ -144,6 +147,7 @@ class StimulusData:
                 analog_index=stim_index,
                 stim_length_seconds=stim_length_seconds,
                 stim_name=stim_name,
+                min_threshold=min_threshold,
             )
         if have_digital:
             self.get_final_digital_data()
@@ -228,6 +232,7 @@ class StimulusData:
         analog_index: int | None = None,
         stim_length_seconds: float | None = None,
         stim_name: list[str] | None = None,
+        min_threshold: None | list = None
     ):
         """Function to digitize the analog data for stimuli that have "events" rather than assessing
         them as continually changing values"""
@@ -249,6 +254,11 @@ class StimulusData:
             current_analog_data = np.expand_dims(current_analog_data, axis=1)
 
         self.dig_analog_events = {}
+        
+        if min_threshold is None:
+            min_threshold = [0.09] * current_analog_data.shape[1]
+        else:
+            assert len(min_threshold) == current_analog_data.shape[1]
 
         if self._verbose:
             event_range = tqdm(range(np.shape(current_analog_data)[1]))
@@ -257,7 +267,7 @@ class StimulusData:
         for row in event_range:
             self.dig_analog_events[str(row)] = {}
             sub_data = current_analog_data[:, row]
-            filtered_analog_data = np.where(sub_data > 0.09, 1, 0)
+            filtered_analog_data = np.where(sub_data > min_threshold[row], 1, 0)
             dig_ana_events, dig_ana_lengths = self._calculate_events(filtered_analog_data)
             events = dig_ana_events[dig_ana_lengths > stim_length_seconds]
             lengths = dig_ana_lengths[dig_ana_lengths > stim_length_seconds]
