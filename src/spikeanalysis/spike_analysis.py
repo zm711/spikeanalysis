@@ -1019,7 +1019,7 @@ class SpikeAnalysis:
             same_params = False
 
         if latency_threshold_ms is None:
-            latency_threshold_ms = {k: [None] for k in self.z_scores.keys()}
+            latency_threshold_ms = {k: None for k in self.z_scores.keys()}
 
         self.responsive_neurons = {}
         for stim in self.z_scores.keys():
@@ -1051,7 +1051,7 @@ class SpikeAnalysis:
 
                 current_bin_size = bins[1] - bins[0]  # likely in ms
                 if current_latency_threshold is not None:
-                    bins_to_threshold = current_latency_threshold // current_bin_size
+                    bins_to_threshold = int(current_latency_threshold // current_bin_size)
                 else:
                     bins_to_threshold = -1
 
