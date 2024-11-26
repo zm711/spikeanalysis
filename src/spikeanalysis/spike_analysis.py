@@ -1058,12 +1058,13 @@ class SpikeAnalysis:
                 current_z_scores_sub = current_z_scores[:, :, window_index]
                 bin_threshold_z_score = current_z_scores_sub[:, :, :bins_to_threshold]
 
+                # final should not be any. Need to think about how we want latency to be incorporated....
                 if current_score > 0 or "inhib" not in key.lower():
                     z_above_threshold = np.sum(np.where(current_z_scores_sub > current_score, 1, 0), axis=2)
-                    latency_resp_neurons = np.where(bin_threshold_z_score > current_score, True, False)
+                    latency_resp_neurons = np.any(np.where(bin_threshold_z_score > current_score, True, False), axis=2)
                 else:
                     z_above_threshold = np.sum(np.where(current_z_scores_sub < current_score, 1, 0), axis=2)
-                    latency_resp_neurons = np.where(bin_threshold_z_score < current_score, True, False)
+                    latency_resp_neurons = np.any(np.where(bin_threshold_z_score < current_score, True, False), axis=2)
 
                 responsive_neurons = np.where(z_above_threshold > current_n_bins, True, False)
 
