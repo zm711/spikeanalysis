@@ -430,3 +430,30 @@ def test_autocorrelogram(sa):
     assert np.shape(sa.acg) == (2, 24)
 
     nptest.assert_array_equal(sa.acg[0], np.zeros((24,)))
+
+def test_baselines(sa):
+
+    sa.events = {
+        "0": {
+            "events": np.array([100, 200]),
+            "lengths": np.array([100, 100]),
+            "trial_groups": np.array([1, 1]),
+            "stim": "test",
+        }
+    }
+    sa.get_raw_psth(window=[0, 300], time_bin_ms=50)
+
+    psths = sa.psths
+    psths["test"]["psth"][0, 0, 0:200] = 1
+    psths["test"]["psth"][0, 1, 100:300] = 2
+    psths["test"]["psth"][0, 0, 3000:4000] = 5
+    sa.psths = psths
+    # print(f"PSTH {sa.psths}")
+    sa.zscore_data(time_bin_ms=1000, bsl_window=[0, 50], z_window=[0, 300])
+
+    for func in ['mean', 'median', 'max']:
+        sa.calculate_baseline_values(func)
+
+    bsls = sa.baselines
+    assert isinstance(bsls, dict)
+    nptest.assert_allclose(bsls['test'],np.array([8.04,.1]))
