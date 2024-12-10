@@ -83,3 +83,11 @@ def test_curation_both_trial(csa):
 def test_curation_wrong_value(csa):
     with pytest.raises(Exception):
         csa.curate(criteria="test", by_stim=False, by_respone=False, by_trial=False)
+
+def test_set_mask(csa):
+    csa.revert_curation()
+    csa.set_mask([True, True])
+
+    with pytest.raises(ValueError):
+        csa.set_mask([True, True, True])
+

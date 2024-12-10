@@ -126,9 +126,9 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
 
     def set_mask(self, mask: list[bool]):
 
-        if len(mask) == len(self.cluster_ids):
+        if len(mask) != len(self.cluster_ids):
             raise ValueError(
-                "mask len {len(mask)} must be same as cluster ids len {len(self.cluster_ids)}. Maybe you need to revert curation."
+                f"mask len {len(mask)} must be same as cluster ids len {len(self.cluster_ids)}. Maybe you need to revert curation."
             )
 
         self.mask = mask
