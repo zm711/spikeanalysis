@@ -48,7 +48,6 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
     def __init__(
         self, curation: dict | None = None, st: SpikeAnalysis | None = None, save_parameters=False, verbose=False
     ):
-
         """
         Parameters
         ----------
@@ -61,6 +60,7 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
         super().__init__(save_parameters=save_parameters, verbose=verbose)
         if st is not None:
             self.set_spike_analysis(st=st)
+        self.mask = None
 
     def set_curation(
         self,
@@ -93,7 +93,6 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
         super().set_spike_data(sp=sp)
         self._original_cluster_ids = deepcopy(self.cluster_ids)
 
-
     def set_spike_data_si(self, sp: "Sorting"):
         """
         Function for setting a spikeinterface sorting
@@ -125,6 +124,15 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
         self.cluster_ids = st.cluster_ids
         self.si_units = st.si_units
 
+    def set_mask(self, mask: list[bool]):
+
+        if len(mask) != len(self.cluster_ids):
+            raise ValueError(
+                f"mask len {len(mask)} must be same as cluster ids len {len(self.cluster_ids)}. Maybe you need to revert curation."
+            )
+
+        self.mask = mask
+
     def curate(
         self,
         criteria: str | dict,
@@ -132,6 +140,7 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
         by_response: bool = False,
         by_trial: Literal["all"] | bool = False,
         trial_index: Optional[int] = None,
+        apply_mask: bool = False,
     ):
         """Function for loading the current curation
         Parameters
@@ -144,9 +153,11 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
             Whether to analyze data by a particular response profile
         by_trial Literal['all'] | bool, default: False
             *****
-        trial_index: Optional[int], default: None
+        trial_index: Optional[int | np.array], default: None
             Must be given if by_trial=True, to indicate which specific trial to be used
 
+        apply_mask: bool, default: False
+            If an additional mask is desired. If mask has not been set then this argument does nothing.
         """
         curation = self.curation
         if len(curation) == 0:
@@ -171,20 +182,21 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
                     if len(sub_curation.shape) == 1:
                         sub_curation = np.expand_dims(sub_curation, axis=1)
                     mask = np.all(sub_curation, axis=1)
-                    self.cluster_ids = self.cluster_ids[mask]
 
                 else:
                     assert trial_index is not None, "must give the trial index to look at only the trial"
                     if len(sub_curation.shape) == 1:
                         sub_curation = np.expand_dims(sub_curation, axis=1)
-                    mask = sub_curation[:, trial_index]
-                    self.cluster_ids = self.cluster_ids[mask]
+                    if isinstance(trial_index, (int, float)):
+                        mask = sub_curation[:, trial_index]
+                    else:
+                        mask = np.all(sub_curation[:, np.array(trial_index)], axis=1)
+                        
 
             else:
                 if len(sub_curation.shape) == 1:
                     sub_curation = np.expand_dims(sub_curation, axis=1)
                 mask = np.any(sub_curation, axis=1)
-                self.cluster_ids = self.cluster_ids[mask]
 
         elif by_stim:
             assert isinstance(criteria, str), "must give single stim"
@@ -207,8 +219,6 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
             else:
                 mask = np.any(mask_array, axis=1)
 
-            self.cluster_ids = self.cluster_ids[mask]
-
         elif by_response:
             assert isinstance(criteria, str), "must give single response"
 
@@ -230,11 +240,80 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
             else:
                 mask = np.any(mask_array, axis=1)
 
-            self.cluster_ids = self.cluster_ids[mask]
-
         else:
             raise Exception("must be by_stim, by_response, or both")
+
+        if self.mask is not None and apply_mask:
+            mask = np.logical_and(mask, self.mask)
+
+        self.cluster_ids = self.cluster_ids[mask]
 
     def revert_curation(self):
         """Function to revert to the pre-curated state"""
         self.cluster_ids = self._original_cluster_ids
+
+    def filter_mask(
+        self,
+        window,
+        datatype="zscore",
+        filter="auc",
+        filter_params=None,
+    ):
+
+        if filter == "auc":
+            if filter_params is None:
+                filter_params = {"all": dict(min=-50, max=50)}
+            else:
+                assert all(['min' in value for value in filter_params.values()])
+                assert all(['max' in value for value in filter_params.values()])
+            operator = np.nansum
+        else:
+            raise ValueError("only auc is implemented")
+
+        if datatype == "zscore":
+
+            data = self.z_scores
+            bins = self.z_bins
+        else:
+            data = self.mean_firing_rate
+            bins = self.fr_bins
+
+        if isinstance(window, list):
+            window_is_list = True
+            if isinstance(window[0], list):
+                assert len(window) == len(data.keys())
+            else:
+                assert len(window) == 2, "only give start stop"
+                window = [window for _ in range(len(data.keys()))]
+        elif isinstance(window, dict):
+            window_is_list = False
+            assert len(window.keys()) == len(data.keys()), "for dict please give one list of stims per stim"
+
+        mask = np.ones((len(self.cluster_ids)))
+        for stim_index, (stim, scores) in enumerate(data.items()):
+
+            if "all" in filter_params.keys():
+                current_params = filter_params["all"]
+            else:
+                current_params = filter_params[stim]
+
+            if window_is_list:
+                current_window = window[stim_index]
+            else:
+                current_window = window[stim]
+
+            current_bins = bins[stim]
+            bin_window = np.logical_and(current_window[0] <= current_bins, current_bins <= current_window[1])
+
+            final_scores = scores[:, :, bin_window]
+
+            final_scores_summed = operator(final_scores, axis=2)
+
+            final_scores_masked = np.logical_or(
+                np.any(final_scores_summed > current_params["max"], axis=1),
+                np.any(final_scores_summed < current_params["min"], axis=1),
+            )
+            mask = np.logical_and(mask, final_scores_masked)
+
+        self.mask = mask
+            

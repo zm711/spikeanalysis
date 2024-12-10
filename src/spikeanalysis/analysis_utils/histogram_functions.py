@@ -187,10 +187,10 @@ def convert_bins(bins: np.array, bin_number: np.int32) -> np.array:
 
 
 @jit(nopython=True, cache=True)
-def z_score_values(z_trial: numba.float32[:, :, :], mean_fr: numba.float32[:], std_fr: numba.float32[:]) -> np.array:
+def z_score_values(z_trial: numba.float32[:, :, :], mean_fr: numba.float32[:,:], std_fr: numba.float32[:,:]) -> np.array:
     z_trials = np.zeros(np.shape(z_trial))
     for idx in range(len(mean_fr)):
         for idy in range(np.shape(z_trial)[1]):
-            z_trials[idx, idy, :] = (z_trial[idx, idy] - mean_fr[idx]) / std_fr[idx]
+            z_trials[idx, idy, :] = (z_trial[idx, idy] - mean_fr[idx, idy]) / std_fr[idx, idy]
 
     return z_trials

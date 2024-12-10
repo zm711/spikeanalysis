@@ -19,6 +19,9 @@ _plot_kwargs = {
     "fontname": "The font to use",
     "fontstyle": "The style to use for the font",
     "fontsize": "The size of the text",
+    "save": "Whether to save images",
+    "format": "The format to save the image",
+    "extra_title": "Additional info to add to image title",
 }
 
 
@@ -85,6 +88,10 @@ class PlotterBase:
         x_axis = plot_kwargs.pop("x_axis", self.x_axis)
         y_axis = plot_kwargs.pop("y_axis", self.y_axis)
 
+        save = plot_kwargs.pop("save", False)
+        format = plot_kwargs.pop("format", "png")
+        extra_title = plot_kwargs.pop("extra_title", "")
+
         PlotKwargs = namedtuple(
             "PlotKwargs",
             [
@@ -99,10 +106,28 @@ class PlotterBase:
                 "fontname",
                 "fontstyle",
                 "fontsize",
+                "save",
+                "format",
+                "extra_title",
             ],
         )
 
-        plot_kwargs = PlotKwargs(figsize, dpi, x_lim, y_lim, title, cmap, x_axis, y_axis, fontname, fontstyle, fontsize)
+        plot_kwargs = PlotKwargs(
+            figsize,
+            dpi,
+            x_lim,
+            y_lim,
+            title,
+            cmap,
+            x_axis,
+            y_axis,
+            fontname,
+            fontstyle,
+            fontsize,
+            save,
+            format,
+            extra_title,
+        )
 
         return plot_kwargs
 
@@ -116,3 +141,8 @@ class PlotterBase:
 
         if plot_kwargs.ylim is not None:
             ax.set_ylim(plot_kwargs.ylim)
+
+    def _save_fig(self, cluster_number, extra_title="", format="png"):
+
+        title = f"{cluster_number}_{extra_title}"
+        plt.savefig(title, format=format)

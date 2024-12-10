@@ -209,8 +209,8 @@ def test_z_score_values():
     z_trial = np.ones((3, 4, 10), dtype=np.float32)
     z_trial[0, 0, 9] = 10
     z_trial[2, 2, 2] = -5
-    mean_fr = np.zeros(3, dtype=np.float32)
-    std_fr = np.ones(3, dtype=np.float32)
+    mean_fr = np.zeros((3,4), dtype=np.float32)
+    std_fr = np.ones((3,4), dtype=np.float32)
 
     z_trials = hf.z_score_values(z_trial, mean_fr, std_fr)
 
@@ -219,8 +219,8 @@ def test_z_score_values():
     assert z_trials[0, 0, 9] == 10
     assert z_trials[2, 2, 2] == -5
 
-    mean_fr2 = np.ones(3, dtype=np.float32)
-    std_fr2 = 0.5 * np.ones(3, dtype=np.float32)
+    mean_fr2 = np.ones((3,4), dtype=np.float32)
+    std_fr2 = 0.5 * np.ones((3,4), dtype=np.float32)
 
     z_trials_2 = hf.z_score_values(z_trial, mean_fr2, std_fr2)
     assert z_trials_2[0, 0, 9] == 18
