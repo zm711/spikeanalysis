@@ -91,3 +91,15 @@ def test_set_mask(csa):
     with pytest.raises(ValueError):
         csa.set_mask([True, True, True])
 
+
+def test_auc_filter(csa):
+    z_scores = {'test' :np.vstack((np.ones((1,2,100)), 2*np.ones((1,2,100))))}
+    z_bins = {'test': np.linspace(0,100,100)}
+    csa.z_scores = z_scores
+    csa.z_bins = z_bins
+
+    csa.filter_mask(window=[20,40], filter_params={'test': {'min':-40, 'max': 30}})
+
+    assert sum(csa.mask) ==1
+    csa.filter_mask(window=[20,40], filter_params={'test': {'min':-40, 'max': 80}})
+    assert sum(csa.mask) == 0 
