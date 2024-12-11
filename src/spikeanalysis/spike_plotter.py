@@ -323,6 +323,7 @@ class SpikePlotter(PlotterBase):
                 sorted_z_scores = np.expand_dims(sorted_z_scores, axis=1)
 
             # at baseline we need to eliminate cases of nan's, infinities, and 0's (if all the way across a stimulus)
+
             nan_mask = np.any(
                 np.any(np.isnan(sorted_z_scores) | np.isinf(sorted_z_scores), axis=2)
                 | np.all(np.equal(sorted_z_scores, 0), axis=2),
@@ -452,6 +453,7 @@ class SpikePlotter(PlotterBase):
                     format=plot_kwargs.format,
                 )
             elif plot_kwargs.save and plot_kwargs.title is None:
+
                 print("give title to save heat map")
             plt.show()
 
@@ -610,6 +612,7 @@ class SpikePlotter(PlotterBase):
                 plt.figure(dpi=plot_kwargs.dpi)
                 if plot_kwargs.save:
                     self._save_fig(fig, title, extra_title=plot_kwargs.extra_title, format=plot_kwargs.format)
+
                 plt.show()
 
     def plot_sm_fr(
@@ -793,6 +796,7 @@ class SpikePlotter(PlotterBase):
 
                 if plot_kwargs.save:
                     self._save_fig(fig, title, extra_title=plot_kwargs.extra_title, format=plot_kwargs.format)
+
                 plt.show()
 
     def plot_zscores_ind(self, z_bar: Optional[list[int]] = None, show_stim: bool = True):

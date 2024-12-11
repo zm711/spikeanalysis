@@ -146,3 +146,4 @@ class PlotterBase:
 
         title = f"{cluster_number}_{extra_title}"
         fig.savefig(title + "." + format, format=format)
+

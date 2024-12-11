@@ -83,3 +83,23 @@ def test_curation_both_trial(csa):
 def test_curation_wrong_value(csa):
     with pytest.raises(Exception):
         csa.curate(criteria="test", by_stim=False, by_respone=False, by_trial=False)
+
+def test_set_mask(csa):
+    csa.revert_curation()
+    csa.set_mask([True, True])
+
+    with pytest.raises(ValueError):
+        csa.set_mask([True, True, True])
+
+
+def test_auc_filter(csa):
+    z_scores = {'test' :np.vstack((np.ones((1,2,100)), 2*np.ones((1,2,100))))}
+    z_bins = {'test': np.linspace(0,100,100)}
+    csa.z_scores = z_scores
+    csa.z_bins = z_bins
+
+    csa.filter_mask(window=[20,40], filter_params={'test': {'min':-40, 'max': 30}})
+
+    assert sum(csa.mask) ==1
+    csa.filter_mask(window=[20,40], filter_params={'test': {'min':-40, 'max': 80}})
+    assert sum(csa.mask) == 0 
