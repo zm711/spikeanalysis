@@ -414,6 +414,8 @@ class SpikeAnalysis:
                 self.fr_bins[stim] = bins[fr_window_values]
             self.mean_firing_rate = final_fr
 
+
+
     def zscore_data(self, time_bin_ms, bsl_window, z_window, eps:float=0):
 
         self.z_score_data(time_bin_ms=time_bin_ms, bsl_window=bsl_window, z_window=z_window, eps=eps)
