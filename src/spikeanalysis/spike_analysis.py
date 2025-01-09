@@ -414,11 +414,28 @@ class SpikeAnalysis:
                 self.fr_bins[stim] = bins[fr_window_values]
             self.mean_firing_rate = final_fr
 
+    def zscore_data(self, time_bin_ms, bsl_window, z_window, eps:float=0, keep_all_trials: dict | bool =False):
+        """
+        z scores data the psth data
 
+        Parameters
+        ----------
+        time_bin_ms : Union[list[float], float]
+            The time bin desired for generating z scores (larger bins lead to smoother data). Either
+            a single float applied to all stim or a list with a value for each stimulus
+        bsl_window : Union[list, list[list]]
+            The baseline window for finding the baseline mean and std firing rate. Either a single
+            sequence of (start, end) in relation to stim onset at 0 applied for all stim. Or a list
+            of lists where each stimulus has its own (start, end)
+        z_window :  Union[list, list[list]],
+            The event window for finding the z scores/time_bin. Either a single
+            sequence of (start, end) in relation to stim onset at 0 applied for all stim. Or a list
+            of lists where each stimulus has its own (start, end)
+        eps: float, default: 0
+            Value to prevent nans from occurring during z-scoring
+        """
 
-    def zscore_data(self, time_bin_ms, bsl_window, z_window, eps:float=0):
-
-        self.z_score_data(time_bin_ms=time_bin_ms, bsl_window=bsl_window, z_window=z_window, eps=eps)
+        self.z_score_data(time_bin_ms=time_bin_ms, bsl_window=bsl_window, z_window=z_window, eps=eps, keep_all_trials=keep_all_trials)
 
     def z_score_data(
         self,
@@ -426,6 +443,7 @@ class SpikeAnalysis:
         bsl_window: Union[list, list[list]],
         z_window: Union[list, list[list]],
         eps: float = 0,
+        keep_all_trials: dict | bool = False
     ):
         """
         z scores data the psth data
@@ -479,6 +497,11 @@ class SpikeAnalysis:
         for idx, stim in enumerate(self.psths.keys()):
             if self._verbose:
                 print(stim)
+
+            if isinstance(keep_all_trials, dict):
+                current_keep_status = keep_all_trials[stim]
+            else:
+                current_keep_status = keep_all_trials
 
             trials = self.events[stim_dict[stim]]["trial_groups"]
 
@@ -549,14 +572,16 @@ class SpikeAnalysis:
                 # if we are > 3 mads away from the tg mean then we eliminate a trial.
                 for neuron_bsl_idx in range(bsl_mean_global.shape[0]):
                     keep_trials = np.logical_and(
-                        mean_fr[neuron_bsl_idx]
-                        < (bsl_mean_global[neuron_bsl_idx] + (3 * bsl_std_global[neuron_bsl_idx])),
-                        mean_fr[neuron_bsl_idx]
-                        > (bsl_mean_global[neuron_bsl_idx] - (3 * bsl_std_global[neuron_bsl_idx])),
-                    )
-                    final_z_scores[stim][neuron_bsl_idx, trial_number, :] = np.nanmean(
-                        z_trials[neuron_bsl_idx, keep_trials, :], axis=0
-                    )
+                            mean_fr[neuron_bsl_idx]
+                            < (bsl_mean_global[neuron_bsl_idx] + (3 * bsl_std_global[neuron_bsl_idx])),
+                            mean_fr[neuron_bsl_idx]
+                            > (bsl_mean_global[neuron_bsl_idx] - (3 * bsl_std_global[neuron_bsl_idx])),
+                        )
+                    if not current_keep_status:
+                        final_z_scores[stim][neuron_bsl_idx, trial_number, :] = np.nanmean(z_trials[neuron_bsl_idx, keep_trials, :], axis=0)
+                    else:
+                        final_z_scores[stim][neuron_bsl_idx, trial_number, :] = np.nanmean(z_trials[neuron_bsl_idx, :, :], axis=0)
+
 
                     self.keep_trials[stim][trial][neuron_bsl_idx, :] = keep_trials
                 self.raw_zscores[stim][:, trials == trial, :] = z_trials[:, :, :]
