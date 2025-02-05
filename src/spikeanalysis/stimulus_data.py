@@ -99,10 +99,11 @@ class StimulusData:
     def run_all(
         self,
         stim_index: int | None = None,
-        stim_length_seconds: float | None = None,
+        stim_length_seconds: float | list[float] | None = None,
         stim_name: list | None = None,
         time_slice: tuple = (None, None),
-        min_threshold: None | list = None
+        min_threshold: None | list = None,
+        force_rerun: bool = False
     ):
         """
         Pipeline function to run through all steps necessary to load intan data
@@ -119,14 +120,18 @@ class StimulusData:
             time slice of recording to use, given in seconds with start and stop
         min_threshold: None | list, deafult: None,
             Whether to set a distinct threshold for analog stim
+        force_rerun: bool, default False
+            Whether to rerun loading even if files
 
         """
-
-        try:
-            self.get_all_files()
-            return
-        except FileNotFoundError:
-            print("Reading raw data files")
+        if not force_rerun:
+            try:
+                self.get_all_files()
+                return
+            except FileNotFoundError:
+                print("JSON not found. Reading raw data files\n")
+        else:
+            print("Rerunning data, must process raw data\n")
 
         self.create_neo_reader()
         try:
@@ -230,7 +235,7 @@ class StimulusData:
     def digitize_analog_data(
         self,
         analog_index: int | None = None,
-        stim_length_seconds: float | None = None,
+        stim_length_seconds: float | list[float] | None = None,
         stim_name: list[str] | None = None,
         min_threshold: None | list = None
     ):
@@ -243,12 +248,18 @@ class StimulusData:
 
         if stim_length_seconds is None:
             stim_length_seconds = 8 * self.sample_frequency
-        else:
+        elif isinstance(stim_length_seconds, (float, int)):
             stim_length_seconds *= self.sample_frequency
+        else:
+            stim_length_seconds = [time * self.sample_frequency for time in stim_length_seconds]
+        
         if analog_index and len(np.shape(self.analog_data)) != 1:
             current_analog_data = self.analog_data[:, analog_index]
         else:
             current_analog_data = self.analog_data
+
+        if isinstance(stim_length_seconds, (int, float)):
+            stim_length_seconds = [stim_length_seconds for _ in range(current_analog_data.shape[1])]
 
         if len(np.shape(current_analog_data)) == 1:
             current_analog_data = np.expand_dims(current_analog_data, axis=1)
@@ -269,8 +280,8 @@ class StimulusData:
             sub_data = current_analog_data[:, row]
             filtered_analog_data = np.where(sub_data > min_threshold[row], 1, 0)
             dig_ana_events, dig_ana_lengths = self._calculate_events(filtered_analog_data)
-            events = dig_ana_events[dig_ana_lengths > stim_length_seconds]
-            lengths = dig_ana_lengths[dig_ana_lengths > stim_length_seconds]
+            events = dig_ana_events[dig_ana_lengths > stim_length_seconds[row]]
+            lengths = dig_ana_lengths[dig_ana_lengths > stim_length_seconds[row]]
             trial_groups = np.zeros((len(events),))
 
             for idx in range(len(events)):
@@ -493,6 +504,56 @@ class StimulusData:
             sub_dig["stim_time_secs"] = stim_time_secs[idx]
 
         self.digital_events = digital_events
+
+
+    def generate_stimulus_bouts(
+        self,
+        channel_name: str | list[str],
+        min_time_interbout_s: float | list[float],
+        new_names = str | list[str],
+    ):
+        
+        if isinstance(channel_name, str):
+            channel_name = [channel_name]
+        if isinstance(min_time_interbout_s, (float, int)):
+            min_time_interbout_s = len(channel_name) * [min_time_interbout_s]
+
+        if isinstance(new_names, str):
+            new_names = [new_names]
+
+        sampling_freq = self.sample_frequency
+        dig_analog_data = self.dig_analog_events
+
+        for idx, name in enumerate(channel_name):
+            sub_ana = dig_analog_data[name]
+
+            events = sub_ana['events']
+            lengths = sub_ana['lengths']
+            new_events = [events[0]] # start with first event
+            new_lengths = []
+            for event_idx in range(len(events)-1):
+                if (sampling_freq * min_time_interbout_s[idx]) < (events[event_idx+1] - (events[event_idx] + lengths[event_idx])):
+                    new_events.append(events[event_idx + 1])
+                    # subtract 2 to get the current starting point
+                    new_lengths.append(events[event_idx]+lengths[event_idx]-new_events[len(new_events)-2])
+            # add the last lenght after we've gone through everything
+            new_lengths.append(events[-1]+lengths[-1]-new_events[len(new_events)-2])
+            new_trials = np.ones((len(new_events),))
+
+            event_dict = {'events': new_events, 'lengths': new_lengths, 'trial_groups': new_trials, 'stim': new_names[idx]}
+
+            dig_analog_data[f'{idx}-{new_names[idx]}'] = event_dict
+
+        self.dig_analog_events = dig_analog_data
+
+
+
+
+
+
+
+
+
 
     def save_events(self):
         """
