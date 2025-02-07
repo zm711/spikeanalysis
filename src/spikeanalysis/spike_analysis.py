@@ -708,7 +708,7 @@ class SpikeAnalysis:
         bins = np.linspace(0, time_ms / 1000, num=int(time_ms + 1))
         final_isi = {}
         raw_data = {}
-        for idx, stimulus in enumerate(self.events.keys()):
+        for stim_idx, stimulus in enumerate(self.events.keys()):
             events = np.array(self.events[stimulus]["events"])
             lengths = np.array(self.events[stimulus]["lengths"])
             stim_name = self.events[stimulus]["stim"]
@@ -716,22 +716,22 @@ class SpikeAnalysis:
             final_isi[stim_name] = {}
             final_counts = np.zeros((len(self.isi_raw.keys()), len(events), len(bins) - 1))
             final_counts_bsl = np.zeros((len(self.isi_raw.keys()), len(events), len(bins) - 1))
-            for idy, cluster in enumerate(self.isi_raw.keys()):
+            for cluster_idx, cluster in enumerate(self.isi_raw.keys()):
                 current_times = self.isi_raw[cluster]["times"]
                 cluster_isi_raw = self.isi_raw[cluster]["isi"]
                 raw_data[stim_name][cluster] = {"isi_values": [], "bsl_isi_values": []}
-                for idz, event in enumerate(events):
+                for event_idx, event in enumerate(events):
                     current_isi_raw = cluster_isi_raw[
-                        np.logical_and(current_times > event, current_times < event + lengths[idx])
+                        np.logical_and(current_times > event, current_times < event + lengths[stim_idx])
                     ]
                     baseline_isi_raw = cluster_isi_raw[
-                        np.logical_and(current_times > event - lengths[idx], current_times < event)
+                        np.logical_and(current_times > event - lengths[stim_idx], current_times < event)
                     ]
 
                     isi_counts, isi_bins = np.histogram(current_isi_raw / self._sampling_rate, bins=bins)
                     bsl_counts, _ = np.histogram(baseline_isi_raw / self._sampling_rate, bins=bins)
-                    final_counts[idy, idz, :] = isi_counts
-                    final_counts_bsl[idy, idz, :] = bsl_counts
+                    final_counts[cluster_idx, event_idx, :] = isi_counts
+                    final_counts_bsl[cluster_idx, event_idx, :] = bsl_counts
                     raw_data[stim_name][cluster]["isi_values"].append(list(current_isi_raw / self._sampling_rate))
                     raw_data[stim_name][cluster]["bsl_isi_values"].append(list(baseline_isi_raw / self._sampling_rate))
                 raw_data[stim_name][cluster]["isi_values"] = np.array(
@@ -746,6 +746,83 @@ class SpikeAnalysis:
 
         self.isi = final_isi
         self.isi_values = raw_data
+
+    def compute_isi_distribution(self, baseline_lengths_s: list):
+
+        """Computes the isi distributions in this case pooling all baseline periods and stim trial groups
+        
+        Parameters
+        ----------
+        baseline_lengths_s: list
+            A list of times for each stimulus to sample to generate the baseline distribution
+            """
+
+        baseline_lengths = [sub_length * self._sampling_rate for sub_length in baseline_lengths_s]
+        isi_distribution = {}
+        for stim_idx, stimulus in enumerate(self.events.keys()):
+
+            events = np.array(self.events[stimulus]['events'])
+            lengths = np.array(self.events[stimulus]['lengths'])
+            stim_name = self.events[stimulus]['stim']
+
+            isi_distribution[stim_name] = {}
+
+
+            for cluster_idx, cluster in enumerate(self.isi_raw.keys()):
+                current_times = self.isi_raw[cluster]["times"]
+                cluster_isi_raw = self.isi_raw[cluster]["isi"]
+                stim_isi = np.array([])
+                bsl_isi = np.array([])
+                isi_distribution[stim_name][cluster] = {}
+                for event_idx, event in enumerate(events):
+                    current_stim_isi = cluster_isi_raw[np.logical_and(current_times > event, current_times < event + lengths[event_idx])]
+                    current_bsl_isi = cluster_isi_raw[np.logical_and(current_times > event - baseline_lengths[stim_idx], current_times < event)]
+                    
+                    stim_isi = np.concatenate((stim_isi, current_stim_isi/self._sampling_rate))
+                    bsl_isi = np.concatenate((bsl_isi, current_bsl_isi/self._sampling_rate))
+                isi_distribution[stim_name][cluster] = {'bsl': bsl_isi, 'stim': stim_isi}
+        self.isi_distribution = isi_distribution
+
+
+    def compute_isi_responsivity(self, p_value, return_output: bool=False):
+        """compute a 2 sample Kolmogorov-Smirnov test to determine whether distributions are different
+        
+        Parameters
+        ----------
+        p_value: float
+            the p value under which you consider the distributions different
+        return_output: bool, default: False
+            whether to return the KS statistic
+        
+        Returns
+        -------
+        KS stat, isi responsiveness dict"""
+        from scipy.stats import ks_2samp
+
+        if self._save_params:
+            parameters = {"compute_isi_responsivity": dict(p_value=p_value)}
+            jsonify_parameters(parameters, self._file_path)
+
+        isi_distribution = self.isi_distribution
+
+        resp_dict = {stim_name : np.zeros((len(self.cluster_ids)), dtype=bool) for stim_name in isi_distribution.keys()}
+        for stim_name, dist in isi_distribution.items():
+            for neuron_num, neuron in dist.items():
+                bsl = neuron['bsl']
+                stim = neuron['stim']
+                if len(bsl)==0 or len(stim)==0:
+                    resp_dict[stim_name][neuron_num] = False
+                    continue
+                stat = ks_2samp(bsl,stim)
+                if stat.pvalue < p_value:
+                    resp_dict[stim_name][neuron_num] = True
+                else:
+                    resp_dict[stim_name][neuron_num] = False
+        self.isi_resp_neurons = resp_dict
+
+        if return_output:
+            return stat, resp_dict
+                
 
     def trial_correlation(
         self,
