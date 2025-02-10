@@ -414,11 +414,30 @@ class SpikeAnalysis:
                 self.fr_bins[stim] = bins[fr_window_values]
             self.mean_firing_rate = final_fr
 
+    def zscore_data(self, time_bin_ms, bsl_window, z_window, eps: float = 0, keep_all_trials: dict | bool = False):
+        """
+        z scores data the psth data
 
+        Parameters
+        ----------
+        time_bin_ms : Union[list[float], float]
+            The time bin desired for generating z scores (larger bins lead to smoother data). Either
+            a single float applied to all stim or a list with a value for each stimulus
+        bsl_window : Union[list, list[list]]
+            The baseline window for finding the baseline mean and std firing rate. Either a single
+            sequence of (start, end) in relation to stim onset at 0 applied for all stim. Or a list
+            of lists where each stimulus has its own (start, end)
+        z_window :  Union[list, list[list]],
+            The event window for finding the z scores/time_bin. Either a single
+            sequence of (start, end) in relation to stim onset at 0 applied for all stim. Or a list
+            of lists where each stimulus has its own (start, end)
+        eps: float, default: 0
+            Value to prevent nans from occurring during z-scoring
+        """
 
-    def zscore_data(self, time_bin_ms, bsl_window, z_window, eps:float=0):
-
-        self.z_score_data(time_bin_ms=time_bin_ms, bsl_window=bsl_window, z_window=z_window, eps=eps)
+        self.z_score_data(
+            time_bin_ms=time_bin_ms, bsl_window=bsl_window, z_window=z_window, eps=eps, keep_all_trials=keep_all_trials
+        )
 
     def z_score_data(
         self,
@@ -426,6 +445,7 @@ class SpikeAnalysis:
         bsl_window: Union[list, list[list]],
         z_window: Union[list, list[list]],
         eps: float = 0,
+        keep_all_trials: dict | bool = False,
     ):
         """
         z scores data the psth data
@@ -479,6 +499,11 @@ class SpikeAnalysis:
         for idx, stim in enumerate(self.psths.keys()):
             if self._verbose:
                 print(stim)
+
+            if isinstance(keep_all_trials, dict):
+                current_keep_status = keep_all_trials[stim]
+            else:
+                current_keep_status = keep_all_trials
 
             trials = self.events[stim_dict[stim]]["trial_groups"]
 
@@ -554,9 +579,14 @@ class SpikeAnalysis:
                         mean_fr[neuron_bsl_idx]
                         > (bsl_mean_global[neuron_bsl_idx] - (3 * bsl_std_global[neuron_bsl_idx])),
                     )
-                    final_z_scores[stim][neuron_bsl_idx, trial_number, :] = np.nanmean(
-                        z_trials[neuron_bsl_idx, keep_trials, :], axis=0
-                    )
+                    if not current_keep_status:
+                        final_z_scores[stim][neuron_bsl_idx, trial_number, :] = np.nanmean(
+                            z_trials[neuron_bsl_idx, keep_trials, :], axis=0
+                        )
+                    else:
+                        final_z_scores[stim][neuron_bsl_idx, trial_number, :] = np.nanmean(
+                            z_trials[neuron_bsl_idx, :, :], axis=0
+                        )
 
                     self.keep_trials[stim][trial][neuron_bsl_idx, :] = keep_trials
                 self.raw_zscores[stim][:, trials == trial, :] = z_trials[:, :, :]
@@ -748,25 +778,23 @@ class SpikeAnalysis:
         self.isi_values = raw_data
 
     def compute_isi_distribution(self, baseline_lengths_s: list):
-
         """Computes the isi distributions in this case pooling all baseline periods and stim trial groups
-        
+
         Parameters
         ----------
         baseline_lengths_s: list
             A list of times for each stimulus to sample to generate the baseline distribution
-            """
+        """
 
         baseline_lengths = [sub_length * self._sampling_rate for sub_length in baseline_lengths_s]
         isi_distribution = {}
         for stim_idx, stimulus in enumerate(self.events.keys()):
 
-            events = np.array(self.events[stimulus]['events'])
-            lengths = np.array(self.events[stimulus]['lengths'])
-            stim_name = self.events[stimulus]['stim']
+            events = np.array(self.events[stimulus]["events"])
+            lengths = np.array(self.events[stimulus]["lengths"])
+            stim_name = self.events[stimulus]["stim"]
 
             isi_distribution[stim_name] = {}
-
 
             for cluster_idx, cluster in enumerate(self.isi_raw.keys()):
                 current_times = self.isi_raw[cluster]["times"]
@@ -775,25 +803,30 @@ class SpikeAnalysis:
                 bsl_isi = np.array([])
                 isi_distribution[stim_name][cluster] = {}
                 for event_idx, event in enumerate(events):
-                    current_stim_isi = cluster_isi_raw[np.logical_and(current_times > event, current_times < event + lengths[event_idx])]
-                    current_bsl_isi = cluster_isi_raw[np.logical_and(current_times > event - baseline_lengths[stim_idx], current_times < event)]
-                    
-                    stim_isi = np.concatenate((stim_isi, current_stim_isi/self._sampling_rate))
-                    bsl_isi = np.concatenate((bsl_isi, current_bsl_isi/self._sampling_rate))
-                isi_distribution[stim_name][cluster] = {'bsl': bsl_isi, 'stim': stim_isi}
+                    current_stim_isi = cluster_isi_raw[
+                        np.logical_and(current_times > event, current_times < event + lengths[event_idx])
+                    ]
+                    current_bsl_isi = cluster_isi_raw[
+                        np.logical_and(current_times > event - baseline_lengths[stim_idx], current_times < event)
+                    ]
+
+                    stim_isi = np.concatenate((stim_isi, current_stim_isi / self._sampling_rate))
+                    bsl_isi = np.concatenate((bsl_isi, current_bsl_isi / self._sampling_rate))
+                isi_distribution[stim_name][cluster] = {"bsl": bsl_isi, "stim": stim_isi}
         self.isi_distribution = isi_distribution
 
-
-    def compute_isi_responsivity(self, p_value, return_output: bool=False):
+    def compute_isi_responsivity(self, p_value, correction: None | 'sidak' | 'bonferroni'= 'sidak', return_output: bool = False):
         """compute a 2 sample Kolmogorov-Smirnov test to determine whether distributions are different
-        
+
         Parameters
         ----------
         p_value: float
             the p value under which you consider the distributions different
+        correction: None | 'sidak' | 'bonferroni', default: sidak
+            Whether to correct the p-value for multiple comparisons
         return_output: bool, default: False
             whether to return the KS statistic
-        
+
         Returns
         -------
         KS stat, isi responsiveness dict"""
@@ -804,17 +837,32 @@ class SpikeAnalysis:
             jsonify_parameters(parameters, self._file_path)
 
         isi_distribution = self.isi_distribution
+        n_neurons = len(self.cluster_ids)
 
-        resp_dict = {stim_name : np.zeros((len(self.cluster_ids)), dtype=bool) for stim_name in isi_distribution.keys()}
+        # it's possible we want to correct for multiple comparisons. Neurons aren't completely independent, but Sidak
+        # is conservative for positively dependent according to Wikipedia this should help only find changed neurons.
+        # bonferroni would be even more conservative/strict especially since I think neurons will often have related
+        # changes in firing.
+        
+        if correction is None:
+            corr_p_value = p_value
+        elif correction == 'sidak':
+            corr_p_value = 1 - (1-p_value) ** (1/n_neurons)
+        elif correction == 'bonferroni':
+            corr_p_value = p_value / n_neurons
+        else:
+            ValueError(f'`correction` can only be `sidak`, `bonferroni` or None, but you have entered {correction=}')
+
+        resp_dict = {stim_name: np.zeros((len(self.cluster_ids)), dtype=bool) for stim_name in isi_distribution.keys()}
         for stim_name, dist in isi_distribution.items():
             for neuron_num, neuron in dist.items():
-                bsl = neuron['bsl']
-                stim = neuron['stim']
-                if len(bsl)==0 or len(stim)==0:
+                bsl = neuron["bsl"]
+                stim = neuron["stim"]
+                if len(bsl) == 0 or len(stim) == 0:
                     resp_dict[stim_name][neuron_num] = False
                     continue
-                stat = ks_2samp(bsl,stim)
-                if stat.pvalue < p_value:
+                stat = ks_2samp(bsl, stim)
+                if stat.pvalue < corr_p_value:
                     resp_dict[stim_name][neuron_num] = True
                 else:
                     resp_dict[stim_name][neuron_num] = False
@@ -822,7 +870,6 @@ class SpikeAnalysis:
 
         if return_output:
             return stat, resp_dict
-                
 
     def trial_correlation(
         self,
