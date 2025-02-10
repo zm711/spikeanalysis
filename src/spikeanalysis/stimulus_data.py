@@ -540,7 +540,7 @@ class StimulusData:
             new_lengths.append(events[-1]+lengths[-1]-new_events[len(new_events)-2])
             new_trials = np.ones((len(new_events),))
 
-            event_dict = {'events': new_events, 'lengths': new_lengths, 'trial_groups': new_trials, 'stim': new_names[idx]}
+            event_dict = {'events': np.array(new_events), 'lengths': np.array(new_lengths), 'trial_groups': new_trials, 'stim': new_names[idx]}
 
             dig_analog_data[f'{idx}-{new_names[idx]}'] = event_dict
 
