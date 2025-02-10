@@ -355,22 +355,22 @@ class SpikeAnalysis:
         final_fr = {}
         self.fr_bins = {}
         self.raw_firing_rate = {}
-        for idx, stim in enumerate(self.psths.keys()):
+        for stim_idx, stim in enumerate(self.psths.keys()):
             if self._verbose:
                 print(stim)
 
             trials = self.events[stim_dict[stim]]["trial_groups"]
 
             trial_set = np.sort(np.unique(np.array(trials)))
-            time_bin_current = time_bin_size[idx]
+            time_bin_current = time_bin_size[stim_idx]
 
             psth = psths[stim]["psth"]
             bins = psths[stim]["bins"]
             bin_size = bins[1] - bins[0]
             n_bins = np.shape(bins)[0]
             if baseline:
-                bsl_current = bsl_windows[idx]
-            fr_window_current = fr_windows[idx]
+                bsl_current = bsl_windows[stim_idx]
+            fr_window_current = fr_windows[stim_idx]
             self.fr_windows[stim] = fr_window_current
 
             new_bin_number = np.int32((n_bins * bin_size) / time_bin_current)
@@ -397,7 +397,7 @@ class SpikeAnalysis:
                 if mode == "raw":
                     fr_trial = fr_trial
                 elif mode == "smooth":
-                    sm_std = int((1 / ((bins[1] - bins[0]) * 1000))) * sm_time_ms[idx]  # convert from user input
+                    sm_std = int((1 / ((bins[1] - bins[0]) * 1000))) * sm_time_ms[stim_idx]  # convert from user input
                     if sm_std % 2 == 0:  # make it odd so it has a peak convolution bin
                         sm_std += 1
                     for cluster_number in range(np.shape(fr_trial)[0]):
@@ -496,7 +496,7 @@ class SpikeAnalysis:
         self.raw_zscores = {}
         self.keep_trials = {}
         self.raw_baselines = {}
-        for idx, stim in enumerate(self.psths.keys()):
+        for stim_idx, stim in enumerate(self.psths.keys()):
             if self._verbose:
                 print(stim)
 
@@ -508,14 +508,14 @@ class SpikeAnalysis:
             trials = self.events[stim_dict[stim]]["trial_groups"]
 
             trial_set = np.sort(np.unique(np.array(trials)))
-            time_bin_current = time_bin_size[idx]
+            time_bin_current = time_bin_size[stim_idx]
 
             psth = psths[stim]["psth"]
             bins = psths[stim]["bins"]
             bin_size = bins[1] - bins[0]
             n_bins = np.shape(bins)[0]
-            bsl_current = bsl_windows[idx]
-            z_window_current = z_windows[idx]
+            bsl_current = bsl_windows[stim_idx]
+            z_window_current = z_windows[stim_idx]
             self.z_windows[stim] = z_window_current
 
             new_bin_number = np.int32((n_bins * bin_size) / time_bin_current)
@@ -621,12 +621,12 @@ class SpikeAnalysis:
         stim_dict = self._get_key_for_stim()
         psths = self.psths
         self.latency = {}
-        for idx, stim in enumerate(self.psths.keys()):
+        for stim_idx, stim in enumerate(self.psths.keys()):
             trials = self.events[stim_dict[stim]]["trial_groups"]
             if self._verbose:
                 print(stim)
             trial_set = np.unique(np.array(trials))
-            current_bsl = bsl_windows[idx]
+            current_bsl = bsl_windows[stim_idx]
             psth = psths[stim]["psth"]
             bins = psths[stim]["bins"]
             time_bin_size = bins[1] - bins[0]
@@ -667,17 +667,17 @@ class SpikeAnalysis:
 
                 bsl_shuffled_trial = bsl_shuffled[:, t_number, :]
 
-                for idx in range(len(bsl_values)):
-                    psth_by_trial = current_psth[idx]
-                    bsl_fr = bsl_values[idx]
-                    bsl_shuffled_trial_cluster = bsl_shuffled_trial[idx]
+                for bsl_idx in range(len(bsl_values)):
+                    psth_by_trial = current_psth[bsl_idx]
+                    bsl_fr = bsl_values[bsl_idx]
+                    bsl_shuffled_trial_cluster = bsl_shuffled_trial[bsl_idx]
 
                     if bsl_fr > 2:
-                        self.latency[stim]["latency"][idx, trials == trial] = 1000 * lf.latency_core_stats(
+                        self.latency[stim]["latency"][bsl_idx, trials == trial] = 1000 * lf.latency_core_stats(
                             bsl_fr, psth_by_trial[:, bins >= 0], final_time_bin_size
                         )
                         for shuffle in tqdm(range(num_shuffles)):
-                            self.latency[stim]["latency_shuffled"][idx, trials == trial, shuffle] = (
+                            self.latency[stim]["latency_shuffled"][bsl_idx, trials == trial, shuffle] = (
                                 1000
                                 * lf.latency_core_stats(
                                     bsl_fr,
@@ -687,11 +687,11 @@ class SpikeAnalysis:
                             )
 
                     else:
-                        self.latency[stim]["latency"][idx, trials == trial] = 1000 * lf.latency_median(
+                        self.latency[stim]["latency"][bsl_idx, trials == trial] = 1000 * lf.latency_median(
                             psth_by_trial[:, bins >= 0], final_time_bin_size
                         )
                         for shuffle in tqdm(range(num_shuffles)):
-                            self.latency[stim]["latency_shuffled"][idx, trials == trial, shuffle] = (
+                            self.latency[stim]["latency_shuffled"][bsl_idx, trials == trial, shuffle] = (
                                 1000
                                 * lf.latency_median(
                                     psth_by_trial[:, bins >= bsl_shuffled_trial_cluster[shuffle]], final_time_bin_size
@@ -843,7 +843,7 @@ class SpikeAnalysis:
         # is conservative for positively dependent according to Wikipedia this should help only find changed neurons.
         # bonferroni would be even more conservative/strict especially since I think neurons will often have related
         # changes in firing.
-        
+
         if correction is None:
             corr_p_value = p_value
         elif correction == 'sidak':
