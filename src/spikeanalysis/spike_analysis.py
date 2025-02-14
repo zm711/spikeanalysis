@@ -397,23 +397,25 @@ class SpikeAnalysis:
                 fr_trial = fr_psth[:, trials == trial, :] 
                 if mode == 'spike count':
                     fr_trial = fr_trial
-                elif mode == "raw":
-                    fr_trial = fr_trial / time_bin_current
-                elif mode == "smooth":
-                    sm_std = int((1 / ((bins[1] - bins[0]) * 1000))) * sm_time_ms[stim_idx]  # convert from user input
-                    if sm_std % 2 == 0:  # make it odd so it has a peak convolution bin
-                        sm_std += 1
-                    for cluster_number in range(np.shape(fr_trial)[0]):
-                        fr_trial[cluster_number] = gaussian_smoothing(
-                            fr_trial[cluster_number], (bins[1] - bins[0]), sm_std
-                        )
                 else:
-                    for row in range(mean_fr.shape[0]):
-                        for column in range(mean_fr.shape[1]):
-                            if mode =='bsl-subtracted-fold-change':
-                                fr_trial[row,column] = (fr_trial[row, column] - mean_fr[row, column]) / mean_fr[row, column]
-                            else:
-                                fr_trial[row,column] = (fr_trial[row, column] - mean_fr[row, column])
+                    fr_trial = fr_trial / time_bin_current
+                    if mode == "raw":
+                        fr_trial = fr_trial
+                    elif mode == "smooth":
+                        sm_std = int((1 / ((bins[1] - bins[0]) * 1000))) * sm_time_ms[stim_idx]  # convert from user input
+                        if sm_std % 2 == 0:  # make it odd so it has a peak convolution bin
+                            sm_std += 1
+                        for cluster_number in range(np.shape(fr_trial)[0]):
+                            fr_trial[cluster_number] = gaussian_smoothing(
+                                fr_trial[cluster_number], (bins[1] - bins[0]), sm_std
+                            )
+                    else:
+                        for row in range(mean_fr.shape[0]):
+                            for column in range(mean_fr.shape[1]):
+                                if mode =='bsl-subtracted-fold-change':
+                                    fr_trial[row,column] = (fr_trial[row, column] - mean_fr[row, column]) / mean_fr[row, column]
+                                else:
+                                    fr_trial[row,column] = (fr_trial[row, column] - mean_fr[row, column])
 
                 fr[stim][:, trials == trial, :] = fr_trial[:, :, :]
                 final_fr[stim][:, trial_number, :] = np.nanmean(fr_trial, axis=1)
