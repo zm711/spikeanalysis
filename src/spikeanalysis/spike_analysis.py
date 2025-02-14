@@ -227,12 +227,13 @@ class SpikeAnalysis:
         windows = verify_window_format(window=window, num_stim=total_stim)
         psths = {}
 
-        for idx, stimulus in enumerate(self.events.keys()):
+        for stim_idx, stimulus in enumerate(self.events.keys()):
             multispike_bin = 0
             events = np.array(self.events[stimulus]["events"])
             stim_name = self.events[stimulus]["stim"]
-            print(f"{stim_name}\n")
-            current_window = windows[idx]
+            if self._verbose:
+                print(f"{stim_name}\n")
+            current_window = windows[stim_idx]
 
             window_start = np.int64(current_window[0] * self._sampling_rate)
             window_end = np.int64(current_window[1] * self._sampling_rate)
@@ -251,7 +252,7 @@ class SpikeAnalysis:
             current_spike_clusters = spike_clusters[np.logical_and(spike_times > min_time, spike_times < max_time)]
             current_spikes = spike_times[np.logical_and(spike_times > min_time, spike_times < max_time)]
 
-            for idy, cluster in enumerate(tqdm(cluster_ids)):
+            for cluster_idx, cluster in enumerate(tqdm(cluster_ids)):
                 spikes_array, bins_sub = hf.spike_times_to_bins(
                     current_spikes[current_spike_clusters == cluster],
                     events,
@@ -259,14 +260,14 @@ class SpikeAnalysis:
                     window_start,
                     window_end,
                 )
-                psth[idy] = spikes_array
+                psth[cluster_idx] = spikes_array
                 if len(np.where(spikes_array > 1)[0]) != 0 or len(np.where(spikes_array > 1)[1]) != 0:
                     multispike_bin += 1
             if multispike_bin:
                 if self._verbose:
-                    print(f"Minimum time_bin size in ms is {1000/self._sampling_rate}")
+                    print(f"Minimum time_bin size in ms is {1000/self._sampling_rate}\n")
                     print(
-                        f"There are {multispike_bin} bins with more than 1 spike. For best psth results bins should only be 0 or 1"
+                        f"There are {multispike_bin} bins with more than 1 spike. For best psth results bins should only be 0 or 1\n"
                     )
             psths[stim_name]["psth"] = psth
             psths[stim_name]["bins"] = bins_sub / self._sampling_rate
@@ -294,7 +295,7 @@ class SpikeAnalysis:
             The event window for finding the firing rate/time_bin. Either a single
             sequence of (start, end) in relation to stim onset at 0 applied for all stim. Or a list
             of lists where each stimulus has its own (start, end)
-        mode: str in ('raw', 'smooth', 'bsl-subtracted')
+        mode: str in ('raw', 'smooth', 'bsl-subtracted', 'bsl-subtracted-fold-change')
             Value to return firing rate as either a raw firing rate based on time_bin_ms, as a gaussian
             smoothed firing rate (requires sm_time_ms), or with baseline subtraction in which the mean
             firing rate during the baseline is subtracted from each bin
@@ -336,7 +337,7 @@ class SpikeAnalysis:
         if bsl_window is not None:
             bsl_windows = verify_window_format(window=bsl_window, num_stim=num_stim)
             baseline = True
-            assert mode == "bsl-subtracted", "only give baseline for baseline subtracted"
+            assert mode in ("bsl-subtracted", "bsl-subtracted-fold-change"), "only give baseline for baseline subtracted"
         else:
             baseline = False
         fr_windows = verify_window_format(window=fr_window, num_stim=num_stim)
@@ -391,11 +392,13 @@ class SpikeAnalysis:
             for trial_number, trial in enumerate(tqdm(trial_set)):
                 if baseline:
                     bsl_trial = bsl_psth[:, trials == trial, :]
-                    mean_fr = np.mean(np.sum(bsl_trial, axis=2), axis=1) / ((bsl_current[1] - bsl_current[0]))
+                    mean_fr = np.sum(bsl_trial, axis=2) / ((bsl_current[1] - bsl_current[0]))
 
-                fr_trial = fr_psth[:, trials == trial, :] / time_bin_current
-                if mode == "raw":
+                fr_trial = fr_psth[:, trials == trial, :] 
+                if mode == 'spike count':
                     fr_trial = fr_trial
+                elif mode == "raw":
+                    fr_trial = fr_trial / time_bin_current
                 elif mode == "smooth":
                     sm_std = int((1 / ((bins[1] - bins[0]) * 1000))) * sm_time_ms[stim_idx]  # convert from user input
                     if sm_std % 2 == 0:  # make it odd so it has a peak convolution bin
@@ -405,8 +408,12 @@ class SpikeAnalysis:
                             fr_trial[cluster_number], (bins[1] - bins[0]), sm_std
                         )
                 else:
-                    for row in range(len(mean_fr)):
-                        fr_trial[row] = fr_trial[row] - mean_fr[row]
+                    for row in range(mean_fr.shape[0]):
+                        for column in range(mean_fr.shape[1]):
+                            if mode =='bsl-subtracted-fold-change':
+                                fr_trial[row,column] = (fr_trial[row, column] - mean_fr[row, column]) / mean_fr[row, column]
+                            else:
+                                fr_trial[row,column] = (fr_trial[row, column] - mean_fr[row, column])
 
                 fr[stim][:, trials == trial, :] = fr_trial[:, :, :]
                 final_fr[stim][:, trial_number, :] = np.nanmean(fr_trial, axis=1)
@@ -815,7 +822,9 @@ class SpikeAnalysis:
                 isi_distribution[stim_name][cluster] = {"bsl": bsl_isi, "stim": stim_isi}
         self.isi_distribution = isi_distribution
 
-    def compute_isi_responsivity(self, p_value, correction: None | 'sidak' | 'bonferroni'= 'sidak', return_output: bool = False):
+    def compute_isi_responsivity(
+        self, p_value, correction: None | "sidak" | "bonferroni" = "sidak", return_output: bool = False
+    ):
         """compute a 2 sample Kolmogorov-Smirnov test to determine whether distributions are different
 
         Parameters
@@ -846,12 +855,12 @@ class SpikeAnalysis:
 
         if correction is None:
             corr_p_value = p_value
-        elif correction == 'sidak':
-            corr_p_value = 1 - (1-p_value) ** (1/n_neurons)
-        elif correction == 'bonferroni':
+        elif correction == "sidak":
+            corr_p_value = 1 - (1 - p_value) ** (1 / n_neurons)
+        elif correction == "bonferroni":
             corr_p_value = p_value / n_neurons
         else:
-            ValueError(f'`correction` can only be `sidak`, `bonferroni` or None, but you have entered {correction=}')
+            ValueError(f"`correction` can only be `sidak`, `bonferroni` or None, but you have entered {correction=}")
 
         resp_dict = {stim_name: np.zeros((len(self.cluster_ids)), dtype=bool) for stim_name in isi_distribution.keys()}
         for stim_name, dist in isi_distribution.items():

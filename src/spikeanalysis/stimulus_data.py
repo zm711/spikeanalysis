@@ -56,7 +56,7 @@ class StimulusData:
             txt += f"\n The methods are {final_methods}"
         return txt
 
-    def get_all_files(self):
+    def get_all_files(self, load_raw=False):
         """
         function to load all stimulus data from a previous instance of the class
         if saved
@@ -82,8 +82,9 @@ class StimulusData:
         if "dig_analog" in files:
             with open(self._file_path / "dig_analog_events.json") as read_file:
                 self.dig_analog_events = json.load(read_file)
-            raw_analog = glob.glob("raw_analog*")[0]
-            self.analog_data = np.load(raw_analog)
+            if load_raw:
+                raw_analog = glob.glob("raw_analog*")[0]
+                self.analog_data = np.load(raw_analog)
 
         try:
             with open(self._file_path / "sampling_rate.json") as read_file:
