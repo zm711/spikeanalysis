@@ -869,9 +869,19 @@ class SpikeAnalysis:
             for neuron_num, neuron in dist.items():
                 bsl = neuron["bsl"]
                 stim = neuron["stim"]
-                if len(bsl) == 0 or len(stim) == 0:
+                if len(bsl) == 0 and len(stim) == 0:
+                    # if 0-0 then the neuron hasn't changed but there is no distribution
                     resp_dict[stim_name][neuron_num] = False
                     continue
+                else:
+                    if (len(bsl)== 0 and len(stim) >50) or (len(bsl)> 50 and len(stim)==0):
+                        # if either but not both is 0 then there is a change that we should think about
+                        # let's make sure there are a minimum number of actual events. Start with 50
+                        resp_dict[stim_name][neuron_num] = True
+                        continue
+                    elif (len(bsl)== 0 and len(stim) <50) or (len(bsl)< 50 and len(stim)==0):
+                        resp_dict[stim_name][neuron_num] = False
+                        continue
                 stat = ks_2samp(bsl, stim)
                 if stat.pvalue < corr_p_value:
                     resp_dict[stim_name][neuron_num] = True
