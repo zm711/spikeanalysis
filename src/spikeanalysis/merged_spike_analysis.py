@@ -17,9 +17,9 @@ class MergedSpikeAnalysis(SpikeAnalysis):
             ):
                 raise TypeError("spikeanalysis must be a list or an individual spikeanalysis")
             if isinstance(spikeanalysis_list, (SpikeAnalysis, CuratedSpikeAnalysis)):
-                spikeanalysis_list = [deepcopy(spikeanalysis_list)]
+                spikeanalysis_list = [self._prep_spikeanalysis(spikeanalysis_list)]
             else:
-                spikeanalysis_list = [deepcopy(sa) for sa in spikeanalysis_list]
+                spikeanalysis_list = [self._prep_spikeanalysis(sa) for sa in spikeanalysis_list]
         if name_list is not None:
             if not isinstance(name_list, list) and not isinstance(name_list, str):
                 raise TypeError("name list must be a list or a str")
@@ -41,6 +41,23 @@ class MergedSpikeAnalysis(SpikeAnalysis):
             txt += f"Stimuli being analyzed {stimuli}"
         return txt
 
+
+    def _prep_spikeanalysis(self, spikeanalysis):
+
+        st = SpikeAnalysis(save_parameters = spikeanalysis._save_params, verbose=spikeanalysis._verbose)
+        st._sampling_rate = spikeanalysis._sampling_rate
+        st.raw_spike_times = spikeanalysis.raw_spike_times
+        st.spike_times = spikeanalysis.raw_spike_times / spikeanalysis._sampling_rate
+        st.spike_clusters = spikeanalysis.spike_clusters
+        st._cids = spikeanalysis._cids
+        st.cluster_ids = spikeanalysis.cluster_ids
+        st.si_units = spikeanalysis.si_units
+
+        st._file_path = spikeanalysis._file_path
+        st.events = spikeanalysis.events
+        return st
+
+
     def add_analysis(self, spikeanalysis, name):
 
         if isinstance(spikeanalysis, list):
@@ -48,7 +65,7 @@ class MergedSpikeAnalysis(SpikeAnalysis):
                 raise RuntimeError(f"{len(spikeanalysis)=} != {len(name)=}")
             for idx, sa in enumerate(spikeanalysis):
                 self._verify_obj(sa)
-                self.spikeanalysis_list.append(deepcopy(sa))
+                self.spikeanalysis_list.append(self._prep_spikeanalysis(sa))
                 if name[idx] in self.name_list:
                     raise RuntimeError("The same name can not be used for multiple datasets")
                 self.name_list.append(name[idx])
@@ -57,11 +74,10 @@ class MergedSpikeAnalysis(SpikeAnalysis):
                 raise TypeError(f"Spikeanalysis must be a list or a spikeanalysis not a type {type(spikeanalysis)}")
             if not isinstance(name, str):
                 raise TypeError("if spikeanalysis is type SpikeAnalysis, then name must be a string")
-            self.spikeanalysis_list.append(deepcopy(spikeanalysis))
+            self.spikeanalysis_list.append(self._prep_spikeanalysis(spikeanalysis))
             self.name_list.append(name)
 
     def _verify_obj(self, obj):
-
         if any([id(sa) == id(obj) for sa in self.spikeanalysis_list]):
             raise RuntimeError("Cannot merge the same data twice")
 
@@ -88,21 +104,21 @@ class MergedSpikeAnalysis(SpikeAnalysis):
                 raise RuntimeError("Can not combine incompatible data")
 
         self._total_stim = len(self.events.keys())
-        spike_times = np.concatenate([sa.raw_spike_times for sa in self.spikeanalysis_list])
+        #spike_times = np.concatenate([sa.raw_spike_times for sa in self.spikeanalysis_list])
 
         sub_cluster_ids = np.array(
             [
                 f"{self.name_list[idx]}-{spike}"
                 for idx, sa in enumerate(self.spikeanalysis_list)
-                for spike in sa.spike_clusters
+                for spike in sa.cluster_ids
             ]
         )
 
-        sort_idx = np.argsort(spike_times)
+        #sort_idx = np.argsort(spike_times)
 
-        self.raw_spike_times = spike_times[sort_idx]
-        self.spike_clusters = sub_cluster_ids[sort_idx]
-        self.cluster_ids = np.unique(self.spike_clusters)
+        #self.raw_spike_times = spike_times[sort_idx]
+        #self.spike_clusters = sub_cluster_ids[sort_idx]
+        self.cluster_ids = np.unique(sub_cluster_ids)
 
         event_names = {v["stim"]: k for k, v in self.events.items()}
 
@@ -159,7 +175,7 @@ class MergedSpikeAnalysis(SpikeAnalysis):
                 fr = np.insert(fr, dim, fill, axis=1)
             data_list[psth_idx] = fr
 
-    def get_raw_psth(self, window, time_bin_ms):
+    def get_raw_psth(self, window, time_bin_ms=1):
 
         for sa in self.spikeanalysis_list:
             sa.get_raw_psth(window=window, time_bin_ms=time_bin_ms)
