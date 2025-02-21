@@ -317,3 +317,57 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
 
         self.mask = mask
             
+
+    def curate_isi(self, any=True, exclusive=False, stims=None):
+
+        resp_neurons = self.isi_resp_neurons
+
+        if stims is None:
+            stims = list(resp_neurons.keys())
+
+        # 3 possibilities, np.logical_xx function, np.any or np.all
+        # if someone gives something else then it is on them
+        if callable(any):
+            mask_func = any
+        elif any:
+            mask_func = np.any
+        else:
+            mask_func = np.all
+        
+        # I don't know what it means to be "exclusively" these stim without
+        # it having to be all the stim within that list, so force any to false
+        # in this case
+        if exclusive:
+            if any:
+                print('for exclusive `any` is automatically set to False')
+            mask_func = np.all
+
+        all_resp_data = []
+        for stim in stims:
+            data = resp_neurons[stim]
+            all_resp_data.append(data)
+        
+        # stack makes an (n_stim, n_neurons) array
+        final_resp_data = np.stack(all_resp_data)
+        final_mask = mask_func(final_resp_data, axis=0)
+
+        if exclusive:
+            other_stim_list = []
+            for stim, isi in resp_neurons.items():
+                if stim in stims:
+                    continue
+                other_stim_list.append(isi)
+            if len(other_stim_data) > 0:
+                
+                other_stim_data = np.stack(other_stim_list)
+                other_stim_mask = np.any(other_stim_data, axis=0)
+
+                # this will mark out only stim that respond to either the exclusive list
+                # or to the mix. If we then check for the True's from the previous exclusive list
+                # then we get the correct exclusively responsive neurons.
+
+                mixed_mask = np.logical_xor(final_mask, other_stim_mask)
+                final_mask = np.logical_and(final_mask, mixed_mask)
+
+        self._isi_mask  = final_mask # Just for debugging
+        self.cluster_ids = self.cluster_ids[final_mask]
