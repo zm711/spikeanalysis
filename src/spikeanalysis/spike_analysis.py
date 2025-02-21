@@ -38,6 +38,7 @@ class SpikeAnalysis:
         self._save_params = save_parameters
         self._verbose = verbose
         self.raw_spike_times = None
+        self.si_units = []
 
     def __repr__(self):
         txt = f"File path: {self._file_path}"
@@ -117,7 +118,7 @@ class SpikeAnalysis:
 
         self.spike_clusters = sp.spike_clusters
         self._sampling_rate = sp._sampling_rate
-        self._si_units = []
+        self.si_units = []
 
     def set_spike_data_si(self, sorting: "Sorting"):
         """loads in a spikeinterface sorting object to serve as spike data
@@ -1069,6 +1070,11 @@ class SpikeAnalysis:
         else:
             print(f"possible values are {_values}")
             raise AttributeError(f"{value} does not exist run appropriate function")
+        
+    def clear_cached_value(self, value_name):
+
+        if hasattr(self, value_name):
+            del self.__dict__[value_name]
 
     def _generate_sample_z_parameter(self, save: bool = True) -> dict:
         """
