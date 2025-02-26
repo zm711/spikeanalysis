@@ -123,6 +123,10 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
         self._cids = st._cids
         self.cluster_ids = st.cluster_ids
         self.si_units = st.si_units
+        try:
+            self.isi_resp_neurons = st.isi_resp_neurons
+        except AttributeError:
+            pass
 
     def set_mask(self, mask: list[bool]):
 
@@ -132,6 +136,9 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
             )
 
         self.mask = mask
+
+    def set_isi_resp_neurons(self, isi_resp_neurons: dict):
+        self.isi_resp_neurons = isi_resp_neurons
 
     def curate(
         self,
