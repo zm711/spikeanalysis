@@ -244,7 +244,7 @@ class SpikeAnalysis:
                     len(events),
                     int((window_end - window_start) / time_bin_size),
                 ),
-                dtype=np.int32,
+                dtype=np.uint8,
             )
 
             psths[stim_name] = {}

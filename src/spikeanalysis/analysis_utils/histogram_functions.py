@@ -11,13 +11,16 @@ def spike_times_to_bins(
     step_number = int(abs((end - start) / bin_size) + 1)
     bin_borders = np.linspace(start, end, step_number)
     bin_number = len(bin_borders) - 1
-    bin_array = np.zeros((len(events), bin_number), np.int32)
+    # this should just be 0s and 1s but some higher values could be possible if user inputs wrong bin size.
+    bin_array = np.zeros((len(events), bin_number), np.uint8)
     bin_centers = bin_borders[:-1] + np.diff(bin_borders) / 2
     if len(time_stamps) == 0:
         return bin_array, bin_centers
 
     for n in range(len(events)):
-        bin_array[n], _ = np.histogram(time_stamps, bin_borders + events[n])
+        counts, _ = np.histogram(time_stamps, bin_borders + events[n])
+        counts = counts.astype('uint8')
+        bin_array[n] = counts
     return bin_array, bin_centers
 
 
