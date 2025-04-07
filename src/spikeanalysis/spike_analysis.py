@@ -787,7 +787,7 @@ class SpikeAnalysis:
         self.isi = final_isi
         self.isi_values = raw_data
 
-    def compute_isi_distribution(self, baseline_lengths_s: list):
+    def compute_isi_distribution(self, baseline_lengths_s: list, offsets_s=None):
         """Computes the isi distributions in this case pooling all baseline periods and stim trial groups
 
         Parameters
@@ -798,6 +798,13 @@ class SpikeAnalysis:
 
         baseline_lengths = [sub_length * self._sampling_rate for sub_length in baseline_lengths_s]
         isi_distribution = {}
+
+        if offsets_s is None:
+            offsets = [0] * len(baseline_lengths)
+        else:
+            assert len(baseline_lengths_s) == len(offsets_s)
+            offsets = [sub_length * self._sampling_rate for sub_length in offsets_s]
+
         for stim_idx, stimulus in enumerate(self.events.keys()):
 
             events = np.array(self.events[stimulus]["events"])
@@ -817,7 +824,7 @@ class SpikeAnalysis:
                         np.logical_and(current_times > event, current_times < event + lengths[event_idx])
                     ]
                     current_bsl_isi = cluster_isi_raw[
-                        np.logical_and(current_times > event - baseline_lengths[stim_idx], current_times < event)
+                        np.logical_and(current_times > event - baseline_lengths[stim_idx] - offsets[stim_idx], current_times < event - offsets[stim_idx])
                     ]
 
                     stim_isi = np.concatenate((stim_isi, current_stim_isi / self._sampling_rate))
@@ -875,12 +882,12 @@ class SpikeAnalysis:
                     resp_dict[stim_name][neuron_num] = False
                     continue
                 else:
-                    if (len(bsl)== 0 and len(stim) >50) or (len(bsl)> 50 and len(stim)==0):
+                    if (len(bsl)== 0 and len(stim) >=50) or (len(bsl)>= 50 and len(stim)==0):
                         # if either but not both is 0 then there is a change that we should think about
                         # let's make sure there are a minimum number of actual events. Start with 50
                         resp_dict[stim_name][neuron_num] = True
                         continue
-                    elif (len(bsl)== 0 and len(stim) <50) or (len(bsl)< 50 and len(stim)==0):
+                    elif (len(bsl)== 0 and len(stim) <=50) or (len(bsl)<= 50 and len(stim)==0):
                         resp_dict[stim_name][neuron_num] = False
                         continue
                 stat = ks_2samp(bsl, stim)
