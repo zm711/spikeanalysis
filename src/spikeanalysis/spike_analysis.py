@@ -390,7 +390,12 @@ class SpikeAnalysis:
             final_fr[stim] = np.zeros((np.shape(fr_psth)[0], len(trial_set), np.shape(fr_psth)[2]))
             self.raw_firing_rate[stim] = np.zeros(np.shape(fr_psth))
 
-            for trial_number, trial in enumerate(tqdm(trial_set)):
+            
+            if self._verbose == True:
+                trial_set_enumerated = enumerate(tqdm(trial_set))
+            else:
+                trial_set_enumerated = enumerate(trial_set)
+            for trial_number, trial in trial_set_enumerated:
                 if baseline:
                     bsl_trial = bsl_psth[:, trials == trial, :]
                     mean_fr = np.sum(bsl_trial, axis=2) / ((bsl_current[1] - bsl_current[0]))
@@ -997,8 +1002,11 @@ class SpikeAnalysis:
             correlation_window = np.logical_and(current_bins > current_window[0], current_bins < current_window[1])
 
             current_data_windowed = current_data[:, :, correlation_window]
-
-            for trial_number, trial in enumerate(tqdm(set(trial_groups))):
+            if self._verbose:
+                trial_enumerated = enumerate(tqdm(set(trial_groups)))
+            else:
+                trial_enumerated = enumerate(set(trial_groups))
+            for trial_number, trial in trial_enumerated:
                 current_data_windowed_by_trial = current_data_windowed[:, trial_groups == trial, :]
 
                 for cluster_number in range(np.shape(current_data_windowed_by_trial)[0]):

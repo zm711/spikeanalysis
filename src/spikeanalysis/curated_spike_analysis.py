@@ -198,7 +198,6 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
                         mask = sub_curation[:, trial_index]
                     else:
                         mask = np.all(sub_curation[:, np.array(trial_index)], axis=1)
-                        
 
             else:
                 if len(sub_curation.shape) == 1:
@@ -271,8 +270,8 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
             if filter_params is None:
                 filter_params = {"all": dict(min=-50, max=50)}
             else:
-                assert all(['min' in value for value in filter_params.values()])
-                assert all(['max' in value for value in filter_params.values()])
+                assert all(["min" in value for value in filter_params.values()])
+                assert all(["max" in value for value in filter_params.values()])
             operator = np.nansum
         else:
             raise ValueError("only auc is implemented")
@@ -323,7 +322,6 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
             mask = np.logical_and(mask, final_scores_masked)
 
         self.mask = mask
-            
 
     def curate_isi(self, any=True, exclusive=False, stims=None):
 
@@ -340,20 +338,20 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
             mask_func = np.any
         else:
             mask_func = np.all
-        
+
         # I don't know what it means to be "exclusively" these stim without
         # it having to be all the stim within that list, so force any to false
         # in this case
         if exclusive:
             if any:
-                print('for exclusive `any` is automatically set to False')
+                print("for exclusive `any` is automatically set to False")
             mask_func = np.all
 
         all_resp_data = []
         for stim in stims:
             data = resp_neurons[stim]
             all_resp_data.append(data)
-        
+
         # stack makes an (n_stim, n_neurons) array
         final_resp_data = np.stack(all_resp_data)
         final_mask = mask_func(final_resp_data, axis=0)
@@ -364,8 +362,8 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
                 if stim in stims:
                     continue
                 other_stim_list.append(isi)
-            if len(other_stim_data) > 0:
-                
+            if len(other_stim_list) > 0:
+
                 other_stim_data = np.stack(other_stim_list)
                 other_stim_mask = np.any(other_stim_data, axis=0)
 
@@ -376,5 +374,5 @@ class CuratedSpikeAnalysis(SpikeAnalysis):
                 mixed_mask = np.logical_xor(final_mask, other_stim_mask)
                 final_mask = np.logical_and(final_mask, mixed_mask)
 
-        self._isi_mask  = final_mask # Just for debugging
+        self._isi_mask = final_mask  # Just for debugging
         self.cluster_ids = self.cluster_ids[final_mask]
