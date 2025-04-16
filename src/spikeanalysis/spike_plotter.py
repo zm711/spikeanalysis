@@ -299,10 +299,10 @@ class SpikePlotter(PlotterBase):
                     is_the_sorting_index_the_filter = False
                     current_sorting_index = sorting_index
 
-            event_window = np.logical_and(bins >= 0, bins <= lengths[current_sorting_index])
             if is_the_sorting_index_the_filter:
                 z_score_sorting_index = sorting_index
             else:
+                event_window = np.logical_and(bins >= 0, bins <= lengths[current_sorting_index])
                 z_score_sorting_index = np.argsort(
                     -np.nansum(sub_zscores[:, current_sorting_index, event_window], axis=1)
                 )
