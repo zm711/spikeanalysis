@@ -561,16 +561,18 @@ class SpikePlotter(PlotterBase):
                 raster_y = np.squeeze(raster_y)
                 raster_y[1:-1:3] = raster_y[1:-1:3] + raster_scale
                 fig, ax = plt.subplots(figsize=plot_kwargs.figsize)
+                ax.set_ylim(0, max(raster_y))
                 if color_raster:
                     norm = mpl.colors.Normalize(vmin=0, vmax=len(tg_set))
                     index_pt = 0
                     for tg_id in range(len(tg_set)):
                         ax.axvspan(
-                            xmin=max(sub_window) + (0.02 * (sub_window[1] - sub_window[0])),
-                            xmax=max(sub_window) + (0.04 * (sub_window[1] - sub_window[0])),
+                            xmin=min(sub_window) + (0.01 * (sub_window[1] - sub_window[0])),
+                            xmax=max(sub_window) + (0.01 * (sub_window[1] - sub_window[0])),
                             ymin=index_pt / np.sum(tg_counts),
                             ymax=(index_pt + tg_counts[tg_id]) / np.sum(tg_counts),
                             color=cmap(norm(tg_id)),
+                            alpha=0.60,
                         )
                         index_pt += tg_counts[tg_id]
 
