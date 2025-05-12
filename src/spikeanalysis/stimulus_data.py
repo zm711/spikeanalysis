@@ -103,7 +103,8 @@ class StimulusData:
         stim_length_seconds: float | None = None,
         stim_name: list | None = None,
         time_slice: tuple = (None, None),
-        min_threshold: None | list = None
+        min_threshold: None | list = None,
+        flipped_volt: None | list = None,
     ):
         """
         Pipeline function to run through all steps necessary to load intan data
@@ -118,8 +119,11 @@ class StimulusData:
             Name of the stimulus. The default is None.
         time_slice: tuple[start, stop]
             time slice of recording to use, given in seconds with start and stop
-        min_threshold: None | list, deafult: None,
+        min_threshold: None | list, default: None,
             Whether to set a distinct threshold for analog stim
+        flipped_volt: None | list, default: None
+            Which stimuli use falling edge rather than rising edge. Default is that all channels
+            use rising edge
 
         """
 
@@ -152,7 +156,7 @@ class StimulusData:
             )
         if have_digital:
             self.get_final_digital_data()
-            self.generate_digital_events()
+            self.generate_digital_events(flipped_volt=flipped_volt)
 
         del self.reader  # reader and memmap heavy. Delete after this since not needed
 
@@ -357,12 +361,17 @@ class StimulusData:
         self.dig_in_channels = np.nonzero(np.sum(values, axis=1))[0] + 1
         self.digital_data = values[np.nonzero(np.sum(values, axis=1))[0]]
 
-    def generate_digital_events(self):
+    def generate_digital_events(self, flipped_volt=None):
         assert self.digital_data is not None, "There is no final digital data, run `get_final_digital_data` first"
 
         self.digital_events = {}
         self.digital_channels = []
-
+        if flipped_volt is None:
+            flipped_volt = []
+        else:
+            if len(flipped_volt) >= self.digital_data.shape[0]:
+                raise ValueError(f"{flipped_volt=} when it can only include {list(range(self.digital_data.shape[0]))}")
+        
         if self._verbose:
             event_range = enumerate(tqdm(self.digital_data))
         else:
@@ -374,7 +383,8 @@ class StimulusData:
             else:
                 title = "DIGITAL-IN-"
             self.digital_events[title + str(self.dig_in_channels[idx])] = {}
-            events, lengths = self._calculate_events(self.digital_data[idx])
+            falling_edge = idx in flipped_volt
+            events, lengths = self._calculate_events(self.digital_data[idx], falling_edge=falling_edge)
             self.digital_events[title + str(self.dig_in_channels[idx])]["events"] = events
             self.digital_events[title + str(self.dig_in_channels[idx])]["lengths"] = lengths
             self.digital_events[title + str(self.dig_in_channels[idx])]["trial_groups"] = np.ones((len(events)))
@@ -617,7 +627,7 @@ class StimulusData:
 
         return raw_digital_data
 
-    def _calculate_events(self, array: np.array) -> tuple[np.array, np.array]:
+    def _calculate_events(self, array: np.array, falling_edge: bool) -> tuple[np.array, np.array]:
         """
         Utility function to calculate events based on rising or falling signals
 
@@ -635,11 +645,23 @@ class StimulusData:
 
         """
         sq_array = np.array(np.squeeze(array), dtype=np.int16)
-        onset = np.where(np.diff(sq_array) == 1)[0]
-        offset = np.where(np.diff(sq_array) == -1)[0]
-        if sq_array[0] == 1:
+        
+        if falling_edge:
+            onset_value = -1
+            offset_value = 1
+            start_value = 0
+            stop_value = 0
+        else:
+            onset_value = 1
+            offset_value = -1
+            start_value = 1
+            stop_value = 1
+
+        onset = np.where(np.diff(sq_array) == onset_value)[0]
+        offset = np.where(np.diff(sq_array) == offset_value)[0]
+        if sq_array[0] == start_value:
             onset = np.pad(onset, (1, 0), "constant", constant_values=0)
-        if sq_array[-1] == 1:
+        if sq_array[-1] == stop_value:
             offset = np.pad(offset, (0, 1), "constant", constant_values=sq_array[-1])
         lengths = offset - onset
 
