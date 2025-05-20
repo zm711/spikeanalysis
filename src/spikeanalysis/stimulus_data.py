@@ -105,6 +105,7 @@ class StimulusData:
         time_slice: tuple = (None, None),
         min_threshold: None | list = None,
         flipped_volt: None | list = None,
+        force_recompute: bool = False,
     ):
         """
         Pipeline function to run through all steps necessary to load intan data
@@ -124,14 +125,23 @@ class StimulusData:
         flipped_volt: None | list, default: None
             Which stimuli use falling edge rather than rising edge. Default is that all channels
             use rising edge
+        force_recompute: bool, default: False
+            Whether to ignore trying to load files
 
         """
 
-        try:
-            self.get_all_files()
-            return
-        except FileNotFoundError:
-            print("Reading raw data files")
+        if not force_recompute:
+            try:
+                self.get_all_files()
+                have_files = True
+                return
+            except FileNotFoundError:
+                have_files = False
+        else:
+            have_files = False
+        
+        if not have_files:
+            print(f"Reading raw data from {self._filename}")
 
         self.create_neo_reader()
         try:
@@ -273,7 +283,7 @@ class StimulusData:
             self.dig_analog_events[str(row)] = {}
             sub_data = current_analog_data[:, row]
             filtered_analog_data = np.where(sub_data > min_threshold[row], 1, 0)
-            dig_ana_events, dig_ana_lengths = self._calculate_events(filtered_analog_data)
+            dig_ana_events, dig_ana_lengths = self._calculate_events(filtered_analog_data, falling_edge=False)
             events = dig_ana_events[dig_ana_lengths > stim_length_seconds]
             lengths = dig_ana_lengths[dig_ana_lengths > stim_length_seconds]
             trial_groups = np.zeros((len(events),))
