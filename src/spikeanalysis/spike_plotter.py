@@ -1225,6 +1225,19 @@ class SpikePlotter(PlotterBase):
                             stim_lines=current_length,
                             plot_kwargs=plot_kwargs,
                         )
+            elif by_trialgroup and by_neuron:
+                for neuron in range(np.shape(response)[0]):
+                    for tg in range(np.shape(response)[1]):
+                        self._plot_one_trace(
+                            current_bins,
+                            response[neuron, tg, :],
+                            ebars=None,
+                            stim=f"{stimulus} trial group {tg} neuron {self.data.cluster_ids[neuron]}",
+                            show_stim=show_stim,
+                            stim_lines=current_length,
+                            plot_kwargs=plot_kwargs,
+                        )
+                        
             elif by_trialgroup:
                 for trial in range(np.shape(response)[1]):
                     avg_response = func(response[:, trial, :], axis=0)
