@@ -1169,7 +1169,7 @@ class SpikePlotter(PlotterBase):
                             stim_lines=current_length,
                             plot_kwargs=plot_kwargs,
                         )
-            elif by_neuron:
+            elif by_neuron and not by_trialgroup:
                 for neuron in range(np.shape(response)[0]):
                     avg_response = func(response[neuron], axis=0)
                     ebars = np.nanstd(response[neuron], axis=0)
@@ -1237,7 +1237,7 @@ class SpikePlotter(PlotterBase):
                             stim_lines=current_length,
                             plot_kwargs=plot_kwargs,
                         )
-                        
+
             elif by_trialgroup:
                 for trial in range(np.shape(response)[1]):
                     avg_response = func(response[:, trial, :], axis=0)
