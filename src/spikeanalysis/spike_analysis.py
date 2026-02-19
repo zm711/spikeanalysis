@@ -420,8 +420,10 @@ class SpikeAnalysis:
                             for column in range(mean_fr.shape[1]):
                                 if mode =='bsl-subtracted-fold-change':
                                     fr_trial[row,column] = (fr_trial[row, column] - mean_fr[row, column]) / mean_fr[row, column]
-                                else:
+                                elif mode=='bsl-subtracted':
                                     fr_trial[row,column] = (fr_trial[row, column] - mean_fr[row, column])
+                                else:
+                                    raise ValueError('you have entered a non-supported mode.')
 
                 fr[stim][:, trials == trial, :] = fr_trial[:, :, :]
                 final_fr[stim][:, trial_number, :] = np.nanmean(fr_trial, axis=1)

@@ -144,18 +144,21 @@ class StimulusData:
             print(f"Reading raw data from {self._filename}")
 
         self.create_neo_reader()
-        try:
-            self.get_analog_data(time_slice=time_slice)
+        # check for adc is '3' in neo
+        if any([stream_id for stream_id in self.reader.header['signal_streams']['id'] if '3' in stream_id]):
             have_analog = True
-        except AssertionError:
+            self.get_analog_data(time_slice=time_slice) 
+        else:
             have_analog = False
 
-        self.get_raw_digital_data(time_slice=time_slice)
-        try:
-            len(np.isnan(self._raw_digital_data))
+        
+        # check for dig in is '4' in neo
+        if any([stream_id for stream_id in self.reader.header['signal_streams']['id'] if '4' in stream_id]):
+            self.get_raw_digital_data(time_slice=time_slice)
             have_digital = True
-        except TypeError:
+        else:
             have_digital = False
+            self._raw_digital_data = np.nan
 
         if have_analog:
             self.digitize_analog_data(
@@ -216,6 +219,12 @@ class StimulusData:
 
         """
 
+        reader = self.reader
+        # 3 is analog data in neo
+        if '3' in reader.header['signal_streams']['id']:
+            adc_index = self._get_stream_index_from_id(reader, '3')
+        else:
+            raise AttributeError('There is no analog data')
         if time_slice[0] is not None:
             i_start = int(np.rint(time_slice[0] * self.sample_frequency))
         else:
@@ -225,20 +234,14 @@ class StimulusData:
         else:
             i_stop = None
 
-        stream_list = []
-        for value in self.reader.header["signal_streams"]:
-            stream_list.append(str(value[0]))
-        adc_stream = [idx for idx, name in enumerate(stream_list) if "ADC" in name.upper()]
-        assert len(adc_stream) > 0, "There is no analog data"
-        adc_stream = adc_stream[0]
         adc_data = self.reader.get_analogsignal_chunk(
-            stream_index=adc_stream,
+            stream_index=adc_index,
             i_start=i_start,
             i_stop=i_stop,
         )
 
         final_adc = np.squeeze(
-            self.reader.rescale_signal_raw_to_float(adc_data, stream_index=adc_stream, dtype="float64")
+            self.reader.rescale_signal_raw_to_float(adc_data, stream_index=adc_index, dtype="float64")
         )
         self.analog_data = final_adc
 
@@ -676,135 +679,12 @@ class StimulusData:
         lengths = offset - onset
 
         return onset, lengths
+    
+    def _get_stream_index_from_id(self, reader, desired_id):
 
+        signal_streams = reader.header['signal_streams']
+        signal_ids = signal_streams['id'].tolist()
 
-class TimestampReader:
-    """utility class for helping load non-synced timestamp based data with leading-edge falling-edge."""
+        signal_index = signal_ids.index(desired_id)
+        return signal_index
 
-    def __init__(
-        self,
-        data: list | np.ndarray,
-        timestamps: list | np.ndarray,
-        start_timestamp: float = 0.0,
-        sample_rate: int | None = None,
-    ):
-        """
-        Parameters
-        ----------
-        data: list | np.ndarray
-            An array containing the TTL style data of 0s and some int
-        timestamps: list | np.ndarray
-            A timestamp for each value given in data
-        start_timestamp: float, default: 0.0
-             The starting timestamp to sync the data to a sample time scale
-        sample_rate int | None, default: None
-             The sample rate to convert from time into samples"""
-
-        self.data = np.array(data)
-        self.timestamps = np.array(timestamps)
-        self._start_timestamp = start_timestamp
-        self._sample_rate = sample_rate
-
-    def set_start_timestamp(self, start_ts: float | StimulusData):
-        """
-        Function to set the timestamp offset
-        Parameters
-        ----------
-        start_ts: float | StimulusData
-            The start timestamp to offset the analysis with"""
-
-        if isinstance(start_ts, (float, int)):
-            self._start_timestamp = float(start_ts)
-        elif isinstance(start_ts, StimulusData):
-            self._start_timestamp = start_ts.start_timestamp
-        else:
-            raise TypeError(f"`start_ts` must be float or StimulusData. It is of type {type(start_ts)}")
-
-    def set_sample_rate(self, sample_rate: int | StimulusData):
-        """
-        Function to set the sample rate
-        Parameters
-        ----------
-        sample_rate: int | StimulusData
-            The sample rate to convert from time to samples"""
-
-        if isinstance(sample_rate, (float, int)):
-            self._sample_rate = sample_rate
-        elif isinstance(sample_rate, StimulusData):
-            self._sample_rate = sample_rate.sample_frequency
-        else:
-            raise TypeError(f"`start_ts` must be int or StimulusData. It is of type {type(sample_rate)}")
-
-    def load_into_stimulus_data(self, stim: StimulusData, new_stim_key: str, in_place: bool = True):
-        """Function which loads a timestamp TTL into StimulusData
-        Parameters
-        ----------
-        stim: StimulusData
-            The StimulusData object to use
-        new_stim_key: str
-            The key value to use in the `digital_events` dictionary
-        in_place: bool, default=True
-            If true loads the new events into the current StimulusData
-            If false returns a deep copy with the new data loaded
-        Returns
-        -------
-        stim1: StimulusData
-            If in_place set to false it returns a deepcopy of the StimulusData with
-            the new events loaded"""
-
-        assert isinstance(stim, StimulusData), "function is for loading into StimulusData"
-        try:
-            assert (
-                new_stim_key not in stim.digital_events
-            ), f"`new_stim_key` must be new key current keys are {stim.digital_events.keys()}"
-        except AttributeError:
-            warnings.warn(
-                "This function should be run after all other stimulus data has been processed but before setting trial groups and names"
-            )
-            stim.digital_events = {}
-
-        onsets, lengths = self._calculate_events()
-
-        if in_place:
-            stim.digital_events[new_stim_key] = {}
-            stim.digital_events[new_stim_key]["onsets"] = onsets
-            stim.digital_events[new_stim_key]["lengths"] = lengths
-            stim.digital_events[new_stim_key]["trial_groups"] = np.ones((len(onsets)))
-        else:
-            import copy
-
-            stim1 = copy.deepcopy(stim)
-            stim1.digital_events[new_stim_key] = {}
-            stim1.digital_events[new_stim_key]["onsets"] = onsets
-            stim1.digital_events[new_stim_key]["lengths"] = lengths
-            stim1.digital_events[new_stim_key]["trial_groups"] = np.ones((len(onsets)))
-            return stim1
-
-    def _calculate_events(self) -> tuple[np.ndarray, np.ndarray]:
-        """Function to convert from timestamps to samples as well as a leading/falling edge detector
-        Returns
-        -------
-        onset_samples: np.ndarray
-            The onset of events in samples
-        lengths: np.ndarray
-            the lengths of the events in samples"""
-
-        assert self._sample_rate, "`sample_rate` must be set to calculate events, use `set_sample_rate()`"
-
-        timestamps = self.timestamps - self._start_timestamp
-        onset = np.where(np.diff(self.data) < 0)[0]
-        offset = np.where(np.diff(self.data) > 0)[0]
-        if self.data[0] > 0:
-            onset = np.pad(onset, (1, 0), "constant", constant_values=0)
-        if self.data[-1] > 0:
-            offset = np.pad(offset, (0, 1), "constant", constant_value=self.data[-1])
-
-        onset_timestamps = timestamps[onset]
-        offset_timestamps = timestamps[offset]
-
-        onset_samples = onset_timestamps * self._sample_rate
-        offset_samples = offset_timestamps * self._sample_rate
-
-        lengths = onset_samples - offset_samples
-
-        return onset_samples, lengths

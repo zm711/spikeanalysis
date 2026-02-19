@@ -315,7 +315,7 @@ class SpikePlotter(PlotterBase):
                         self.data.cluster_ids[z_score_sorting_index]
                     ]
                 else:
-                    sorted_cluster_ids[stimulus] = self.data.cluster_ids[z_score_sorting_index]
+                    sorted_cluster_ids[stimulus] = z_score_sorting_index
 
             sorted_z_scores = sub_zscores[z_score_sorting_index, :, :]
 
@@ -324,8 +324,8 @@ class SpikePlotter(PlotterBase):
 
             # at baseline we need to eliminate cases of nan's, infinities, and 0's (if all the way across a stimulus)
             nan_mask = np.any(
-                np.any(np.isnan(sorted_z_scores) | np.isinf(sorted_z_scores), axis=2)
-                | np.all(np.equal(sorted_z_scores, 0), axis=2),
+                np.any(np.isnan(sorted_z_scores) | np.isinf(sorted_z_scores), axis=2),
+                #| np.all(np.equal(sorted_z_scores, 0), axis=2),
                 axis=1,
             )
 
@@ -387,8 +387,9 @@ class SpikePlotter(PlotterBase):
                 )
                 sub_ax.set_xticks([i * bins_length for i in range(7)])
                 sub_ax.set_xticklabels([round(bins[i * bins_length], 4) if i < 7 else z_window[1] for i in range(7)])
+                sub_ax.tick_params(axis='both', which='major', labelsize=plot_kwargs.fontsize)
                 if idx == 0:
-                    sub_ax.set_ylabel(y_axis, fontsize="small")
+                    sub_ax.set_ylabel(y_axis, fontsize=plot_kwargs.fontsize, fontname=plot_kwargs.fontname, fontstyle=plot_kwargs.fontstyle)
                 if show_stim:
                     if isinstance(show_stim, bool):
                         show_stim = 0.5
@@ -431,7 +432,7 @@ class SpikePlotter(PlotterBase):
                 cbar_label = "Z scores"
             else:
                 cbar_label = "Raw Firing"
-            plt.colorbar(im, cax=cax, label=cbar_label)  # Similar to fig.colorbar(im, cax = cax)
+            fig.colorbar(im, cax=cax, label=cbar_label)  # Similar to fig.colorbar(im, cax = cax)
             if plot_kwargs.title is None:
                 plt.title(
                     f"{stimulus}",
@@ -654,7 +655,12 @@ class SpikePlotter(PlotterBase):
         plot_kwargs = self._convert_plot_kwargs(plot_kwargs)
 
         if plot_kwargs.cmap is not None:
-            cmap = mpl.colormaps[plot_kwargs.cmap]
+            if isinstance(plot_kwargs.cmap, str):
+                cmap = mpl.colormaps[plot_kwargs.cmap]
+                no_norm = False
+            else:
+                cmap = plot_kwargs.cmap
+                no_norm = True
         else:
             cmap = mpl.colormaps["rainbow"]
 
@@ -710,7 +716,8 @@ class SpikePlotter(PlotterBase):
             bins = bins[np.logical_and(bins > sub_window[0], bins < sub_window[1])]
             events = event_lengths[stimulus]
             tg_set = np.unique(trial_groups)
-            norm = mpl.colors.Normalize(vmin=0, vmax=len(tg_set))
+            if not no_norm:
+                norm = mpl.colors.Normalize(vmin=0, vmax=len(tg_set))
             bin_size = bins[1] - bins[0]
             sm_std = int((1 / (bin_size * 1000))) * sm_time_ms[idx]  # convert from user input
 
@@ -740,10 +747,14 @@ class SpikePlotter(PlotterBase):
                 for value in range(np.shape(mean_smoothed_psth)[0]):
                     err_minus = mean_smoothed_psth[value] - stderr[value]
                     err_plus = mean_smoothed_psth[value] + stderr[value]
-                    plots = ax.plot(bins, mean_smoothed_psth[value], color=cmap(norm(value)), linewidth=0.75)
-                    ax.plot(bins, err_minus, color=cmap(norm(value)), linewidth=0.25)
-                    ax.plot(bins, err_plus, color=cmap(norm(value)), linewidth=0.25)
-                    ax.fill_between(bins, err_minus, err_plus, color=cmap(norm(value)), alpha=0.2)
+                    if no_norm:
+                        color = cmap[value]
+                    else:
+                        color = cmap(norm(value))
+                    plots = ax.plot(bins, mean_smoothed_psth[value], color=color, linewidth=0.75)
+                    ax.plot(bins, err_minus, color=color, linewidth=0.25)
+                    ax.plot(bins, err_plus, color=color, linewidth=0.25)
+                    ax.fill_between(bins, err_minus, err_plus, color=color, alpha=0.4)
                     if show_stim:
                         ax.plot(
                             [0, 0],
@@ -772,6 +783,7 @@ class SpikePlotter(PlotterBase):
                         fontstyle=plot_kwargs.fontstyle,
                         fontname=plot_kwargs.fontname,
                     )
+                    ax.tick_params(which='major', length=10, width=4, labelsize=8)
                     plt.tight_layout()
 
                     self._despine(ax)
@@ -783,6 +795,7 @@ class SpikePlotter(PlotterBase):
                         fontstyle=plot_kwargs.fontstyle,
                         fontname=plot_kwargs.fontname,
                     )
+                    title = f"{self.data.cluster_ids[cluster_number]}-{stimulus}"
                 else:
                     if len(self.data.si_units) > 0:
                         title = f"{stimulus}: {self.data.si_units[self.data.cluster_ids[cluster_number]]}"
@@ -797,7 +810,7 @@ class SpikePlotter(PlotterBase):
                 plt.figure(dpi=plot_kwargs.dpi)
 
                 if plot_kwargs.save:
-                    self._save_fig(fig, title, extra_title=plot_kwargs.extra_title, format=plot_kwargs.format)
+                    self._save_fig(fig, title, extra_title=plot_kwargs.title, format=plot_kwargs.format)
                 plt.show()
 
     def plot_zscores_ind(self, z_bar: Optional[list[int]] = None, show_stim: bool = True):
@@ -1144,7 +1157,6 @@ class SpikePlotter(PlotterBase):
             func = mode
 
         plot_kwargs = self._convert_plot_kwargs(plot_kwargs=plot_kwargs)
-
         for stimulus, response in data.items():
             current_length = stim_lengths[stimulus]
             current_bins = bins[stimulus]
@@ -1355,6 +1367,7 @@ class SpikePlotter(PlotterBase):
             fontname=plot_kwargs.fontname,
         )
         self._despine(ax)
+        ax.tick_params(which='major', length=10, width=4, labelsize=8)
         plt.title(
             f"trace {stim}",
             fontsize=plot_kwargs.fontsize,
@@ -1363,6 +1376,12 @@ class SpikePlotter(PlotterBase):
         )
         plt.tight_layout()
         plt.figure(dpi=plot_kwargs.dpi)
+        if plot_kwargs.save and plot_kwargs.title:
+            print('saving')
+            self._save_fig(fig=fig, cluster_number=f'{stim}', extra_title=plot_kwargs.title, format=plot_kwargs.format)
+        else:
+            print(f"{plot_kwargs.save=}")
+            print('not saving')
         plt.show()
 
     def plot_correlations(self, plot_type="whisker", mode="mean", colors="r", sem=True, plot_kwargs=None):
